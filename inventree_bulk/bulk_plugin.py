@@ -1,9 +1,8 @@
 from plugin import InvenTreePlugin
-
-from inventree_bulk.version import BULK_PLUGIN_VERSION
-from plugin.mixins import SettingsMixin, PanelMixin
-
+from plugin.mixins import PanelMixin, SettingsMixin
 from stock.views import StockLocationDetail
+
+from .version import BULK_PLUGIN_VERSION
 
 
 class BulkActionPlugin(SettingsMixin, PanelMixin, InvenTreePlugin):
