@@ -18,22 +18,12 @@ class BulkActionPlugin(SettingsMixin, PanelMixin, InvenTreePlugin):
 
     def get_custom_panels(self, view, request):
         panels = []
-        print(view)
-        if isinstance(view, StockLocationDetail):
-            # We can use template rendering in the raw content
-            content = """
-            <div>
-                <textarea></textarea>
-                <br />
-                {{location.id}}
-                <button type="button" class="btn btn-primary">Erstellen</button>
-            </div>
-            """
 
+        if isinstance(view, StockLocationDetail):
             panels.append({
                 'title': 'Bulk creation',
                 'icon': 'fas fa-tools',
-                'content': content,
+                'content_template': 'create-bulk.html',
                 'description': 'Bulk creation tools',
             })
 
