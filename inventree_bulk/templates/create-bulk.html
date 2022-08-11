@@ -1,7 +1,32 @@
 <div>
-  <textarea></textarea>
-  <br />
-  {{location.id}}
-  {{location.name}}
-  <button type="button" class="btn btn-primary">Erstellen</button>
+  <form id="bulkcreate-form">
+    <textarea id="bulkcreate-input" cols="80" rows="20"></textarea>
+    <br />
+    <p id="success"></p>
+    <p id="error"></p>
+    <button type="button" class="btn btn-primary" id="bulkcreate-preview-btn">
+      <span class="spinner-border spinner-border-sm loadingindicator" role="status" aria-hidden="true" id="loadingindicator-preview"></span>
+      Preview
+    </button>
+    <button type="button" class="btn btn-primary" id="bulkcreate-create-btn">
+      <span class="spinner-border spinner-border-sm loadingindicator" role="status" aria-hidden="true" id="loadingindicator-create"></span>
+      Create
+    </button>
+
+    <table id="table"></table>
+  </form>
 </div>
+
+<style>
+  #success {
+    color: green;
+  }
+
+  #error {
+    color: red;
+  }
+
+  .loadingindicator {
+    display: none;
+  }
+</style>
