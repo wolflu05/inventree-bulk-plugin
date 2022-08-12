@@ -6,27 +6,34 @@ from django.views.decorators.csrf import csrf_exempt
 from rest_framework import status
 
 from plugin import InvenTreePlugin
-from plugin.mixins import PanelMixin, SettingsMixin, UrlsMixin
-from stock.views import StockLocationDetail
+from plugin.mixins import PanelMixin, UrlsMixin, AppMixin
+from stock.views import StockLocationDetail, StockIndex
 from stock.models import StockLocation
 
 from .version import BULK_PLUGIN_VERSION
 from .BulkGenerator.BulkGenerator import BulkGenerator
 
 
-class BulkActionPlugin(SettingsMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
+class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
     AUTHOR = "wolflu05"
     DESCRIPTION = "Bulk action plugin"
     VERSION = BULK_PLUGIN_VERSION
 
-    NAME = "Bulk Action"
+    NAME = "inventree_bulk"
     SLUG = "bulkaction"
     TITLE = "Bulk Action"
 
-    SETTINGS = {}
-
     def get_custom_panels(self, view, request):
         panels = []
+
+        if isinstance(view, StockIndex):
+            panels.append({
+                'title': 'Manage bulk creation',
+                'icon': 'fas fa-tools',
+                'content_template': 'manage-bulk.html',
+                'javascript_template': 'manage-bulk.js',
+                'description': 'Manage bulk creation',
+            })
 
         if isinstance(view, StockLocationDetail):
             panels.append({
