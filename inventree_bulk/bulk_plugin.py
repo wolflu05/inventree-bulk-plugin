@@ -10,6 +10,7 @@ from plugin.mixins import PanelMixin, UrlsMixin, AppMixin
 from stock.views import StockLocationDetail, StockIndex
 from stock.models import StockLocation
 
+from .models import BulkCreationTemplate
 from .version import BULK_PLUGIN_VERSION
 from .BulkGenerator.BulkGenerator import BulkGenerator
 
@@ -19,7 +20,7 @@ class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
     DESCRIPTION = "Bulk action plugin"
     VERSION = BULK_PLUGIN_VERSION
 
-    NAME = "inventree_bulk"
+    NAME = "Bulk Action"
     SLUG = "bulkaction"
     TITLE = "Bulk Action"
 
@@ -47,14 +48,14 @@ class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
         return panels
 
     @csrf_exempt
-    def parse(self, request):
+    def url_parse(self, request):
         if request.method == "POST":
             parsed = yaml.safe_load(request.body)
             bg = BulkGenerator(parsed).generate()
             return JsonResponse(bg, safe=False)
 
     @csrf_exempt
-    def bulk_create(self, request, pk):
+    def url_bulk_create(self, request, pk):
         if request.method == "POST":
             parsed = yaml.safe_load(request.body)
             bg = BulkGenerator(parsed).generate()
@@ -75,8 +76,24 @@ class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
 
             self._create_location(loc, c[1])
 
+    @csrf_exempt
+    def url_templates(self, request, pk=None):
+        if request.method == "GET":
+            if pk is not None:
+                template = BulkCreationTemplate.objects.get(pk=pk)
+                return JsonResponse(template)
+
+            query_set = BulkCreationTemplate.objects.all()
+            return JsonResponse(list(query_set), safe=False)
+
+        if request.method == "POST":
+            pass
+
     def setup_urls(self):
         return [
-            url(r'parse', self.parse, name='parse'),
-            url(r'bulkcreate/(?P<pk>\d+)', self.bulk_create, name='bulkcreate'),
+            url(r'parse', self.url_parse, name='parse'),
+            url(r'bulkcreate/(?P<pk>\d+)',
+                self.url_bulk_create, name='bulkcreate'),
+            url(r'templates', self.url_templates, name='templates'),
+            url(r'templates/(?P<pk>\d+)', self.url_templates, name='templates'),
         ]
