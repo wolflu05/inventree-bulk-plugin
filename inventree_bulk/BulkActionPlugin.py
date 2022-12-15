@@ -9,6 +9,8 @@ from plugin import InvenTreePlugin
 from plugin.mixins import PanelMixin, UrlsMixin, AppMixin
 from stock.views import StockLocationDetail, StockIndex
 from stock.models import StockLocation
+from part.views import CategoryDetail
+from part.models import PartCategory
 
 from pydantic import ValidationError
 
@@ -47,6 +49,15 @@ class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
                 'description': 'Bulk creation tools',
             })
 
+        if isinstance(view, CategoryDetail):
+            panels.append({
+                'title': 'Bulk creation',
+                'icon': 'fas fa-tools',
+                'content_template': 'panels/category-detail/create-bulk.html',
+                'javascript_template': 'panels/category-detail/create-bulk.js',
+                'description': 'Bulk creation tools',
+            })
+
         return panels
 
     @csrf_exempt
@@ -78,9 +89,9 @@ class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
             if error is not None:
                 return error
 
-            root_location = StockLocation.objects.get(pk=pk)
+            root_category = PartCategory.objects.get(pk=pk)
 
-            self._create_location(root_location, output)
+            self._create_category(root_category, output)
 
             return HttpResponse(status=status.HTTP_201_CREATED)
 
@@ -103,6 +114,16 @@ class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
             )
 
             self._create_location(loc, c[1])
+
+    def _create_category(self, parent, childs):
+        for c in childs:
+            cat = PartCategory.objects.create(
+                name=c[0]['name'],
+                description=c[0]['description'],
+                parent=parent
+            )
+
+            self._create_category(cat, c[1])
 
     @csrf_exempt
     def url_templates(self, request, pk=None):
