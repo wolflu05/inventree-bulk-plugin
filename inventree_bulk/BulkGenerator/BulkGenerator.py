@@ -1,7 +1,7 @@
 import itertools
 import re
 from typing import List, Optional, Dict, Union, Tuple
-from pydantic import BaseModel, ValidationError, PrivateAttr
+from pydantic import BaseModel, PrivateAttr
 
 from .dimensions import get_dimension_type
 
@@ -18,8 +18,7 @@ class BulkDefinitionChild(BaseModel):
     parent_name_match: Optional[str] = ".*"
     extends: Optional[str]
     dimensions: Optional[List[str]] = []
-    generate_name: Optional[str]
-    generate_description: Optional[str]
+    generate: Dict[str, str]
     count: Optional[List[Union[int, None]]] = []
     child: Optional["BulkDefinitionChild"]
     childs: Optional[List["BulkDefinitionChild"]] = []
@@ -29,22 +28,31 @@ class BulkDefinitionChild(BaseModel):
     _parent: Optional["BulkDefinitionChild"] = PrivateAttr(None)
 
 
+class BulkDefinitionChildTemplate(BulkDefinitionChild):
+    name: str
+
+
 class BulkDefinitionSettings(BaseModel):
     count_from: Optional[int] = 1
     leading_zeros: Optional[bool] = True
 
 
 class BulkDefinitionSchema(BaseModel):
+    version: str
     input: Dict[str, Union[int, str]]
     settings: Optional[BulkDefinitionSettings] = BulkDefinitionSettings()
-    templates: Dict[str, "BulkDefinitionChild"]
+    templates: List["BulkDefinitionChildTemplate"]
     output: "BulkDefinitionChild"
 
 
 def apply_template(obj, template):
     for k in template.__fields__.keys():
-        obj_attr = getattr(obj, k)
-        template_attr = getattr(template, k)
+        # only templates have names
+        if k == "name":
+            continue
+
+        obj_attr = getattr(obj, k, None)
+        template_attr = getattr(template, k, None)
 
         if template_attr is None:
             continue
@@ -57,6 +65,12 @@ def apply_template(obj, template):
         if k in ['count', 'dimensions'] and len(obj_attr) == 0:
             for i in template_attr:
                 obj_attr.append(i)
+
+        if k in ["generate"] and type(template_attr) is dict:
+            for key, value in template_attr.items():
+                existing_value = getattr(obj_attr, key, "")
+                if existing_value == "" and value != "":
+                    obj_attr[key] = value
 
         if obj_attr is None:
             setattr(obj, k, template_attr)
@@ -74,17 +88,15 @@ class BulkGenerator:
         return self.parse_child(self.schema.output)
 
     def validate(self):
-        try:
-            self.schema = BulkDefinitionSchema(**self.inp)
-        except ValidationError as e:
-            print(e)
+        self.schema = BulkDefinitionSchema(**self.inp)
 
     def parse_child(self, child):
         res = []
 
         # merge extend template
         if child.extends:
-            template = self.schema.templates.get(child.extends, None)
+            template = next(
+                filter(lambda x: x.name == child.extends, self.schema.templates), None)
             if template is None:
                 raise ValueError(f"template {child.extends} is not defined")
 
@@ -145,10 +157,7 @@ class BulkGenerator:
         return itertools.product(*seq, repeat=1)
 
     def get_generated(self, child, ctx={}):
-        return {
-            'name': self.parse_str(child.generate_name, ctx),
-            'description': self.parse_str(child.generate_description, ctx)
-        }
+        return dict([a, self.parse_str(x, ctx)] for a, x in child.generate.items())
 
     def parse_str(self, string, ctx={}):
         ctx = {'inp': dotdict(self.schema.input), **ctx}
