@@ -6,5 +6,6 @@ generateBulkCreateView({
   createURL: "{% url 'plugin:bulkaction:bulkcreatecategory' pk=category.id %}",
   name: "categories",
   defaultSchema: null,
-  tableSelector: "#bulk-create-category-preview-table"
+  tableSelector: "#bulk-create-category-preview-table",
+  templateType: "PART_CATEGORY",
 });

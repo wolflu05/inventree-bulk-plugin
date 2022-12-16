@@ -1,12 +1,29 @@
 {% include "components/BulkDefinitionSchemaBuilder.js" %}
 
-function generateBulkCreateView({ target, generateKeys, createURL, name, defaultSchema = null, tableSelector }) {
+function generateBulkCreateView({ target, generateKeys, createURL, name, defaultSchema = null, tableSelector, templateType }) {
   function App() {
+    const [savedTemplates, setSavedTemplates] = useState();
+    const [isLoading, setIsLoading] = useState(true);
     const [schema, setSchema] = useState(defaultSchema);
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [btnPreviewLoading, setBtnPreviewLoading] = useState(false);
     const [btnCreateLoading, setBtnCreateLoading] = useState(false);
+
+    const reloadSavedTemplates = useCallback(async () => {
+      const res = await fetch("{% url 'plugin:bulkaction:templates' %}" + `?template_type=${templateType}`);
+      const data = await res.json();
+  
+      setSavedTemplates(data.map(t => ({
+        ...t,
+        template: JSON.parse(t.template),
+      })));
+      setIsLoading(false);
+    }, []);
+  
+    useEffect(() => {
+      reloadSavedTemplates();
+    }, []);
 
     const onPreview = useCallback(async () => {
       setError("");
@@ -90,8 +107,51 @@ function generateBulkCreateView({ target, generateKeys, createURL, name, default
       bootstrap.Modal.getInstance("#bulkCreateModal").hide()
     }, [schema]);
 
+    const loadTemplate = useCallback((template) => () => {
+      setSchema(template.template);
+    }, []);
+
     return html`
       <div>
+        <div class="card mb-2">
+          <div class="card-header">
+            <h5 class="mb-0 user-select-none" role="button" data-bs-toggle="collapse" data-bs-target="#accordion-saved-templates">
+              Saved templates
+            </h5>
+          </div>
+
+          <div id="accordion-saved-templates" class="collapse show">
+            <div class="card-body">
+              <table class="table table-bordered" style="max-width: 500px">
+                <thead>
+                  <th>Name</th>
+                  <th>Actions</th>
+                </thead>
+                <tbody>
+                  ${isLoading ? html`
+                  <tr>
+                    <td colspan="2">
+                      <div class="d-flex justify-content-center">
+                        <div class="spinner-border" role="status">
+                          <span class="visually-hidden">Loading...</span>
+                        </div>
+                      </div>
+                    </td>
+                  </tr>
+                  ` : savedTemplates.map(template => html`
+                  <tr>
+                    <td>${template.name}</td>
+                    <td>
+                      <button class="btn btn-sm btn-outline-success" onClick=${loadTemplate(template)}>Load</button>
+                    </td>
+                  </tr>
+                  `)}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
         <${BulkDefinitionSchemaBuilder} schema=${schema} setSchema=${setSchema} generateKeys=${generateKeys} />
 
         <div class="mt-3">

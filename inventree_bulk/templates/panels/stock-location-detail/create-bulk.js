@@ -6,5 +6,6 @@ generateBulkCreateView({
   createURL: "{% url 'plugin:bulkaction:bulkcreatelocation' pk=location.id %}",
   name: "locations",
   defaultSchema: null,
-  tableSelector: "#bulk-create-location-preview-table"
+  tableSelector: "#bulk-create-location-preview-table",
+  templateType: "STOCK_LOCATION",
 });

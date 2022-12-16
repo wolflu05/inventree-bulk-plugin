@@ -142,6 +142,10 @@ class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
 
         if request.method == "GET" and pk is None:
             templates = BulkCreationTemplate.objects.all()
+            template_type = request.GET.get("template_type", None)
+            if template_type is not None:
+                templates = templates.filter(template_type=template_type)
+
             return JsonResponse(list(map(model_to_dict, templates)), safe=False)
 
         if pk is None:
