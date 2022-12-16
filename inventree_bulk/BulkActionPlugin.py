@@ -3,6 +3,7 @@ import json
 from django.conf.urls import url
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
+from django.forms.models import modelform_factory, model_to_dict
 from rest_framework import status
 
 from plugin import InvenTreePlugin
@@ -127,16 +128,48 @@ class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
 
     @csrf_exempt
     def url_templates(self, request, pk=None):
-        if request.method == "GET":
-            if pk is not None:
-                template = BulkCreationTemplate.objects.get(pk=pk)
-                return JsonResponse(template)
-
-            query_set = BulkCreationTemplate.objects.all()
-            return JsonResponse(list(query_set), safe=False)
+        BulkCreationTemplateForm = modelform_factory(
+            BulkCreationTemplate, fields=("name", "template_type", "template"))
 
         if request.method == "POST":
-            pass
+            data = json.loads(request.body)
+            populated_form = BulkCreationTemplateForm(data=data)
+            if populated_form.is_valid():
+                saved = populated_form.save()
+                return JsonResponse(model_to_dict(saved))
+            else:
+                return JsonResponse(populated_form.errors.get_json_data(), status=status.HTTP_400_BAD_REQUEST)
+
+        if request.method == "GET" and pk is None:
+            templates = BulkCreationTemplate.objects.all()
+            return JsonResponse(list(map(model_to_dict, templates)), safe=False)
+
+        if pk is None:
+            return HttpResponse(status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            template = BulkCreationTemplate.objects.get(pk=pk)
+        except BulkCreationTemplate.DoesNotExist:
+            return HttpResponse(status=status.HTTP_404_NOT_FOUND)
+
+        if request.method == "GET":
+            return JsonResponse(model_to_dict(template))
+
+        if request.method == "PUT":
+            body = json.loads(request.body)
+            populated_form = BulkCreationTemplateForm(
+                {**model_to_dict(template), **body, "id": template.pk}, instance=template)
+            if populated_form.is_valid():
+                saved = populated_form.save()
+                return JsonResponse(model_to_dict(saved))
+            else:
+                return JsonResponse(populated_form.errors.get_json_data(), status=status.HTTP_400_BAD_REQUEST)
+
+        if request.method == "DELETE":
+            template.delete()
+            return HttpResponse(status=status.HTTP_201_CREATED)
+
+        return HttpResponse(status=status.HTTP_404_NOT_FOUND)
 
     def setup_urls(self):
         return [
@@ -145,6 +178,6 @@ class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
                 self.url_bulk_create_location, name='bulkcreatelocation'),
             url(r'bulkcreate/category/(?P<pk>\d+)',
                 self.url_bulk_create_category, name='bulkcreatecategory'),
+            url(r'templates/(?P<pk>\d+)', self.url_templates, name='templatebyid'),
             url(r'templates', self.url_templates, name='templates'),
-            url(r'templates/(?P<pk>\d+)', self.url_templates, name='templates'),
         ]
