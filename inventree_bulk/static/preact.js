@@ -2,7 +2,7 @@
  * preact@v10.11.3
  * https://github.com/preactjs/preact
  * Copyright (c) 2015-present Jason Miller
- * Licensed under the MIT License 
+ * Licensed under the MIT License (see ./preact.LICENSE)
  */
 
 // Bundle from https://cdnjs.cloudflare.com/ajax/libs/preact/10.11.3/preact.min.js
