@@ -42,8 +42,7 @@ function generateBulkCreateView({ target, generateKeys, createURL, name, default
         data: data,
         idField: 'id',
         columns: [
-          { field: 'name', title: 'Name' },
-          { field: 'description', title: 'Description' },
+          ...Object.entries(generateKeys).map(([key, name]) => ({ field: key, title: name })),
           { field: 'path', title: 'Path' }
         ],
         treeShowField: 'name',

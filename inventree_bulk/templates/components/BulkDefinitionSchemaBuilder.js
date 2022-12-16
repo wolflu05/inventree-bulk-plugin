@@ -1,5 +1,7 @@
+{% include "components/constants.js" %}
+
 const { render, h } = window.preact;
-const { useState, useCallback, useEffect, useMemo, useId } = window.preactHooks;
+const { useState, useCallback, useEffect, useMemo, useId, useImperativeHandle, useRef } = window.preactHooks;
 const html = window.htm.bind(h);
 
 // helpers
@@ -26,7 +28,7 @@ const beautifySchema = (schema) => {
 }
 
 // Components
-function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = [] }) {
+function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = {} }) {
   // initially populate schema if null
   useEffect(() => {
     if (schema === null) {
@@ -185,7 +187,7 @@ function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generat
         ...(extendsKeys ? {extends: ""} : {}),
         dimensions: [],
         count: [],
-        generate: Object.fromEntries(generateKeys.map(k => [k, ""])),
+        generate: Object.fromEntries(Object.keys(generateKeys).map(k => [k, ""])),
         childs: []
       }))
     }
@@ -243,8 +245,8 @@ function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generat
           <h5>Generate</h5>
           <//>
       </div>
-      ${generateKeys.map(k => html`
-        <${Input} label="Generate ${k}" type="text" value=${childSchema.generate[k]} onInput=${setGenerateValue(k)} />
+      ${Object.entries(generateKeys).map(([key, name]) => html`
+        <${Input} label="Generate ${name}" type="text" value=${childSchema.generate[key]} onInput=${setGenerateValue(key)} />
       `)}
 
       <div class="ms-4 mt-2">

@@ -36,8 +36,8 @@ class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
             panels.append({
                 'title': 'Manage bulk creation',
                 'icon': 'fas fa-tools',
-                'content_template': 'manage-bulk.html',
-                'javascript_template': 'manage-bulk.js',
+                'content_template': 'panels/stock-index/manage-bulk.html',
+                'javascript_template': 'panels/stock-index/manage-bulk.js',
                 'description': 'Manage bulk creation',
             })
 

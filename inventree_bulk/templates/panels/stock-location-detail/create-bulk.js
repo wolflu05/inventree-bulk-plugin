@@ -2,7 +2,7 @@
 
 generateBulkCreateView({
   target: document.getElementById("bulk-create-location-preact-root"),
-  generateKeys: ["name", "description"],
+  generateKeys: generateKeysForTemplateType.STOCK_LOCATION,
   createURL: "{% url 'plugin:bulkaction:bulkcreatelocation' pk=location.id %}",
   name: "locations",
   defaultSchema: null,
