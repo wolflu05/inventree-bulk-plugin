@@ -44,7 +44,7 @@ setuptools.setup(
 
     entry_points={
         "inventree_plugins": [
-            "BulkActionPlugin = inventree_bulk.bulk_plugin:BulkActionPlugin"
+            "BulkActionPlugin = inventree_bulk.BulkActionPlugin:BulkActionPlugin"
         ]
     },
 )
