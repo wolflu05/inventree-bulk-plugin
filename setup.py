@@ -47,4 +47,6 @@ setuptools.setup(
             "BulkActionPlugin = inventree_bulk.BulkActionPlugin:BulkActionPlugin"
         ]
     },
+
+    include_package_data=True,
 )
