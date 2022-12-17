@@ -6,8 +6,9 @@ from pydantic import BaseModel, PrivateAttr
 from .dimensions import get_dimension_type
 
 
-class dotdict(dict):
-    """dot.notation access to dictionary attributes"""
+class DotDict(dict):
+    """dot.notation access to dictionary attributes."""
+
     def __getattr__(*args):
         return dict.get(*args, "")
     __setattr__ = dict.__setitem__
@@ -107,7 +108,7 @@ class BulkGenerator:
             product = self.generate_product(
                 child.dimensions, child.count, child)
             for p in product:
-                ctx = {'dim': dotdict(
+                ctx = {'dim': DotDict(
                     {f"{i + 1}": x for i, x in enumerate(p)})}
                 res.append((self.get_generated(child, ctx), []))
         else:
@@ -160,7 +161,7 @@ class BulkGenerator:
         return dict([a, self.parse_str(x, ctx)] for a, x in child.generate.items())
 
     def parse_str(self, string, ctx={}):
-        ctx = {'inp': dotdict(self.schema.input), **ctx}
+        ctx = {'inp': DotDict(self.schema.input), **ctx}
 
         try:
             return string.format(**ctx)

@@ -19,6 +19,9 @@ from .models import BulkCreationTemplate
 from .version import BULK_PLUGIN_VERSION
 from .BulkGenerator.BulkGenerator import BulkGenerator
 
+BulkCreationTemplateForm = modelform_factory(
+    BulkCreationTemplate, fields=("name", "template_type", "template"))
+
 
 class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
     AUTHOR = "wolflu05"
@@ -128,9 +131,6 @@ class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
 
     @csrf_exempt
     def url_templates(self, request, pk=None):
-        BulkCreationTemplateForm = modelform_factory(
-            BulkCreationTemplate, fields=("name", "template_type", "template"))
-
         if request.method == "POST":
             data = json.loads(request.body)
             populated_form = BulkCreationTemplateForm(data=data)

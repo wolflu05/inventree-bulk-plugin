@@ -19,7 +19,7 @@ def validate_template(value):
 
 
 class BulkCreationTemplate(models.Model):
-    """Store bulk creation templates"""
+    """Store bulk creation templates."""
 
     class Meta:
         app_label = "inventree_bulk"
