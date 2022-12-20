@@ -9,19 +9,15 @@ A bulk creation plugin for [InvenTree](https://inventree.org), which helps you g
 
 ## Installation
 
-1. Install this plugin as follows:
+Install this plugin as follows:
 
-   ```bash
-   pip install git+https://github.com/wolflu05/inventree-bulk-plugin
-   ```
-   
-   Or, add to your `plugins.txt` file:
-   
-   ```txt
-   git+https://github.com/wolflu05/inventree-bulk-plugin
-   ```
- 
-2. Goto your plugin settings and ensure that you allow the use of the url integration and app integration
+1. Make sure you allow the use of the url integration and app integration (see [Why does this plugin needs the app mixin?](#why-does-this-plugin-needs-the-app-mixin))
+
+2. Goto Settings > Plugins > Install Plugin, set `inventree-bulk-plugin` as package name and `git+https://github.com/wolflu05/inventree-bulk-plugin` as source URL. Enable the confirm switch and click submit.
+
+3. Restart your server and activate the plugin.
+
+4. Stop your server and run `invoke update` (for docker installs it is `docker-compose inventree-server invoke update`). This ensures that all migrations run and the static files get collected. You can now start your server again and start using the plugin.
 
 ## Usage
 
@@ -73,7 +69,7 @@ Dimensions are a way to add various counting strategies to your naming. You can 
 
 A `dimension` can be either specify a range or a generic name. You can use the count field to limit a generic dimension to a specific amount of generating items.
 
-Ranges: `A-G`,`f-x`, `1-3`, `A-XZ`
+Ranges: `A-G`,`f-x`, `1-3`, `A-XZ` <br/>
 Generics: `NUMERIC` (0-9), `ALPHA_LOWER` (a-...), `ALPHA_UPPER` (A-...). 
 
 ##### Generate
