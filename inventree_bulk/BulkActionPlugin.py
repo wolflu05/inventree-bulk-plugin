@@ -27,6 +27,7 @@ class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
     AUTHOR = "wolflu05"
     DESCRIPTION = "Bulk action plugin"
     VERSION = BULK_PLUGIN_VERSION
+    MIN_VERSION = "0.9.1"  # due to "invoke update" doesn't run collectstatic (see #inventree/InvenTree#4077)
 
     TITLE = "Bulk Action"
     SLUG = "bulkaction"
