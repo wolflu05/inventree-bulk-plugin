@@ -56,9 +56,9 @@ jobs:
         run: |
           cd inventree_bulk
           python -m coverage json
-          echo '## Test Coverage Report\n' > coverage.md
+          echo '## Test Coverage Report' > coverage.md
           coverage=$(jq -r ".totals.percent_covered" coverage.json | xargs printf "%.*f\n" "1")
-          echo "![Code Coverage](https://img.shields.io/badge/Code%20Coverage-${coverage}%25-green?style=flat)\n" >> coverage.md
+          echo "![Code Coverage](https://img.shields.io/badge/Code%20Coverage-${coverage}%25-green?style=flat)" >> coverage.md
           python -m coverage report --format=markdown >> coverage.md
 
       - name: Get PR number
