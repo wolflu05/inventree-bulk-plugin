@@ -44,6 +44,7 @@ jobs:
 
       - name: Install tests dependencies
         run: |
+          pip install pydantic==1.9.1
           pip install coverage==5.5
 
       - name: Run tests
