@@ -48,6 +48,7 @@ jobs:
 
       - name: Run tests
         run: |
+          cd inventree_bulk
           python -m coverage run -m unittest
 
       - name: Coverage report
