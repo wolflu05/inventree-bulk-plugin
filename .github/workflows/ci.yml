@@ -72,13 +72,16 @@ jobs:
           thresholds: '50 80'
 
       - name: Get PR number
-        uses: jwalton/gh-find-current-pr@v1
-        id: finder
+        uses: 8BitJonny/gh-get-current-pr@2.2.0
+        id: pr
+        with:
+          sha: ${{ github.event.pull_request.head.sha }}
+          filterOutClosed: true
 
       - name: Add Coverage PR Comment
         uses: marocchino/sticky-pull-request-comment@v2
-        if: success() && steps.finder.outputs.number
+        if: success() && steps.pr.outputs.number
         with:
-          number: ${{ steps.finder.outputs.pr }}
+          number: ${{ steps.pr.outputs.number }}
           recreate: true
           path: code-coverage-results.md
