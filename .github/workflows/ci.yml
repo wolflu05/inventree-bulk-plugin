@@ -54,4 +54,5 @@ jobs:
 
       - name: Coverage report
         run: |
+          cd inventree_bulk
           python -m coverage report
