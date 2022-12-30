@@ -8,7 +8,7 @@ def numeric_generator():
 
 
 def alpha_generator(letters=string.ascii_uppercase):
-    for i in itertools.count(0):
+    for i in itertools.count(1):
         for p in itertools.product(letters, repeat=i):
             yield ''.join(p)
 
@@ -23,10 +23,12 @@ def try_int(x):
     return x
 
 
-def get_alpha_index(x):
+def get_alpha_index(x, *, _recursive=False):
+    """ returns the zero-based index of alphanumeric values. """
     if x == "":
         return 0
-    return 1 + ord(x[-1].upper()) - ord('A') + 26 * get_alpha_index(x[:-1])
+    res = 1 + ord(x[-1].upper()) - ord('A') + 26 * get_alpha_index(x[:-1], _recursive=True)
+    return res if _recursive else res - 1
 
 
 def get_dimension_type(dim, count, default_start=1):
@@ -37,7 +39,10 @@ def get_dimension_type(dim, count, default_start=1):
             raise ValueError(f"'{dim}' is not of same type")
 
         if isinstance(a, int):
-            return numeric_generator, (int(a), int(b) + 1)
+            start, end = a, b + 1
+            if count is not None:
+                end = min(start + count, end)
+            return numeric_generator, (start, end)
 
         if isinstance(a, str):
             if a.islower() and b.islower():
@@ -58,11 +63,11 @@ def get_dimension_type(dim, count, default_start=1):
             raise ValueError(f"'{dim}' is an infinity generator, count expected")
 
         if dim != "NUMERIC":
-            default_start = 1
+            default_start = 0
 
         return DIMENSIONS_GENERATORS[dim], (default_start, default_start + count)
 
-    raise ValueError(f"Unknown dimmension '{dim}'")
+    raise ValueError(f"Unknown dimension '{dim}'")
 
 
 DIMENSIONS_GENERATORS = {

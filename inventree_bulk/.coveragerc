@@ -1,0 +1,10 @@
+[run]
+omit = 
+  **/__init__.py
+  migrations/**
+  version.py
+source = .
+
+[report]
+omit =
+  **/test_*.py
