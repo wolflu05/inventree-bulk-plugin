@@ -45,31 +45,21 @@ jobs:
       - name: Install tests dependencies
         run: |
           pip install pydantic==1.9.1
-          pip install coverage==5.5
+          pip install coverage==7.0.1
 
       - name: Run tests
         run: |
           cd inventree_bulk
           python -m coverage run -m unittest
-          python -m coverage xml
 
-      # - name: Coverage report
-      #   run: |
-      #     cd inventree_bulk
-      #     python -m coverage report
-
-      - name: Code Coverage Report
-        uses: irongut/CodeCoverageSummary@v1.3.0
-        with:
-          filename: inventree_bulk/coverage.xml
-          badge: true
-          fail_below_min: false
-          format: markdown
-          hide_branch_rate: false
-          hide_complexity: true
-          indicators: true
-          output: both
-          thresholds: '50 80'
+      - name: Prepare reports
+        run: |
+          cd inventree_bulk
+          python -m coverage json
+          echo '## Test Coverage Report\n' > coverage.md
+          coverage=$(jq -r ".totals.percent_covered" coverage.json | xargs printf "%.*f\n" "1")
+          echo "![Code Coverage](https://img.shields.io/badge/Code%20Coverage-${coverage}%25-green?style=flat)\n" > coverage.md
+          python -m coverage report --format=markdown > coverage.md
 
       - name: Get PR number
         uses: 8BitJonny/gh-get-current-pr@2.2.0
@@ -84,4 +74,7 @@ jobs:
         with:
           number: ${{ steps.pr.outputs.number }}
           recreate: true
-          path: code-coverage-results.md
+          path: inventree_bulk/coverage.md
+
+      - name: Write to Job Summary
+        run: cat inventree_bulk/coverage.md >> $GITHUB_STEP_SUMMARY
