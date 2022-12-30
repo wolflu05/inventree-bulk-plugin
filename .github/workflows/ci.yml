@@ -52,7 +52,32 @@ jobs:
           cd inventree_bulk
           python -m coverage run -m unittest
 
-      - name: Coverage report
-        run: |
-          cd inventree_bulk
-          python -m coverage report
+      # - name: Coverage report
+      #   run: |
+      #     cd inventree_bulk
+      #     python -m coverage report
+
+      - name: Code Coverage Report
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: inventree_bulk/.coverage
+          badge: true
+          fail_below_min: false
+          format: markdown
+          hide_branch_rate: false
+          hide_complexity: true
+          indicators: true
+          output: both
+          thresholds: '50 80'
+
+      - name: Get PR number
+        uses: jwalton/gh-find-current-pr@v1
+        id: finder
+
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: success() && steps.finder.outputs.number
+        with:
+          number: ${{ steps.finder.outputs.pr }}
+          recreate: true
+          path: code-coverage-results.md
