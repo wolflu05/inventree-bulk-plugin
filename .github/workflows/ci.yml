@@ -58,8 +58,8 @@ jobs:
           python -m coverage json
           echo '## Test Coverage Report\n' > coverage.md
           coverage=$(jq -r ".totals.percent_covered" coverage.json | xargs printf "%.*f\n" "1")
-          echo "![Code Coverage](https://img.shields.io/badge/Code%20Coverage-${coverage}%25-green?style=flat)\n" > coverage.md
-          python -m coverage report --format=markdown > coverage.md
+          echo "![Code Coverage](https://img.shields.io/badge/Code%20Coverage-${coverage}%25-green?style=flat)\n" >> coverage.md
+          python -m coverage report --format=markdown >> coverage.md
 
       - name: Get PR number
         uses: 8BitJonny/gh-get-current-pr@2.2.0
