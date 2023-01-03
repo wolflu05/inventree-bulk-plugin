@@ -83,8 +83,6 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v3
-        with:
-          path: "/home/inventree"
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
