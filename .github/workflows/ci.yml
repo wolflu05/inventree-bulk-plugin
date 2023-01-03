@@ -83,11 +83,12 @@ jobs:
       # - name: Checkout
       #   uses: actions/checkout@v2
 
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+        
       - name: Setup inventree
         run: inv update
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
 
       # - name: Setup inventree_bulk_plugin
       #   run: pip -e 
