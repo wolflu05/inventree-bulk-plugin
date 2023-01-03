@@ -6,7 +6,7 @@ on:
 
 jobs:
   style:
-    name: 🧪 Style checks
+    name: 💄 Style checks
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
 
@@ -77,6 +77,8 @@ jobs:
         INVENTREE_DB_USER: inventree
         INVENTREE_DB_PASSWORD: inventree
         INVENTREE_PLUGINS_ENABLED: True
+        PLUGIN_TESTING: True
+        PLUGIN_TESTING_SETUP: True
 
     services:
       db:

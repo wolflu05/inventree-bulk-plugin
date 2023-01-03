@@ -2,6 +2,7 @@
 omit = 
   **/__init__.py
   **/migrations/**
+  setup.py
 source = .
 
 [report]
