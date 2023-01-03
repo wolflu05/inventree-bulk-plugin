@@ -12,12 +12,12 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.10.9
+          python-version: 3.10
 
       - name: Install style check dependencies
         run: |
@@ -35,21 +35,20 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.10.9
+          python-version: 3.10
 
-      - name: Install tests dependencies
+      - name: Install test dependencies
         run: |
           pip install pydantic==1.9.1
           pip install coverage==7.0.1
 
       - name: Run tests
         run: |
-          cd inventree_bulk
           python -m coverage run -m unittest discover -s inventree_bulk.tests.unit
 
   tests-integration:
@@ -67,8 +66,6 @@ jobs:
         INVENTREE_DB_USER: inventree
         INVENTREE_DB_PASSWORD: inventree
         INVENTREE_PLUGINS_ENABLED: True
-      volumes:
-        - my_docker_volume:/volume_mount
 
     services:
       db:
