@@ -74,7 +74,7 @@ jobs:
         image: postgres:13
         ports:
           - 5432:5432
-        environment:
+        env:
           - POSTGRES_USER: inventree
           - POSTGRES_PASSWORD: inventree
           - POSTGRES_DB: inventree
