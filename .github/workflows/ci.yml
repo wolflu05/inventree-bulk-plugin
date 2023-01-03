@@ -84,17 +84,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
+      # - name: Setup inventree
+      #   run: |
+      #     cd /home/inventree
+      #     inv update
+
+      - name: Setup inventree_bulk_plugin
+        run: |
+          cd /home/inventree
+          pip install -e $GITHUB_WORKSPACE
+      
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
 
-      - name: Setup inventree
-        run: |
-          cd /home/inventree
-          inv update
 
 
-      # - name: Setup inventree_bulk_plugin
-      #   run: pip -e 
 
   report:
     name: 📝 Report
