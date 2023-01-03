@@ -6,7 +6,7 @@ on:
 
 jobs:
   style:
-    name: Style checks
+    name: 🧪 Style checks
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
 
@@ -28,8 +28,8 @@ jobs:
         run: |
           flake8 .
 
-  tests:
-    name: Tests
+  tests-unit:
+    name: 🧪 Unit tests
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
 
@@ -52,6 +52,52 @@ jobs:
           cd inventree_bulk
           python -m coverage run -m unittest
 
+  tests-integration:
+    name: 🧪 Integration tests
+    runs-on: ubuntu-latest
+
+    container:
+      image: inventree/inventree:stable
+      env:
+        - INVENTREE_DB_ENGINE: postgresql
+        - INVENTREE_DB_NAME: inventree
+        - INVENTREE_DB_HOST: db
+        - INVENTREE_DB_PORT: 5432
+        - INVENTREE_DB_USER: inventree
+        - INVENTREE_DB_PASSWORD: inventree
+        - INVENTREE_PLUGINS_ENABLED: True
+      volumes:
+        - my_docker_volume:/volume_mount
+
+    services:
+      db:
+        image: postgres:13
+        ports:
+          - 5432:5432
+        environment:
+          - POSTGRES_USER: inventree
+          - POSTGRES_PASSWORD: inventree
+          - POSTGRES_DB: inventree
+
+    steps:
+      # - name: Checkout
+      #   uses: actions/checkout@v2
+
+      - name: Setup inventree
+        run: inv update
+
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+
+      # - name: Setup inventree_bulk_plugin
+      #   run: pip -e 
+
+  report:
+    name: 📝 Report
+    needs: [tests-unit, tests-integration]
+    if: false # ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: ubuntu-latest
+    steps:
       - name: Prepare reports
         run: |
           cd inventree_bulk

@@ -2,7 +2,7 @@ import unittest
 import types
 from itertools import islice
 
-from BulkGenerator.dimensions import numeric_generator, alpha_generator, get_alpha_generator, try_int, get_alpha_index, get_dimension_type
+from ...BulkGenerator.dimensions import numeric_generator, alpha_generator, get_alpha_generator, try_int, get_alpha_index, get_dimension_type
 
 
 class DimensionsTestCase(unittest.TestCase):

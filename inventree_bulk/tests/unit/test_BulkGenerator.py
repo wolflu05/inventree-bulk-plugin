@@ -1,6 +1,6 @@
 import unittest
 
-from BulkGenerator.BulkGenerator import BulkGenerator, BulkDefinitionChild, BulkDefinitionChildTemplate, apply_template
+from ...BulkGenerator.BulkGenerator import BulkGenerator, BulkDefinitionChild, BulkDefinitionChildTemplate, apply_template
 
 
 class BulkGeneratorTestCase(unittest.TestCase):
