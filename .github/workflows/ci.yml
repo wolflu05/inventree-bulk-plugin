@@ -142,7 +142,7 @@ jobs:
       - name: Prepare reports
         run: |
           echo "" >> .coveragerc
-          echo "[path]" >> .coveragerc
+          echo "[paths]" >> .coveragerc
           echo "source =" >> .coveragerc
           echo "  ." >> .coveragerc
           echo "  $(cat coverage/unit-coverage/coverage_info)" >> .coveragerc
