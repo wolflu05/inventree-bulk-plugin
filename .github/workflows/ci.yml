@@ -31,6 +31,7 @@ jobs:
   tests-unit:
     name: 🧪 Unit tests
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
+    needs: style
     runs-on: ubuntu-latest
 
     steps:
@@ -50,16 +51,20 @@ jobs:
       - name: Run tests
         run: |
           python -m coverage run -m unittest discover -s inventree_bulk.tests.unit
+          echo $GITHUB_WORKSPACE > coverage_info
 
       - name: Upload coverage
         uses: actions/upload-artifact@v3
         with:
           name: unit-coverage
-          path: .coverage
+          path: |
+            .coverage
+            coverage_info
 
   tests-integration:
     name: 🧪 Integration tests
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
+    needs: style
     runs-on: ubuntu-latest
 
     container:
@@ -131,33 +136,41 @@ jobs:
 
       - name: Download coverage
         uses: actions/download-artifact@v2
+        with:
+          path: coverage
 
-      - name: Setup tmate session
-        uses: mxschmitt/action-tmate@v3
+      - name: Prepare reports
+        run: |
+          echo "" >> .coveragerc
+          echo "[path]" >> .coveragerc
+          echo "source =" >> .coveragerc
+          echo "  ." >> .coveragerc
+          echo "  $(cat coverage/unit-coverage/coverage_info)" >> .coveragerc
+          echo "  $(cat coverage/integration-coverage/coverage_info)" >> .coveragerc
 
-      # - name: Prepare reports
-      #   run: |
-      #     cd inventree_bulk
-      #     python -m coverage json
-      #     echo '## Coverage Report' > coverage.md
-      #     coverage=$(jq -r ".totals.percent_covered" coverage.json | xargs printf "%.*f\n" "1")
-      #     echo "![Code Coverage](https://img.shields.io/badge/Code%20Coverage-${coverage}%25-green?style=flat)" >> coverage.md
-      #     python -m coverage report --format=markdown >> coverage.md
+          coverage combine coverage/integration-coverage/.coverage coverage/unit-coverage/.coverage
+          coverage json
 
-      # - name: Get PR number
-      #   uses: 8BitJonny/gh-get-current-pr@2.2.0
-      #   id: pr
-      #   with:
-      #     sha: ${{ github.event.pull_request.head.sha }}
-      #     filterOutClosed: true
+          coverage_percentage=$(jq -r ".totals.percent_covered" coverage.json | xargs printf "%.*f\n" "1")
+          
+          echo '## Coverage Report' > coverage.md
+          echo "![Code Coverage](https://img.shields.io/badge/Code%20Coverage-${coverage_percentage}%25-green?style=flat)" >> coverage.md
+          coverage report --format=markdown >> coverage.md
 
-      # - name: Add Coverage PR Comment
-      #   uses: marocchino/sticky-pull-request-comment@v2
-      #   if: success() && steps.pr.outputs.number
-      #   with:
-      #     number: ${{ steps.pr.outputs.number }}
-      #     recreate: true
-      #     path: inventree_bulk/coverage.md
+      - name: Get PR number
+        uses: 8BitJonny/gh-get-current-pr@2.2.0
+        id: pr
+        with:
+          sha: ${{ github.event.pull_request.head.sha }}
+          filterOutClosed: true
 
-      # - name: Write to Job Summary
-      #   run: cat inventree_bulk/coverage.md >> $GITHUB_STEP_SUMMARY
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: success() && steps.pr.outputs.number
+        with:
+          number: ${{ steps.pr.outputs.number }}
+          recreate: true
+          path: coverage.md
+
+      - name: Write to Job Summary
+        run: cat coverage.md >> $GITHUB_STEP_SUMMARY
