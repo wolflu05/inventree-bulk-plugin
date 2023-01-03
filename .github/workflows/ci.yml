@@ -54,6 +54,7 @@ jobs:
 
   tests-integration:
     name: 🧪 Integration tests
+    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
 
     container:
@@ -80,14 +81,18 @@ jobs:
           POSTGRES_DB: inventree
 
     steps:
-      # - name: Checkout
-      #   uses: actions/checkout@v2
+      - name: Checkout
+        uses: actions/checkout@v3
+        with:
+          path: "/home/inventree"
 
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
-        
+
       - name: Setup inventree
-        run: inv update
+        run: |
+          cd /home/inventree
+          inv update
 
 
       # - name: Setup inventree_bulk_plugin
