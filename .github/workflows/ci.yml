@@ -84,15 +84,21 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v3
 
-      # - name: Setup inventree
-      #   run: |
-      #     cd /home/inventree
-      #     inv update
+      - name: Setup inventree
+        run: |
+          cd /home/inventree
+          inv update
 
       - name: Setup inventree_bulk_plugin
         run: |
           cd /home/inventree
           pip install -e $GITHUB_WORKSPACE
+          pip install coverage==6.0 # https://github.com/nedbat/coveragepy/issues/1150
+
+      - name: Run tests
+        run: |
+          cd /home/inventree
+          coverage run InvenTree/manage.py test inventree_bulk.tests.integration
       
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@v3
