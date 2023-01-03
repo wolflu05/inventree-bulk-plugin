@@ -135,7 +135,7 @@ jobs:
         run: pip install coverage==7.0.1
 
       - name: Download coverage
-        uses: actions/download-artifact@v2
+        uses: actions/download-artifact@v3
         with:
           path: coverage
 
