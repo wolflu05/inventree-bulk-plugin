@@ -51,6 +51,12 @@ jobs:
         run: |
           python -m coverage run -m unittest discover -s inventree_bulk.tests.unit
 
+      - name: Upload coverage
+        uses: actions/upload-artifact@v2
+        with:
+          name: unit-coverage
+          path: .coverage
+
   tests-integration:
     name: 🧪 Integration tests
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
@@ -96,42 +102,59 @@ jobs:
         run: |
           cd /home/inventree
           coverage run --omit="InvenTree/**" InvenTree/manage.py test inventree_bulk.tests.integration
+          echo $GITHUB_WORKSPACE > coverage_info
 
       - name: Upload coverage
         uses: actions/upload-artifact@v2
         with:
           name: integration-coverage
-          path: /home/inventree/.coverage
+          path: |
+            /home/inventree/.coverage
+            /home/inventree/coverage_info
 
   report:
     name: 📝 Report
     needs: [tests-unit, tests-integration]
-    if: false # ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
+    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
     steps:
-      - name: Prepare reports
-        run: |
-          cd inventree_bulk
-          python -m coverage json
-          echo '## Coverage Report' > coverage.md
-          coverage=$(jq -r ".totals.percent_covered" coverage.json | xargs printf "%.*f\n" "1")
-          echo "![Code Coverage](https://img.shields.io/badge/Code%20Coverage-${coverage}%25-green?style=flat)" >> coverage.md
-          python -m coverage report --format=markdown >> coverage.md
+      - name: Checkout
+        uses: actions/checkout@v3
 
-      - name: Get PR number
-        uses: 8BitJonny/gh-get-current-pr@2.2.0
-        id: pr
+      - name: Setup python
+        uses: actions/setup-python@v4
         with:
-          sha: ${{ github.event.pull_request.head.sha }}
-          filterOutClosed: true
+          python-version: "3.10"
 
-      - name: Add Coverage PR Comment
-        uses: marocchino/sticky-pull-request-comment@v2
-        if: success() && steps.pr.outputs.number
-        with:
-          number: ${{ steps.pr.outputs.number }}
-          recreate: true
-          path: inventree_bulk/coverage.md
+      - name: Install test dependencies
+        run: pip install coverage==7.0.1
 
-      - name: Write to Job Summary
-        run: cat inventree_bulk/coverage.md >> $GITHUB_STEP_SUMMARY
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@v3
+
+      # - name: Prepare reports
+      #   run: |
+      #     cd inventree_bulk
+      #     python -m coverage json
+      #     echo '## Coverage Report' > coverage.md
+      #     coverage=$(jq -r ".totals.percent_covered" coverage.json | xargs printf "%.*f\n" "1")
+      #     echo "![Code Coverage](https://img.shields.io/badge/Code%20Coverage-${coverage}%25-green?style=flat)" >> coverage.md
+      #     python -m coverage report --format=markdown >> coverage.md
+
+      # - name: Get PR number
+      #   uses: 8BitJonny/gh-get-current-pr@2.2.0
+      #   id: pr
+      #   with:
+      #     sha: ${{ github.event.pull_request.head.sha }}
+      #     filterOutClosed: true
+
+      # - name: Add Coverage PR Comment
+      #   uses: marocchino/sticky-pull-request-comment@v2
+      #   if: success() && steps.pr.outputs.number
+      #   with:
+      #     number: ${{ steps.pr.outputs.number }}
+      #     recreate: true
+      #     path: inventree_bulk/coverage.md
+
+      # - name: Write to Job Summary
+      #   run: cat inventree_bulk/coverage.md >> $GITHUB_STEP_SUMMARY
