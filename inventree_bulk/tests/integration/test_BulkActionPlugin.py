@@ -53,6 +53,7 @@ class BulkActionPluginAPITestCase(InvenTreeAPITestCase):
                 },
             }
         }
+        self.simple_valid_generation_template_json = json.dumps(self.simple_valid_generation_template)
 
         self.complex_valid_generation_template = {
             "version": "0.1.0",
@@ -170,24 +171,78 @@ class BulkActionPluginAPITestCase(InvenTreeAPITestCase):
 
     def _template_url(self, pk=None):
         if pk:
-            reverse("plugin:bulkaction:templatesbyid", kwargs={"pk": pk})
+            return reverse("plugin:bulkaction:templatebyid", kwargs={"pk": pk})
         else:
-            reverse("plugin:bulkaction:templates")
+            return reverse("plugin:bulkaction:templates")
 
     def test_url_template_get(self):
         BulkCreationTemplate.objects.create(name="Complex Stock template", template_type="STOCK_LOCATION",
                                             template=json.dumps(self.complex_valid_generation_template))
-        BulkCreationTemplate.objects.create(name="Stock template", template_type="STOCK_LOCATION",
-                                            template=json.dumps(self.simple_valid_generation_template))
+        template2 = BulkCreationTemplate.objects.create(name="Stock template", template_type="STOCK_LOCATION",
+                                                        template=self.simple_valid_generation_template_json)
         BulkCreationTemplate.objects.create(
-            name="Category template", template_type="PART_CATEGORY", template=json.dumps(self.simple_valid_generation_template))
+            name="Category template", template_type="PART_CATEGORY", template=self.simple_valid_generation_template_json)
 
         # try getting all 3 templates
-        response = self.get(self._template_url())
-        self.assertEqual(3, len(json.loads(response.content)))
+        response = self.get(self._template_url(), expected_code=200).json()
+        self.assertEqual(3, len(response))
 
         # try getting only STOCK_LOCATION templates
-        response = self.get(self._template_url() + "?template_type=STOCK_LOCATION")
-        self.assertEqual(2, len(json.loads(response.content)))
+        response = self.get(self._template_url() + "?template_type=STOCK_LOCATION", expected_code=200).json()
+        self.assertEqual(2, len(response))
+        for template in response:
+            self.assertEqual("STOCK_LOCATION", template["template_type"])
 
-        print("JSON", response.json())
+        # try getting by pk
+        response = self.get(self._template_url(template2.pk), expected_code=200).json()
+        self.assertDictEqual({'id': template2.pk, 'name': 'Stock template', 'template_type': 'STOCK_LOCATION',
+                             'template': self.simple_valid_generation_template_json}, response)
+
+        # try getting by not existing pk
+        response = self.get(self._template_url(42), expected_code=404)
+
+    def test_url_template_post(self):
+        # create valid template
+        create_template = self.post(self._template_url(), {
+                                    "name": "Post - testing template", "template_type": "STOCK_LOCATION", "template": self.simple_valid_generation_template_json}, expected_code=200).json()
+        created_object = BulkCreationTemplate.objects.get(pk=create_template['id'])
+        for key in ["id", "name", "template_type", "template"]:
+            self.assertEqual(getattr(created_object, key), create_template[key])
+
+        # create invalid template
+        self.post(self._template_url(), {"novalidkey": "value"}, expected_code=400)
+
+    def test_url_template_put(self):
+        template = BulkCreationTemplate.objects.create(name="Stock template put test", template_type="STOCK_LOCATION",
+                                                       template=self.simple_valid_generation_template_json)
+
+        # test update with no pk
+        self.put(self._template_url(), {"name": "test"}, expected_code=404)
+
+        # test update with invalid pk
+        self.put(self._template_url(42), {"name": "test"}, expected_code=404)
+
+        # test update with valid pk
+        updated_template = self.put(self._template_url(template.pk), {'name': "updated name"}, expected_code=200).json()
+        self.assertEqual("updated name", updated_template['name'])
+        self.assertEqual("updated name", BulkCreationTemplate.objects.get(pk=template.pk).name)
+
+        # test update with valid pk and no valid data
+        updated_template = self.put(self._template_url(template.pk), {'template': {
+                                    "no valid bulk": "generation template"}}, expected_code=400).json()
+
+        # assert that id cannot be changed
+        updated_template = self.put(self._template_url(template.pk), {'id': 42}, expected_code=200).json()
+        self.assertEqual(template.pk, updated_template['id'])
+
+    def test_url_template_delte(self):
+        template = BulkCreationTemplate.objects.create(name="Stock template put test", template_type="STOCK_LOCATION",
+                                                       template=self.simple_valid_generation_template_json)
+
+        # test delete with no valid pk
+        self.delete(self._template_url(42), expected_code=404)
+
+        # test delete with valid pk
+        self.delete(self._template_url(template.pk), expected_code=201)
+        with self.assertRaises(BulkCreationTemplate.DoesNotExist):
+            BulkCreationTemplate.objects.get(pk=template.pk)
