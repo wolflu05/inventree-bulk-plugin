@@ -97,13 +97,16 @@ jobs:
       - name: Setup inventree
         run: |
           cd /home/inventree
-          inv update
+          pip3 install --no-cache-dir --disable-pip-version-check -U -r requirements.txt
 
       - name: Setup inventree_bulk_plugin
         run: |
           cd /home/inventree
-          pip install -e $GITHUB_WORKSPACE
-          pip install coverage==6.0 # https://github.com/nedbat/coveragepy/issues/1150
+          pip3 install -e $GITHUB_WORKSPACE
+
+          # install additional dependencies required for testing
+          # and newer coverage version due to https://github.com/nedbat/coveragepy/issues/1150
+          pip3 install django-test-migrations==1.2.0 coverage==6.0 
 
       - name: Run tests
         run: |
