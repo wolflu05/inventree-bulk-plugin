@@ -68,7 +68,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: inventree/inventree:stable
+      image: inventree/inventree:latest # TODO change to :stable if v0.9.3 is released
       env:
         INVENTREE_DB_ENGINE: postgresql
         INVENTREE_DB_NAME: inventree
@@ -77,9 +77,8 @@ jobs:
         INVENTREE_DB_USER: inventree
         INVENTREE_DB_PASSWORD: inventree
         INVENTREE_PLUGINS_ENABLED: True
-        TESTING_ENV: True
-        PLUGIN_TESTING: True
-        PLUGIN_TESTING_SETUP: True
+        INVENTREE_PLUGIN_TESTING: True
+        INVENTREE_PLUGIN_TESTING_SETUP: True
 
     services:
       db:

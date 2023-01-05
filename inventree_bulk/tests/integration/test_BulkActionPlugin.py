@@ -1,7 +1,7 @@
 import json
 
 from django.urls import reverse
-from django.test import TestCase, override_settings
+from django.test import TestCase
 from django.core.exceptions import ValidationError
 
 from InvenTree.api_tester import InvenTreeAPITestCase
@@ -11,7 +11,7 @@ from part.models import PartCategory
 from stock.views import StockLocationDetail, StockIndex
 from part.views import CategoryDetail
 
-from ...models import validate_template
+from ...models import validate_template, BulkCreationTemplate
 from ...BulkGenerator.BulkGenerator import BulkGenerator
 from ...BulkActionPlugin import BulkActionPlugin
 
@@ -38,11 +38,21 @@ class BulkActionPluginModelTestCase(TestCase):
         self.assertJSONEqual(valid_schema, validate_template(valid_schema))
 
 
-@override_settings(PLUGIN_TESTING_SETUP=True)
 class BulkActionPluginAPITestCase(InvenTreeAPITestCase):
     def setUp(self):
-        registry.reload_plugins(True)
         super().setUp()
+
+        self.simple_valid_generation_template = {
+            "version": "0.1.0",
+            "input": {},
+            "templates": [],
+            "output": {
+                "generate": {
+                    "name": "Test",
+                    "description": "Test description"
+                },
+            }
+        }
 
         self.complex_valid_generation_template = {
             "version": "0.1.0",
@@ -96,17 +106,7 @@ class BulkActionPluginAPITestCase(InvenTreeAPITestCase):
         url = reverse("plugin:bulkaction:parse")
 
         # There should be only one item generated
-        data = {
-            "version": "0.1.0",
-            "input": {},
-            "templates": [],
-            "output": {
-                "generate": {
-                    "name": "Test",
-                    "description": "Test description"
-                },
-            }
-        }
+        data = self.simple_valid_generation_template
 
         response = self.post(url, data, expected_code=200)
         self.assertJSONEqual(response.content, [[{"name": "Test", "description": "Test description"}, []]])
@@ -167,3 +167,27 @@ class BulkActionPluginAPITestCase(InvenTreeAPITestCase):
 
         path_list = list(map(lambda location: location.pathstring, StockLocation.objects.all()))
         self.assertListEqual(expected, path_list)
+
+    def _template_url(pk=None):
+        if pk:
+            reverse("plugin:bulkaction:templatesbyid", kwargs={"pk": pk})
+        else:
+            reverse("plugin:bulkaction:templates")
+
+    def test_url_template_get(self):
+        BulkCreationTemplate.objects.create(name="Complex Stock template", template_type="STOCK_LOCATION",
+                                            template=json.dumps(self.complex_valid_generation_template))
+        BulkCreationTemplate.objects.create(name="Stock template", template_type="STOCK_LOCATION",
+                                            template=json.dumps(self.simple_valid_generation_template))
+        BulkCreationTemplate.objects.create(
+            name="Category template", template_type="PART_CATEGORY", template=json.dumps(self.simple_valid_generation_template))
+
+        # try getting all 3 templates
+        response = self.get(self._template_url())
+        self.assertEqual(3, len(json.loads(response.content)))
+
+        # try getting only STOCK_LOCATION templates
+        response = self.get(self._template_url() + "?template_type=STOCK_LOCATION")
+        self.assertEqual(2, len(json.loads(response.content)))
+
+        print("JSON", response.json())
