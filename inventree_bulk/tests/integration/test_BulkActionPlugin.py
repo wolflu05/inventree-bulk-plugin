@@ -168,7 +168,7 @@ class BulkActionPluginAPITestCase(InvenTreeAPITestCase):
         path_list = list(map(lambda location: location.pathstring, StockLocation.objects.all()))
         self.assertListEqual(expected, path_list)
 
-    def _template_url(pk=None):
+    def _template_url(self, pk=None):
         if pk:
             reverse("plugin:bulkaction:templatesbyid", kwargs={"pk": pk})
         else:
