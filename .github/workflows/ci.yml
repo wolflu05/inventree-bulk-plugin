@@ -153,12 +153,21 @@ jobs:
 
           coverage combine coverage/integration-coverage/.coverage coverage/unit-coverage/.coverage
           coverage json
+          coverage html
 
           coverage_percentage=$(jq -r ".totals.percent_covered" coverage.json | xargs printf "%.*f\n" "1")
           
           echo '## Coverage Report' > coverage.md
           echo "![Code Coverage](https://img.shields.io/badge/Code%20Coverage-${coverage_percentage}%25-green?style=flat)" >> coverage.md
           coverage report --format=markdown >> coverage.md
+
+      - name: Upload full-coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage
+          path: |
+            .coverage
+            htmlcov
 
       - name: Get PR number
         uses: 8BitJonny/gh-get-current-pr@2.2.0

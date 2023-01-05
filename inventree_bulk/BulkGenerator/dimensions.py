@@ -24,7 +24,7 @@ def try_int(x):
 
 
 def get_alpha_index(x, *, _recursive=False):
-    """ returns the zero-based index of alphanumeric values. """
+    """Return the zero-based index of alphanumeric values."""
     if x == "":
         return 0
     res = 1 + ord(x[-1].upper()) - ord('A') + 26 * get_alpha_index(x[:-1], _recursive=True)
