@@ -235,7 +235,7 @@ class BulkActionPluginAPITestCase(InvenTreeAPITestCase):
         updated_template = self.put(self._template_url(template.pk), {'id': 42}, expected_code=200).json()
         self.assertEqual(template.pk, updated_template['id'])
 
-    def test_url_template_delte(self):
+    def test_url_template_delete(self):
         template = BulkCreationTemplate.objects.create(name="Stock template put test", template_type="STOCK_LOCATION",
                                                        template=self.simple_valid_generation_template_json)
 
@@ -246,3 +246,8 @@ class BulkActionPluginAPITestCase(InvenTreeAPITestCase):
         self.delete(self._template_url(template.pk), expected_code=201)
         with self.assertRaises(BulkCreationTemplate.DoesNotExist):
             BulkCreationTemplate.objects.get(pk=template.pk)
+
+    def test_url_template_invalid_method(self):
+        template = BulkCreationTemplate.objects.create(name="Stock template put test", template_type="STOCK_LOCATION",
+                                                       template=self.simple_valid_generation_template_json)
+        self.patch(self._template_url(template.pk), {}, expected_code=404)
