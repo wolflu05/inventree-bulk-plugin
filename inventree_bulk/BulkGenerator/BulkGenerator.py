@@ -19,7 +19,7 @@ class BulkDefinitionChild(BaseModel):
     parent_name_match: Optional[str] = ".*"
     extends: Optional[str]
     dimensions: Optional[List[str]] = []
-    generate: Dict[str, str]
+    generate: Optional[Dict[str, str]] = {}
     count: Optional[List[Union[int, None]]] = []
     child: Optional["BulkDefinitionChild"]
     childs: Optional[List["BulkDefinitionChild"]] = []
@@ -59,17 +59,20 @@ def apply_template(obj, template):
             continue
 
         if k in ['childs'] and isinstance(obj_attr, list) and isinstance(template_attr, list):
-            for i in template_attr:
-                if i not in obj_attr:
-                    obj_attr.insert(0, i)
+            if len(obj_attr) == 0:
+                setattr(obj, k, template_attr)
 
-        if k in ['count', 'dimensions'] and len(obj_attr) == 0:
-            for i in template_attr:
-                obj_attr.append(i)
+        if k in ['count', 'dimensions']:
+            for i, (t_val, o_val) in enumerate(itertools.zip_longest(template_attr or [], obj_attr or [], fillvalue=None)):
+                if (o_val is None or o_val == "") and (t_val is not None or t_val != ""):
+                    if i < len(obj_attr):
+                        obj_attr[i] = t_val
+                    else:
+                        obj_attr.append(t_val)
 
         if k in ["generate"] and type(template_attr) is dict:
             for key, value in template_attr.items():
-                existing_value = getattr(obj_attr, key, "")
+                existing_value = obj_attr.get(key, "")
                 if existing_value == "" and value != "":
                     obj_attr[key] = value
 
@@ -144,7 +147,7 @@ class BulkGenerator:
                 break
 
             if not has_matched and len(child.childs) > 0:
-                print("No match for", generated[0]['name'])
+                raise ValueError("No match for " + generated[0]['name'])
 
         return res
 

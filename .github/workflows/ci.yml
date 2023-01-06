@@ -6,18 +6,18 @@ on:
 
 jobs:
   style:
-    name: Style checks
+    name: 💄 Style checks
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Setup python
-        uses: actions/setup-python@v1
+        uses: actions/setup-python@v4
         with:
-          python-version: 3.10.9
+          python-version: "3.10"
 
       - name: Install style check dependencies
         run: |
@@ -27,3 +27,164 @@ jobs:
       - name: Check style
         run: |
           flake8 .
+
+  tests-unit:
+    name: 🧪 Unit tests
+    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
+    needs: style
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install test dependencies
+        run: |
+          pip install pydantic==1.9.1
+          pip install coverage==7.0.1
+
+      - name: Run tests
+        run: |
+          python -m coverage run -m unittest discover -s inventree_bulk.tests.unit
+          echo $GITHUB_WORKSPACE > coverage_info
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: unit-coverage
+          path: |
+            .coverage
+            coverage_info
+
+  tests-integration:
+    name: 🧪 Integration tests
+    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
+    needs: style
+    runs-on: ubuntu-latest
+
+    container:
+      image: inventree/inventree:latest # TODO change to :stable if v0.9.3 is released
+      env:
+        INVENTREE_DB_ENGINE: postgresql
+        INVENTREE_DB_NAME: inventree
+        INVENTREE_DB_HOST: db
+        INVENTREE_DB_PORT: 5432
+        INVENTREE_DB_USER: inventree
+        INVENTREE_DB_PASSWORD: inventree
+        INVENTREE_PLUGINS_ENABLED: True
+        INVENTREE_PLUGIN_TESTING: True
+        INVENTREE_PLUGIN_TESTING_SETUP: True
+
+    services:
+      db:
+        image: postgres:13
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_USER: inventree
+          POSTGRES_PASSWORD: inventree
+          POSTGRES_DB: inventree
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup inventree
+        run: |
+          cd /home/inventree
+          pip3 install --no-cache-dir --disable-pip-version-check -U -r requirements.txt
+
+      - name: Setup inventree_bulk_plugin
+        run: |
+          cd /home/inventree
+          pip3 install -e $GITHUB_WORKSPACE
+
+          # install additional dependencies required for testing
+          # and newer coverage version due to https://github.com/nedbat/coveragepy/issues/1150
+          pip3 install django-test-migrations==1.2.0 coverage==6.0 
+
+      - name: Run tests
+        run: |
+          cd /home/inventree
+          coverage run --omit="InvenTree/**" InvenTree/manage.py test inventree_bulk.tests.integration
+          echo $GITHUB_WORKSPACE > coverage_info
+
+      - name: Upload coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: integration-coverage
+          path: |
+            /home/inventree/.coverage
+            /home/inventree/coverage_info
+
+  report:
+    name: 📝 Report
+    needs: [tests-unit, tests-integration]
+    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install test dependencies
+        run: pip install coverage==7.0.1
+
+      - name: Download coverage
+        uses: actions/download-artifact@v3
+        with:
+          path: coverage
+
+      - name: Prepare reports
+        run: |
+          echo "" >> .coveragerc
+          echo "[paths]" >> .coveragerc
+          echo "source =" >> .coveragerc
+          echo "  ." >> .coveragerc
+          echo "  $(cat coverage/unit-coverage/coverage_info)" >> .coveragerc
+          echo "  $(cat coverage/integration-coverage/coverage_info)" >> .coveragerc
+
+          coverage combine coverage/integration-coverage/.coverage coverage/unit-coverage/.coverage
+          coverage json
+          coverage html
+
+          coverage_percentage=$(jq -r ".totals.percent_covered" coverage.json | xargs printf "%.*f\n" "1")
+          
+          echo '## Coverage Report' > coverage.md
+          echo "![Code Coverage](https://img.shields.io/badge/Code%20Coverage-${coverage_percentage}%25-green?style=flat)" >> coverage.md
+          coverage report --format=markdown -m >> coverage.md
+
+      - name: Upload full-coverage
+        uses: actions/upload-artifact@v3
+        with:
+          name: coverage
+          path: |
+            .coverage
+            htmlcov
+
+      - name: Get PR number
+        uses: 8BitJonny/gh-get-current-pr@2.2.0
+        id: pr
+        with:
+          sha: ${{ github.event.pull_request.head.sha }}
+          filterOutClosed: true
+
+      - name: Add Coverage PR Comment
+        uses: marocchino/sticky-pull-request-comment@v2
+        if: success() && steps.pr.outputs.number
+        with:
+          number: ${{ steps.pr.outputs.number }}
+          recreate: true
+          path: coverage.md
+
+      - name: Write to Job Summary
+        run: cat coverage.md >> $GITHUB_STEP_SUMMARY

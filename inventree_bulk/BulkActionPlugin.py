@@ -27,7 +27,7 @@ class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
     AUTHOR = "wolflu05"
     DESCRIPTION = "Bulk action plugin"
     VERSION = BULK_PLUGIN_VERSION
-    MIN_VERSION = "0.9.1"  # due to "invoke update" doesn't run collectstatic (see #inventree/InvenTree#4077)
+    MIN_VERSION = "0.9.1"  # due to "invoke update" doesn't run collectstatic (see inventree/InvenTree#4077)
 
     TITLE = "Bulk Action"
     SLUG = "bulkaction"
@@ -81,9 +81,12 @@ class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
             if error is not None:
                 return error
 
-            root_location = StockLocation.objects.get(pk=pk)
+            try:
+                root_location = StockLocation.objects.get(pk=pk)
+            except (StockLocation.DoesNotExist):
+                return HttpResponse(status=status.HTTP_404_NOT_FOUND)
 
-            self._create_location(root_location, output)
+            self._bulk_create(StockLocation, root_location, output, ["name", "description"])
 
             return HttpResponse(status=status.HTTP_201_CREATED)
 
@@ -94,9 +97,12 @@ class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
             if error is not None:
                 return error
 
-            root_category = PartCategory.objects.get(pk=pk)
+            try:
+                root_category = PartCategory.objects.get(pk=pk)
+            except (PartCategory.DoesNotExist):
+                return HttpResponse(status=status.HTTP_404_NOT_FOUND)
 
-            self._create_category(root_category, output)
+            self._bulk_create(PartCategory, root_category, output, ["name", "description"])
 
             return HttpResponse(status=status.HTTP_201_CREATED)
 
@@ -110,25 +116,19 @@ class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
         except Exception:
             return JsonResponse({"error": "An error occured"}, status=status.HTTP_400_BAD_REQUEST, safe=False), None
 
-    def _create_location(self, parent, childs):
+    def _bulk_create(self, object_class, parent, childs, allowed_keys):
         for c in childs:
-            loc = StockLocation.objects.create(
-                name=c[0]['name'],
-                description=c[0]['description'],
+            properties = {}
+            for k, v in c[0].items():
+                if k in allowed_keys:
+                    properties[k] = v
+
+            obj = object_class.objects.create(
+                **properties,
                 parent=parent
             )
 
-            self._create_location(loc, c[1])
-
-    def _create_category(self, parent, childs):
-        for c in childs:
-            cat = PartCategory.objects.create(
-                name=c[0]['name'],
-                description=c[0]['description'],
-                parent=parent
-            )
-
-            self._create_category(cat, c[1])
+            self._bulk_create(object_class, obj, c[1], allowed_keys)
 
     @csrf_exempt
     def url_templates(self, request, pk=None):
