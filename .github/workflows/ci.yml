@@ -161,7 +161,7 @@ jobs:
           
           echo '## Coverage Report' > coverage.md
           echo "![Code Coverage](https://img.shields.io/badge/Code%20Coverage-${coverage_percentage}%25-green?style=flat)" >> coverage.md
-          coverage report --format=markdown >> coverage.md
+          coverage report --format=markdown -m >> coverage.md
 
       - name: Upload full-coverage
         uses: actions/upload-artifact@v3
