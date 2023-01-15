@@ -1,14 +1,15 @@
 import unittest
 
-from ...BulkGenerator.BulkGenerator import BulkGenerator, BulkDefinitionChild, BulkDefinitionChildTemplate, apply_template
+from ...BulkGenerator.BulkGenerator import BulkGenerator, apply_template
+from ...BulkGenerator.validations import BulkDefinitionChild, BulkDefinitionChildTemplate
 
 
 class BulkGeneratorTestCase(unittest.TestCase):
     def test_1D_generation(self):
         dimensions = [
-            ("NUMERIC", list(range(1, 6))),
-            ("ALPHA_UPPER", ["A", "B", "C", "D", "E"]),
-            ("ALPHA_LOWER", ["a", "b", "c", "d", "e"]),
+            ("*NUMERIC", list(range(1, 6))),
+            ("*ALPHA{casing=upper}", ["A", "B", "C", "D", "E"]),
+            ("*ALPHA{casing=lower}", ["a", "b", "c", "d", "e"]),
         ]
 
         for dim, exp in dimensions:
@@ -38,7 +39,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
             "templates": [
                 {
                     "name": "Drawer",
-                    "dimensions": ["NUMERIC"],
+                    "dimensions": ["*NUMERIC"],
                     "count": ["4"],
                     "generate": {
                         "name": "{dim.1} from template",
@@ -196,7 +197,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
             "input": {},
             "templates": [],
             "output": {
-                "dimensions": ["NUMERIC"],
+                "dimensions": ["*NUMERIC"],
                 "count": [9],
                 "generate": {"name": "{dim.1}"},
                 "childs": [
@@ -223,7 +224,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 "input": {},
                 "templates": [],
                 "output": {
-                    "dimensions": ["NUMERIC"],
+                    "dimensions": ["*NUMERIC"],
                     "count": [9],
                     "generate": {"name": "{dim.1}"},
                     "childs": [

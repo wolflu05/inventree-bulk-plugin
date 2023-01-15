@@ -60,7 +60,7 @@ class BulkActionPluginAPITestCase(InvenTreeAPITestCase):
             "input": {},
             "templates": [],
             "output": {
-                "dimensions": ["NUMERIC"],
+                "dimensions": ["*NUMERIC"],
                 "count": [5],
                 "generate": {
                     "name": "N{dim.1}",
@@ -68,7 +68,7 @@ class BulkActionPluginAPITestCase(InvenTreeAPITestCase):
                 },
                 "childs": [
                     {
-                        "dimensions": ["ALPHA_LOWER"],
+                        "dimensions": ["*ALPHA{casing=lower}"],
                         "count": [2],
                         "generate": {
                             "name": "CN{dim.1}",

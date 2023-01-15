@@ -1,5 +1,5 @@
 import itertools
-
+from typing import Optional
 from .dimension import Dimension, BaseSettingsSchema
 
 
@@ -7,7 +7,7 @@ class Numeric(Dimension):
     NAME = "NUMERIC"
 
     class SettingsSchema(BaseSettingsSchema):
-        pass
+        start: Optional[int] = 1
 
     @staticmethod
     def is_dimension(start_value, end_value):

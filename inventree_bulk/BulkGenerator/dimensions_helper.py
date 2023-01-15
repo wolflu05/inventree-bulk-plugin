@@ -40,7 +40,9 @@ def get_dimension_values(dimension: str, global_count: int, settings: dict) -> I
     parsed_dimensions = parse_dimension(dimension)
     for dim_type, dim, settings, dim_name in parsed_dimensions:
         if dim_type == DimensionTypes.WORD:
-            seq.append(dim)
+            def generator():
+                yield dim
+            seq.append((generator(), 0, 1, 1))
         else:
             dimension_class = match_generator(dim_type, dim)
 
@@ -73,19 +75,24 @@ def get_dimension_values(dimension: str, global_count: int, settings: dict) -> I
 
             step = dimension_instance.settings.step
 
-            seq.append(itertools.islice(dimension_instance.generator(), start_idx, end_idx, step))
+            seq.append((dimension_instance.generator(), start_idx, end_idx, step))
 
     # generate result, islice objects with no end will take all available space to generate global_count elements
     res = []
-    for item, (dim_type, dim, settings, dim_name) in zip(seq, parsed_dimensions):
-        print(item)
-        if global_count is not None and len(res) >= global_count:
-            break
-        if isinstance(item, itertools.islice):
-            if global_count is None:
-                raise ValueError(f"Missing count for dimension: '{dim_name}' or global count")
-            res.extend(list(itertools.islice(item, global_count - len(res))))
-        else:
-            res.append(item)
+    for (generator, start_idx, end_idx, step), (dim_type, dim, settings, dim_name) in zip(seq, parsed_dimensions):
+        length = None
+        if None not in [start_idx, end_idx]:
+            length = (end_idx - start_idx) * step
+
+        if global_count is None and length is None:
+            raise ValueError(f"Missing count for dimension: '{dim_name}' or global count")
+
+        if global_count is not None:
+            if (remaining_items := global_count - len(res)) <= 0:
+                break
+
+            end_idx = min(start_idx + remaining_items * step, end_idx or float("inf"))
+
+        res.extend(itertools.islice(generator, start_idx, end_idx, step))
 
     return res
