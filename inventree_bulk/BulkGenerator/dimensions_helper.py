@@ -27,7 +27,7 @@ def parse_dimension(dimension):
     return res
 
 
-def match_generator(dim_type: DimensionTypes, dim: Union[str, Tuple[str, str]]) -> Dimension | None:
+def match_generator(dim_type: DimensionTypes, dim: Union[str, Tuple[str, str]]) -> Union[Dimension, None]:
     for dimension in DIMENSIONS:
         if dim_type == DimensionTypes.INFINITY and dimension.NAME == dim:
             return dimension
