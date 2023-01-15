@@ -1,6 +1,6 @@
 import itertools
 import re
-from typing import Iterable, Tuple
+from typing import Iterable, Tuple, Union
 
 from .dimensions import DIMENSIONS
 from .dimensions.dimension import Dimension, DimensionTypes
@@ -27,7 +27,7 @@ def parse_dimension(dimension):
     return res
 
 
-def match_generator(dim_type: DimensionTypes, dim: str | Tuple[str, str]) -> Dimension | None:
+def match_generator(dim_type: DimensionTypes, dim: Union[str, Tuple[str, str]]) -> Dimension | None:
     for dimension in DIMENSIONS:
         if dim_type == DimensionTypes.INFINITY and dimension.NAME == dim:
             return dimension

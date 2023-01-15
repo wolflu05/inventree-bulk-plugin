@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from typing import Iterable
-from typing import Dict, Optional, Tuple
+from typing import Dict, Optional, Tuple, Union
 from pydantic import BaseModel
 from enum import IntEnum
 
@@ -19,7 +19,7 @@ class BaseSettingsSchema(BaseModel):
 
 
 class Dimension(ABC):
-    def __init__(self, dim_type: DimensionTypes, dim: str | Tuple[str, str], settings: Dict[str, str], dim_name: str) -> None:
+    def __init__(self, dim_type: DimensionTypes, dim: Union[str, Tuple[str, str]], settings: Dict[str, str], dim_name: str) -> None:
         self.dim_type = dim_type
         self.dim = dim
         self.settings = self.SettingsSchema(**settings)

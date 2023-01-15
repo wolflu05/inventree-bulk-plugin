@@ -1,6 +1,6 @@
 import itertools
 from enum import Enum
-from typing import Dict, Tuple
+from typing import Dict, Tuple, Union
 import string
 
 from .dimension import Dimension, BaseSettingsSchema, DimensionTypes
@@ -14,7 +14,7 @@ class CasingTypes(Enum):
 class Alpha(Dimension):
     NAME = "ALPHA"
 
-    def __init__(self, dim_type: DimensionTypes, dim: str | Tuple[str, str], settings: Dict[str, str], dim_name: str) -> None:
+    def __init__(self, dim_type: DimensionTypes, dim: Union[str, Tuple[str, str]], settings: Dict[str, str], dim_name: str) -> None:
         super().__init__(dim_type, dim, settings, dim_name)
 
         if dim_type == DimensionTypes.RANGE:
