@@ -2,7 +2,7 @@ import itertools
 import re
 
 from .validations import BulkDefinitionSchema
-from .dimensions_helper import get_dimension_values
+from .dimensions import get_dimension_values
 
 
 class DotDict(dict):
