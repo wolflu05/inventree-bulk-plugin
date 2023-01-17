@@ -3,7 +3,7 @@ from enum import Enum
 from typing import Dict, Tuple, Union
 import string
 
-from .dimension import Dimension, BaseSettingsSchema, DimensionTypes
+from .generator import Generator, BaseSettingsSchema, GeneratorTypes
 
 
 class CasingTypes(Enum):
@@ -11,14 +11,14 @@ class CasingTypes(Enum):
     lower = "lower"
 
 
-class Alpha(Dimension):
+class AlphaGenerator(Generator):
     NAME = "ALPHA"
 
-    def __init__(self, dim_type: DimensionTypes, dim: Union[str, Tuple[str, str]], settings: Dict[str, str], dim_name: str) -> None:
-        super().__init__(dim_type, dim, settings, dim_name)
+    def __init__(self, gen_type: GeneratorTypes, gen: Union[str, Tuple[str, str]], settings: Dict[str, str], gen_name: str) -> None:
+        super().__init__(gen_type, gen, settings, gen_name)
 
-        if dim_type == DimensionTypes.RANGE:
-            self.settings.casing = (CasingTypes.lower if dim[0].islower() else CasingTypes.upper)
+        if gen_type == GeneratorTypes.RANGE:
+            self.settings.casing = (CasingTypes.lower if gen[0].islower() else CasingTypes.upper)
 
         self.letters = ""
         if self.settings.casing == CasingTypes.lower:
@@ -30,7 +30,7 @@ class Alpha(Dimension):
         casing: CasingTypes = CasingTypes.lower
 
     @staticmethod
-    def is_dimension(start_value, end_value):
+    def is_generator(start_value, end_value):
         return start_value.islower() == end_value.islower()
 
     def get_index(self, value):
