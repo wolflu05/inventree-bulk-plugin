@@ -31,7 +31,7 @@ class AlphaGenerator(Generator):
 
     @staticmethod
     def is_generator(start_value, end_value):
-        return start_value.islower() == end_value.islower()
+        return start_value.isalpha() and end_value.isalpha() and (start_value.islower() == end_value.islower())
 
     def get_index(self, value):
         return self._get_alpha_index(value) - 1

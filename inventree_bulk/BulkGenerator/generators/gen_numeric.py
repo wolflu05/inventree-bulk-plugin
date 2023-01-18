@@ -17,4 +17,4 @@ class NumericGenerator(Generator):
         return int(value)
 
     def generator(self):
-        return itertools.count()
+        return (str(i) for i in itertools.count())

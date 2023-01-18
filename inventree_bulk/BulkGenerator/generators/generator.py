@@ -36,7 +36,7 @@ class Generator(ABC):
 
     @staticmethod
     @abstractmethod
-    def is_generator(self, start_value: str, end_value: str) -> bool:
+    def is_generator(start_value: str, end_value: str) -> bool:
         pass  # pragma: no cover
 
     @abstractmethod

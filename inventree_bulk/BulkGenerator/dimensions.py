@@ -22,20 +22,22 @@ def parse_dimension(dimension):
             gen = (gen_match.group(1), gen_match.group(2))
             gen_type = GeneratorTypes.RANGE
 
-        res.append((gen_type, gen, settings, gen_match.group(0)))
+        res.append((gen_type, gen, settings, gen_match.group(0).rstrip(",")))
 
     return res
 
 
-def match_generator(gen_type: GeneratorTypes, gen: Union[str, Tuple[str, str]]) -> Union[Generator, None]:
-    for generator in GENERATORS:
+def match_generator(generators, gen_type: GeneratorTypes, gen: Union[str, Tuple[str, str]]) -> Union[Generator, None]:
+    for generator in generators:
         if gen_type == GeneratorTypes.INFINITY and generator.NAME == gen:
             return generator
         elif gen_type == GeneratorTypes.RANGE and generator.is_generator(*gen):
             return generator
 
+    return None
 
-def get_dimension_values(dimension: str, global_count: int, settings: dict) -> Iterable[str]:
+
+def get_dimension_values(dimension: str, global_count: Union[int, None], settings: dict) -> Iterable[str]:
     seq = []
     parsed_dimension = parse_dimension(dimension)
     for gen_type, gen, settings, gen_name in parsed_dimension:
@@ -44,7 +46,7 @@ def get_dimension_values(dimension: str, global_count: int, settings: dict) -> I
                 yield gen
             seq.append((generator(), 0, 1, 1))
         else:
-            gen_class = match_generator(gen_type, gen)
+            gen_class = match_generator(GENERATORS, gen_type, gen)
 
             if gen_class is None:
                 raise ValueError(f"No generator named: '{gen_name}'")
