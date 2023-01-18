@@ -73,11 +73,12 @@ Dimensions are a way to add various counting strategies to your naming. You can 
 
 A `dimension` can contain comma separated generators which generate the values for you. There are three types of generators. You can use the `count` field to limit a dimension to a specific amount of generating items. These generators can have arguments parsed via the following syntax: `GENERATOR{key1=value,key2=value}`, where `GENERATOR` is the name/range. <br/>
 
+**Generator types:**<br/>
 Word: _any arbitrary word, not starting with `*`_. E.g. `hello world`<br/>
 Ranges: _ranges are defined with a - in the middle_ E.g. `a-bx`<br/>
 Infinity: _infinity generators start with a *_ E.g. `*NUMERIC`<br/>
 
-
+**Available Generators:**<br/>
 Numeric generator: `*NUMERIC{start=0,end=10,step=2,count=5}` or `0-10{step=2}`<br/>
 Alpha generator: `*ALPHA{casing=upper|lower,start=A,end=F,step=2,count=3}` or `a-z{step=2}`<br/><br />
 
