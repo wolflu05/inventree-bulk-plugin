@@ -43,6 +43,7 @@ class DimensionsTestCase(unittest.TestCase):
         class CGenerator(Generator):
             NAME = "C_GENERATOR"
 
+            @staticmethod
             def is_generator(start_value, end_value):
                 return start_value == "A" and end_value == "B"
 
