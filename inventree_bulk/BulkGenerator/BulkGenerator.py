@@ -1,9 +1,8 @@
 import itertools
 import re
-from typing import List, Optional, Dict, Union, Tuple
-from pydantic import BaseModel, PrivateAttr
 
-from .dimensions import get_dimension_type
+from .validations import BulkDefinitionSchema
+from .dimensions import get_dimension_values
 
 
 class DotDict(dict):
@@ -13,37 +12,6 @@ class DotDict(dict):
         return dict.get(*args, "")
     __setattr__ = dict.__setitem__
     __delattr__ = dict.__delitem__
-
-
-class BulkDefinitionChild(BaseModel):
-    parent_name_match: Optional[str] = ".*"
-    extends: Optional[str]
-    dimensions: Optional[List[str]] = []
-    generate: Optional[Dict[str, str]] = {}
-    count: Optional[List[Union[int, None]]] = []
-    child: Optional["BulkDefinitionChild"]
-    childs: Optional[List["BulkDefinitionChild"]] = []
-
-    _generated: List[Tuple[Dict[str, str],
-                           "BulkDefinitionChild._generated"]] = PrivateAttr([])
-    _parent: Optional["BulkDefinitionChild"] = PrivateAttr(None)
-
-
-class BulkDefinitionChildTemplate(BulkDefinitionChild):
-    name: str
-
-
-class BulkDefinitionSettings(BaseModel):
-    count_from: Optional[int] = 1
-    leading_zeros: Optional[bool] = True
-
-
-class BulkDefinitionSchema(BaseModel):
-    version: str
-    input: Dict[str, Union[int, str]]
-    settings: Optional[BulkDefinitionSettings] = BulkDefinitionSettings()
-    templates: List["BulkDefinitionChildTemplate"]
-    output: "BulkDefinitionChild"
 
 
 def apply_template(obj, template):
@@ -154,9 +122,7 @@ class BulkGenerator:
     def generate_product(self, dimensions, count, child):
         seq = []
         for d, c in itertools.zip_longest(dimensions, count, fillvalue=None):
-            gen, (start, end) = get_dimension_type(
-                d, c, default_start=self.schema.settings.count_from)
-            seq.append(itertools.islice(gen(), start, end))
+            seq.append(get_dimension_values(d, c, self.schema.settings))
 
         return itertools.product(*seq, repeat=1)
 

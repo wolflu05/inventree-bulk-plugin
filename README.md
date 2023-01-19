@@ -43,10 +43,14 @@ You can save bulk creation templates to ensure consistency along your storage tr
 
 You can define key/value pairs of inputs which you can later reference in your schema via `{inp.<key>}`. This is useful for [saved templates](#saved-templates).
 
+> :warning: This is currently not fully working - see [#10](https://github.com/wolflu05/inventree-bulk-plugin/issues/10)
+
 #### Settings
 
 - `Count from` - defines from where to start with counting numbers in dimensions.
 - `Leading zeros` - defines if it needs to add leading zeros to numbers to ensure consistent length.
+
+> :warning: These settings are currently not working - see [#18](https://github.com/wolflu05/inventree-bulk-plugin/issues/18)
 
 #### Templates
 
@@ -67,10 +71,20 @@ Select a template to extend from
 ##### Dimensions/Count
 Dimensions are a way to add various counting strategies to your naming. You can add a dimension by clicking on "Add dimension" and remove it via the red "X" on the right of the dimension field.
 
-A `dimension` can be either specify a range or a generic name. You can use the count field to limit a generic dimension to a specific amount of generating items.
+A `dimension` can contain comma separated generators which generate the values for you. There are three types of generators. You can use the `count` field to limit a dimension to a specific amount of generating items. These generators can have arguments parsed via the following syntax: `GENERATOR{key1=value,key2=value}`, where `GENERATOR` is the name/range. <br/>
 
-Ranges: `A-G`,`f-x`, `1-3`, `A-XZ` <br/>
-Generics: `NUMERIC` (0-9), `ALPHA_LOWER` (a-...), `ALPHA_UPPER` (A-...). 
+**Generator types:**<br/>
+Word: _any arbitrary word, not starting with `*`_. E.g. `hello world`<br/>
+Ranges: _ranges are defined with a - in the middle_ E.g. `a-bx`<br/>
+Infinity: _infinity generators start with a *_ E.g. `*NUMERIC`<br/>
+
+**Available Generators:**<br/>
+Numeric generator: `*NUMERIC{start=0,end=10,step=2,count=5}` or `0-10{step=2}`<br/>
+Alpha generator: `*ALPHA{casing=upper|lower,start=A,end=F,step=2,count=3}` or `a-z{step=2}`<br/><br />
+
+Example: `1-3,hello,*NUMERIC{start=1,step=2,end=10},*ALPHA{casing=upper,end=B},A-D{step=2}`, this will generate the following dimension: `12,3,hello,1,3,5,7,9,A,B,A,C`.
+
+> :warning: Infinity generators need a `count` argument or a global count limitation, otherwise generation will fail.
 
 ##### Generate
 
