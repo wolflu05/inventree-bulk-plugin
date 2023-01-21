@@ -19,12 +19,12 @@ def getMigrationFiles(func) -> str:
 class TestForwardMigrations(MigratorTestCase):
     """Unit testing class for testing 'bulkcreationtemplate' app migrations."""
 
-    migrate_from = ('inventree_bulk', getMigrationFiles(min))
-    migrate_to = ('inventree_bulk', getMigrationFiles(max))
+    migrate_from = ('inventree_bulk_plugin', getMigrationFiles(min))
+    migrate_to = ('inventree_bulk_plugin', getMigrationFiles(max))
 
     def prepare(self):
         """Create some simple Template data, and ensure that it migrates OK."""
-        bulk_creation_template = self.old_state.apps.get_model('inventree_bulk', 'bulkCreationTemplate')
+        bulk_creation_template = self.old_state.apps.get_model('inventree_bulk_plugin', 'bulkCreationTemplate')
 
         simple_valid_generation_template = {
             "version": "0.1.0",
@@ -42,6 +42,6 @@ class TestForwardMigrations(MigratorTestCase):
 
     def test_migrations(self):
         """Test the database state after applying all migrations."""
-        bulk_creation_template = self.old_state.apps.get_model('inventree_bulk', 'bulkcreationtemplate')
+        bulk_creation_template = self.old_state.apps.get_model('inventree_bulk_plugin', 'bulkCreationTemplate')
 
         self.assertEqual(1, bulk_creation_template.objects.count())

@@ -13,10 +13,10 @@ from part.views import CategoryDetail
 
 from ...models import validate_template, BulkCreationTemplate
 from ...BulkGenerator.BulkGenerator import BulkGenerator
-from ...BulkActionPlugin import BulkActionPlugin
+from ...InvenTreeBulkPlugin import BulkActionPlugin
 
 
-class BulkActionPluginModelTestCase(TestCase):
+class InvenTreeBulkPluginModelTestCase(TestCase):
     def test_validate_template(self):
         with self.assertRaisesRegex(ValidationError, "validation errors for BulkDefinitionSchema"):
             validate_template("{}")
@@ -38,7 +38,7 @@ class BulkActionPluginModelTestCase(TestCase):
         self.assertJSONEqual(valid_schema, validate_template(valid_schema))
 
 
-class BulkActionPluginAPITestCase(InvenTreeAPITestCase):
+class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
     def setUp(self):
         super().setUp()
 

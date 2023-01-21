@@ -50,7 +50,7 @@ jobs:
 
       - name: Run tests
         run: |
-          python -m coverage run -m unittest discover -s inventree_bulk.tests.unit
+          python -m coverage run -m unittest discover -s inventree_bulk_plugin.tests.unit
           echo $GITHUB_WORKSPACE > coverage_info
 
       - name: Upload coverage
@@ -99,7 +99,7 @@ jobs:
           cd /home/inventree
           pip3 install --no-cache-dir --disable-pip-version-check -U -r requirements.txt
 
-      - name: Setup inventree_bulk_plugin
+      - name: Setup inventree-bulk-plugin
         run: |
           cd /home/inventree
           pip3 install -e $GITHUB_WORKSPACE
@@ -111,7 +111,7 @@ jobs:
       - name: Run tests
         run: |
           cd /home/inventree
-          coverage run --omit="InvenTree/**" InvenTree/manage.py test inventree_bulk.tests.integration
+          coverage run --omit="InvenTree/**" InvenTree/manage.py test inventree_bulk_plugin.tests.integration
           echo $GITHUB_WORKSPACE > coverage_info
 
       - name: Upload coverage

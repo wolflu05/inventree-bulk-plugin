@@ -22,7 +22,7 @@ class BulkCreationTemplate(models.Model):
     """Store bulk creation templates."""
 
     class Meta:
-        app_label = "inventree_bulk"
+        app_label = "inventree_bulk_plugin"
 
     name = models.CharField(max_length=250)
     template_type = models.CharField(max_length=100)
