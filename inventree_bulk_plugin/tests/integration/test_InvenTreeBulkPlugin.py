@@ -83,7 +83,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         }
 
     def test_get_custom_panels(self):
-        bulk_plugin: InvenTreeBulkPlugin = registry.get_plugin("bulkaction")
+        bulk_plugin: InvenTreeBulkPlugin = registry.get_plugin("inventree-bulk-plugin")
 
         def assert_contains_by_title(title, panels):
             found = None
@@ -104,7 +104,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         assert_contains_by_title("Bulk creation", panels)
 
     def test_url_parse(self):
-        url = reverse("plugin:bulkaction:parse")
+        url = reverse("plugin:inventree-bulk-plugin:parse")
 
         # There should be only one item generated
         data = self.simple_valid_generation_template
@@ -139,7 +139,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         for object_type_name, object_class in objects:
             with self.subTest(object_type_name=object_type_name):
                 def url(pk):
-                    return reverse(f"plugin:bulkaction:bulkcreate{object_type_name}", kwargs={"pk": pk})
+                    return reverse(f"plugin:inventree-bulk-plugin:bulkcreate{object_type_name}", kwargs={"pk": pk})
 
                 # wrong schema should produce an error
                 self.post(url(0), {"no valid data": "should produce error"}, expected_code=400)
@@ -158,7 +158,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
 
     def test__bulk_create(self):
         items = BulkGenerator(self.complex_valid_generation_template).generate()
-        bulk_plugin: InvenTreeBulkPlugin = registry.get_plugin("bulkaction")
+        bulk_plugin: InvenTreeBulkPlugin = registry.get_plugin("inventree-bulk-plugin")
 
         parent = StockLocation.objects.create(name="Parent", description="Parent description", parent=None)
         bulk_plugin._bulk_create(StockLocation, parent, items, ["name", "description"])
@@ -171,9 +171,9 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
 
     def _template_url(self, pk=None):
         if pk:
-            return reverse("plugin:bulkaction:templatebyid", kwargs={"pk": pk})
+            return reverse("plugin:inventree-bulk-plugin:templatebyid", kwargs={"pk": pk})
         else:
-            return reverse("plugin:bulkaction:templates")
+            return reverse("plugin:inventree-bulk-plugin:templates")
 
     def test_url_template_get(self):
         BulkCreationTemplate.objects.create(name="Complex Stock template", template_type="STOCK_LOCATION",
