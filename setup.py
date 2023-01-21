@@ -44,7 +44,7 @@ setuptools.setup(
 
     entry_points={
         "inventree_plugins": [
-            "InventreeBulkPlugin = inventree_bulk_plugin.InvenTreeBulkPlugin:InvenTreeBulkPlugin"
+            "InvenTreeBulkPlugin = inventree_bulk_plugin.InvenTreeBulkPlugin:InvenTreeBulkPlugin"
         ]
     },
 
