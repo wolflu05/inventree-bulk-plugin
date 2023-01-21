@@ -13,7 +13,7 @@ from part.views import CategoryDetail
 
 from ...models import validate_template, BulkCreationTemplate
 from ...BulkGenerator.BulkGenerator import BulkGenerator
-from ...InvenTreeBulkPlugin import BulkActionPlugin
+from ...InvenTreeBulkPlugin import InvenTreeBulkPlugin
 
 
 class InvenTreeBulkPluginModelTestCase(TestCase):
@@ -83,7 +83,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         }
 
     def test_get_custom_panels(self):
-        bulk_plugin: BulkActionPlugin = registry.get_plugin("bulkaction")
+        bulk_plugin: InvenTreeBulkPlugin = registry.get_plugin("bulkaction")
 
         def assert_contains_by_title(title, panels):
             found = None
@@ -158,7 +158,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
 
     def test__bulk_create(self):
         items = BulkGenerator(self.complex_valid_generation_template).generate()
-        bulk_plugin: BulkActionPlugin = registry.get_plugin("bulkaction")
+        bulk_plugin: InvenTreeBulkPlugin = registry.get_plugin("bulkaction")
 
         parent = StockLocation.objects.create(name="Parent", description="Parent description", parent=None)
         bulk_plugin._bulk_create(StockLocation, parent, items, ["name", "description"])
