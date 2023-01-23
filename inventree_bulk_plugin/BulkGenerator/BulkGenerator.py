@@ -1,8 +1,10 @@
 import itertools
 import re
 
+from ..version import BULK_PLUGIN_VERSION
 from .validations import BulkDefinitionSchema
 from .dimensions import get_dimension_values
+from .utils import version_tuple
 
 
 class DotDict(dict):
@@ -61,6 +63,13 @@ class BulkGenerator:
 
     def validate(self):
         self.schema = BulkDefinitionSchema(**self.inp)
+
+        version = version_tuple(self.schema.version)
+        curr_version = version_tuple(BULK_PLUGIN_VERSION)
+
+        if version[0] != curr_version[0]:
+            raise ValueError(
+                f"The server runs on v{BULK_PLUGIN_VERSION} which is incompatible to v{self.schema.version}.")
 
     def parse_child(self, child):
         res = []
