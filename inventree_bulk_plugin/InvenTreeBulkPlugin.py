@@ -23,15 +23,15 @@ BulkCreationTemplateForm = modelform_factory(
     BulkCreationTemplate, fields=("name", "template_type", "template"))
 
 
-class BulkActionPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
+class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
     AUTHOR = "wolflu05"
-    DESCRIPTION = "Bulk action plugin"
+    DESCRIPTION = "InvenTree Bulk plugin"
     VERSION = BULK_PLUGIN_VERSION
     MIN_VERSION = "0.9.1"  # due to "invoke update" doesn't run collectstatic (see inventree/InvenTree#4077)
 
-    TITLE = "Bulk Action"
-    SLUG = "bulkaction"
-    NAME = "Bulk Action"
+    TITLE = "InvenTree Bulk Plugin"
+    SLUG = "inventree-bulk-plugin"
+    NAME = "InvenTreeBulkPlugin"
 
     def get_custom_panels(self, view, request):
         panels = []

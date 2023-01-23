@@ -52,7 +52,7 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
       setError("");
 
       const create = template.id === null;
-      const res = await fetch("{% url 'plugin:bulkaction:templates' %}" + `/${create ? "" : template.id }`, {
+      const res = await fetch("{% url 'plugin:inventree-bulk-plugin:templates' %}" + `/${create ? "" : template.id }`, {
         method: create ? "POST" : "PUT",
         body: JSON.stringify({...template, template: JSON.stringify(template.template)})
       });
@@ -80,7 +80,7 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
     setSuccess("");
     setBtnPreviewLoading(true);
 
-    const res = await fetch("{% url 'plugin:bulkaction:parse' %}", {
+    const res = await fetch("{% url 'plugin:inventree-bulk-plugin:parse' %}", {
       method: "POST",
       body: JSON.stringify(beautifySchema(template.template))
     });
@@ -173,7 +173,7 @@ function App() {
   const [success, setSuccess] = useState("");
 
   const reloadSavedTemplates = useCallback(async () => {
-    const res = await fetch("{% url 'plugin:bulkaction:templates' %}");
+    const res = await fetch("{% url 'plugin:inventree-bulk-plugin:templates' %}");
     const data = await res.json();
 
     setSavedTemplates(data.map(t => ({
@@ -219,7 +219,7 @@ function App() {
     setError("");
     setSuccess("");
 
-    const res = await fetch("{% url 'plugin:bulkaction:templates' %}" + `/${deletingTemplate.id}`, {
+    const res = await fetch("{% url 'plugin:inventree-bulk-plugin:templates' %}" + `/${deletingTemplate.id}`, {
       method: "DELETE"
     });
 

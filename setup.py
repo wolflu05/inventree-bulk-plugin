@@ -2,7 +2,7 @@
 
 import setuptools
 
-from inventree_bulk.version import BULK_PLUGIN_VERSION
+from inventree_bulk_plugin.version import BULK_PLUGIN_VERSION
 
 with open('README.md', encoding='utf-8') as f:
     long_description = f.read()
@@ -44,7 +44,7 @@ setuptools.setup(
 
     entry_points={
         "inventree_plugins": [
-            "BulkActionPlugin = inventree_bulk.BulkActionPlugin:BulkActionPlugin"
+            "InvenTreeBulkPlugin = inventree_bulk_plugin.InvenTreeBulkPlugin:InvenTreeBulkPlugin"
         ]
     },
 

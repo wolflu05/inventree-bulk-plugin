@@ -11,7 +11,7 @@ function generateBulkCreateView({ target, generateKeys, createURL, name, default
     const [btnCreateLoading, setBtnCreateLoading] = useState(false);
 
     const reloadSavedTemplates = useCallback(async () => {
-      const res = await fetch("{% url 'plugin:bulkaction:templates' %}" + `?template_type=${templateType}`);
+      const res = await fetch("{% url 'plugin:inventree-bulk-plugin:templates' %}" + `?template_type=${templateType}`);
       const data = await res.json();
   
       setSavedTemplates(data.map(t => ({
@@ -30,7 +30,7 @@ function generateBulkCreateView({ target, generateKeys, createURL, name, default
       setSuccess("");
       setBtnPreviewLoading(true);
       
-      const res = await fetch("{% url 'plugin:bulkaction:parse' %}", {
+      const res = await fetch("{% url 'plugin:inventree-bulk-plugin:parse' %}", {
         method: "POST",
         body: JSON.stringify(beautifySchema(schema))
       });
