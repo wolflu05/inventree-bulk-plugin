@@ -12,9 +12,9 @@ class GeneratorTypes(IntEnum):
 
 
 class BaseSettingsSchema(BaseModel):
-    start: Optional[str]
-    end: Optional[str]
-    count: Optional[int]
+    start: Optional[str] = None
+    end: Optional[str] = None
+    count: Optional[int] = None
     step: Optional[int] = 1
 
 

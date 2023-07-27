@@ -2,7 +2,7 @@ import itertools
 import re
 
 from ..version import BULK_PLUGIN_VERSION
-from .validations import BulkDefinitionSchema
+from .validations import BulkDefinitionChild, BulkDefinitionChildCount, BulkDefinitionChildDimensions, BulkDefinitionChildTemplate, BulkDefinitionSchema
 from .dimensions import get_dimension_values
 from .utils import version_tuple
 
@@ -16,8 +16,8 @@ class DotDict(dict):
     __delattr__ = dict.__delitem__
 
 
-def apply_template(obj, template):
-    for k in template.__fields__.keys():
+def apply_template(obj: BulkDefinitionChild, template: BulkDefinitionChildTemplate):
+    for k in template.model_fields.keys():
         # only templates have names
         if k == "name":
             continue
@@ -55,7 +55,7 @@ def apply_template(obj, template):
 class BulkGenerator:
     def __init__(self, inp):
         self.inp = inp
-        self.schema = None
+        self.schema: BulkDefinitionSchema = None
 
     def generate(self):
         self.validate()
@@ -71,7 +71,9 @@ class BulkGenerator:
             raise ValueError(
                 f"The server runs on v{BULK_PLUGIN_VERSION} which is incompatible to v{self.schema.version}.")
 
-    def parse_child(self, child):
+    ParseChildReturnType = list[tuple[dict[str, str], list["ParseChildReturnType"]]]
+
+    def parse_child(self, child: BulkDefinitionChild) -> ParseChildReturnType:
         res = []
 
         # merge extend template
@@ -128,17 +130,17 @@ class BulkGenerator:
 
         return res
 
-    def generate_product(self, dimensions, count, child):
+    def generate_product(self, dimensions: BulkDefinitionChildDimensions, count: BulkDefinitionChildCount, child: BulkDefinitionChild):
         seq = []
         for d, c in itertools.zip_longest(dimensions, count, fillvalue=None):
             seq.append(get_dimension_values(d, c, self.schema.settings))
 
         return itertools.product(*seq, repeat=1)
 
-    def get_generated(self, child, ctx={}):
+    def get_generated(self, child: BulkDefinitionChild, ctx: dict = {}):
         return dict([a, self.parse_str(x, ctx)] for a, x in child.generate.items())
 
-    def parse_str(self, string, ctx={}):
+    def parse_str(self, string: str, ctx: dict = {}):
         ctx = {'inp': DotDict(self.schema.input), **ctx}
 
         try:

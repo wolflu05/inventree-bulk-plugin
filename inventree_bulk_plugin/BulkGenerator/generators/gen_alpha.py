@@ -42,7 +42,7 @@ class AlphaGenerator(Generator):
                 yield ''.join(p)
 
     @classmethod
-    def _get_alpha_index(cls, x) -> int:
+    def _get_alpha_index(cls, x: str) -> int:
         """Return the zero-based index of alphanumeric values."""
         if x == "":
             return 0

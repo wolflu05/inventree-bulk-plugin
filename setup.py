@@ -32,7 +32,7 @@ setuptools.setup(
     packages=setuptools.find_packages(),
 
     install_requires=[
-        "pydantic==1.*"
+        "pydantic==2.*"
     ],
 
     setup_requires=[
