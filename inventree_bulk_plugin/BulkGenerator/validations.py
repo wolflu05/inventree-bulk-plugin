@@ -4,11 +4,11 @@ from pydantic import BaseModel, PrivateAttr
 
 class BulkDefinitionChild(BaseModel):
     parent_name_match: Optional[str] = ".*"
-    extends: Optional[str]
+    extends: Optional[str] = None
     dimensions: Optional[List[str]] = []
     generate: Optional[Dict[str, str]] = {}
     count: Optional[List[Union[int, None]]] = []
-    child: Optional["BulkDefinitionChild"]
+    child: Optional["BulkDefinitionChild"] = None
     childs: Optional[List["BulkDefinitionChild"]] = []
 
     _generated: List[Tuple[Dict[str, str], "_generated"]] = PrivateAttr([])
@@ -24,12 +24,9 @@ class BulkDefinitionSettings(BaseModel):
     leading_zeros: Optional[bool] = True
 
 
-BulkDefinitionChildTemplate
-
-
 class BulkDefinitionSchema(BaseModel):
     version: str
-    input: Dict[str, Union[int, str]]
+    input: Dict[str, str]
     settings: Optional[BulkDefinitionSettings] = BulkDefinitionSettings()
     templates: List["BulkDefinitionChildTemplate"]
     output: "BulkDefinitionChild"

@@ -2,7 +2,7 @@ import itertools
 import re
 
 from ..version import BULK_PLUGIN_VERSION
-from .validations import BulkDefinitionSchema
+from .validations import BulkDefinitionChild, BulkDefinitionChildTemplate, BulkDefinitionSchema
 from .dimensions import get_dimension_values
 from .utils import version_tuple
 
@@ -16,8 +16,8 @@ class DotDict(dict):
     __delattr__ = dict.__delitem__
 
 
-def apply_template(obj, template):
-    for k in template.__fields__.keys():
+def apply_template(obj: BulkDefinitionChild, template: BulkDefinitionChildTemplate):
+    for k in template.model_fields.keys():
         # only templates have names
         if k == "name":
             continue
@@ -55,7 +55,7 @@ def apply_template(obj, template):
 class BulkGenerator:
     def __init__(self, inp):
         self.inp = inp
-        self.schema = None
+        self.schema: BulkDefinitionSchema = None
 
     def generate(self):
         self.validate()
@@ -71,7 +71,7 @@ class BulkGenerator:
             raise ValueError(
                 f"The server runs on v{BULK_PLUGIN_VERSION} which is incompatible to v{self.schema.version}.")
 
-    def parse_child(self, child):
+    def parse_child(self, child: BulkDefinitionChild):
         res = []
 
         # merge extend template
