@@ -11,8 +11,7 @@ class BulkDefinitionChild(BaseModel):
     child: Optional["BulkDefinitionChild"]
     childs: Optional[List["BulkDefinitionChild"]] = []
 
-    _generated: List[Tuple[Dict[str, str],
-                           "BulkDefinitionChild._generated"]] = PrivateAttr([])
+    _generated: List[Tuple[Dict[str, str], "_generated"]] = PrivateAttr([])
     _parent: Optional["BulkDefinitionChild"] = PrivateAttr(None)
 
 

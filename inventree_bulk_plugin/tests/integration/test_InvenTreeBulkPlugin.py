@@ -4,7 +4,7 @@ from django.urls import reverse
 from django.test import TestCase
 from django.core.exceptions import ValidationError
 
-from InvenTree.api_tester import InvenTreeAPITestCase
+from InvenTree.unit_test import InvenTreeAPITestCase
 from plugin import registry
 from stock.models import StockLocation
 from part.models import PartCategory

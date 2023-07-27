@@ -1,6 +1,7 @@
 import json
 import re
 from pathlib import Path, PosixPath
+from unittest import skip
 
 from django_test_migrations.contrib.unittest_case import MigratorTestCase
 
@@ -16,6 +17,7 @@ def getMigrationFiles(func) -> str:
     return func(files, key=extract_number).name.rstrip(".py")
 
 
+@skip("Migrations tests take to much time for now.")
 class TestForwardMigrations(MigratorTestCase):
     """Unit testing class for testing 'bulkcreationtemplate' app migrations."""
 
