@@ -2,12 +2,16 @@ from typing import List, Optional, Dict, Union, Tuple
 from pydantic import BaseModel, PrivateAttr
 
 
+BulkDefinitionChildDimensions = Optional[List[str]]
+BulkDefinitionChildCount = Optional[List[Union[int, None]]]
+
+
 class BulkDefinitionChild(BaseModel):
     parent_name_match: Optional[str] = ".*"
     extends: Optional[str] = None
-    dimensions: Optional[List[str]] = []
+    dimensions: BulkDefinitionChildDimensions = []
     generate: Optional[Dict[str, str]] = {}
-    count: Optional[List[Union[int, None]]] = []
+    count: BulkDefinitionChildCount = []
     child: Optional["BulkDefinitionChild"] = None
     childs: Optional[List["BulkDefinitionChild"]] = []
 

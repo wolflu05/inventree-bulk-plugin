@@ -6,7 +6,7 @@ from .generators import GENERATORS
 from .generators.generator import Generator, GeneratorTypes
 
 
-def parse_dimension(dimension):
+def parse_dimension(dimension: str) -> list[tuple[GeneratorTypes, Union[str, tuple[str, str]], dict, str]]:
     res = []
     for gen_match in re.finditer(r"(?:(?:(\w+)-(\w+))|(\*?\w+))(?:{(.*?)})?(?:,|$)", dimension):
         settings = {}
@@ -27,7 +27,7 @@ def parse_dimension(dimension):
     return res
 
 
-def match_generator(generators, gen_type: GeneratorTypes, gen: Union[str, Tuple[str, str]]) -> Union[Generator, None]:
+def match_generator(generators: list[Generator], gen_type: GeneratorTypes, gen: Union[str, Tuple[str, str]]) -> Union[Generator, None]:
     for generator in generators:
         if gen_type == GeneratorTypes.INFINITY and generator.NAME == gen:
             return generator
