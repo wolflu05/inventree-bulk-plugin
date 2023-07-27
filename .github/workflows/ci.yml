@@ -106,7 +106,7 @@ jobs:
 
           # install additional dependencies required for testing
           # and newer coverage version due to https://github.com/nedbat/coveragepy/issues/1150
-          pip3 install django-test-migrations==1.2.0 coverage==6.0 
+          pip3 install django-test-migrations==1.2.0 coverage==6.0 django_slowtests==1.1.1
 
       - name: Run tests
         run: |
