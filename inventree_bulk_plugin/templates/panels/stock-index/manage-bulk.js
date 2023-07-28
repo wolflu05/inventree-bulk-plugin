@@ -54,7 +54,7 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
       const create = template.id === null;
       const res = await fetch("{% url 'plugin:inventree-bulk-plugin:templates' %}" + `/${create ? "" : template.id }`, {
         method: create ? "POST" : "PUT",
-        body: JSON.stringify({...template, template: JSON.stringify(template.template)})
+        body: JSON.stringify({...template, template: JSON.stringify(beautifySchema(template.template))})
       });
       const data = await res.json();
 

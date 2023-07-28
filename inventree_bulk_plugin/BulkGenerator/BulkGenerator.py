@@ -1,19 +1,13 @@
 import itertools
 import re
 
+from jinja2.exceptions import TemplateError
+
 from ..version import BULK_PLUGIN_VERSION
 from .validations import BulkDefinitionChild, BulkDefinitionChildCount, BulkDefinitionChildDimensions, BulkDefinitionChildTemplate, BulkDefinitionSchema
 from .dimensions import get_dimension_values
 from .utils import version_tuple
-
-
-class DotDict(dict):
-    """dot.notation access to dictionary attributes."""
-
-    def __getattr__(*args):
-        return dict.get(*args, "")
-    __setattr__ = dict.__setitem__
-    __delattr__ = dict.__delitem__
+from .template import Template
 
 
 def apply_template(obj: BulkDefinitionChild, template: BulkDefinitionChildTemplate):
@@ -58,11 +52,11 @@ class BulkGenerator:
         self.schema: BulkDefinitionSchema = None
 
     def generate(self):
-        self.validate()
+        self.validate(apply_input=True)
         return self.parse_child(self.schema.output)
 
-    def validate(self):
-        self.schema = BulkDefinitionSchema(**self.inp)
+    def validate(self, apply_input=False):
+        self.schema = BulkDefinitionSchema(**self.inp, apply_input=apply_input)
 
         version = version_tuple(self.schema.version)
         curr_version = version_tuple(BULK_PLUGIN_VERSION)
@@ -86,16 +80,19 @@ class BulkGenerator:
             child = apply_template(child, template)
 
         # generate
+        ctx = {'inp': self.schema.input}
+        render = self.compile_child_templates(child)
         if len(child.dimensions) > 0:
-            product = self.generate_product(
-                child.dimensions, child.count, child)
+            product = self.generate_product(child.dimensions, child.count, child)
             for p in product:
-                ctx = {'dim': DotDict(
-                    {f"{i + 1}": x for i, x in enumerate(p)})}
-                res.append((self.get_generated(child, ctx), []))
+                product_ctx = {
+                    **ctx,
+                    'dim': {(i + 1): x for i, x in enumerate(p)}
+                }
+                res.append((render(**product_ctx), []))
         else:
             # no dimensions
-            res.append((self.get_generated(child), []))
+            res.append((render(**ctx), []))
 
         # merge child/childs
         if child.child:
@@ -137,14 +134,18 @@ class BulkGenerator:
 
         return itertools.product(*seq, repeat=1)
 
-    def get_generated(self, child: BulkDefinitionChild, ctx: dict = {}):
-        return dict([a, self.parse_str(x, ctx)] for a, x in child.generate.items())
+    def compile_child_templates(self, child: BulkDefinitionChild):
+        compiled_templates = {}
+        for key, template_str in child.generate.items():
+            try:
+                compiled_templates[key] = Template(template_str).compile()
+            except TemplateError as e:
+                raise ValueError(f"Invalid generator template '{template_str}'\nException: {e}")
 
-    def parse_str(self, string: str, ctx: dict = {}):
-        ctx = {'inp': DotDict(self.schema.input), **ctx}
+        def render(**ctx):
+            try:
+                return {key: template.render(**ctx) for key, template in compiled_templates.items()}
+            except TemplateError as e:
+                raise ValueError(f"Exception: {e}")
 
-        try:
-            return string.format(**ctx)
-        except Exception as e:
-            raise ValueError(
-                f"Invalid generator template '{string}'\nException: {e}")
+        return render
