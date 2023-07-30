@@ -172,7 +172,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
             }).generate()
 
     # remove validator for early template validation to catch other errors on runtime
-    @mock.patch.object(BulkDefinitionSchema.__pydantic_decorators__, "field_validators", {})
+    @mock.patch.object(BulkDefinitionSchema, "apply_input_to_field", lambda value, field_info: value)
     def test_invalid_template_on_dimensions_render(self):
         cases = [
             ("Invalid template", "{{}", ValueError, r".*"),
