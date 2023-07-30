@@ -1,6 +1,6 @@
 from jinja2 import Environment
 
-env = Environment(variable_start_string="${{", variable_end_string="}}")
+env = Environment(variable_start_string="{{", variable_end_string="}}")
 
 
 class Template:
