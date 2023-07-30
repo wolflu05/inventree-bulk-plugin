@@ -1,7 +1,8 @@
 import unittest
+from unittest import mock
 
 from ...BulkGenerator.BulkGenerator import BulkGenerator, apply_template
-from ...BulkGenerator.validations import BulkDefinitionChild, BulkDefinitionChildTemplate
+from ...BulkGenerator.validations import BulkDefinitionChild, BulkDefinitionChildTemplate, BulkDefinitionSchema
 
 
 class BulkGeneratorTestCase(unittest.TestCase):
@@ -133,21 +134,67 @@ class BulkGeneratorTestCase(unittest.TestCase):
         self.assertDictEqual({"name": "test"}, res[0][0])
         self.assertEqual(0, len(res[0][1]))
 
+    def test_input_variables(self):
+        res = BulkGenerator({
+            "version": "0.1.0",
+            "input": {"a": "2", "b": "Hello"},
+            "templates": [],
+            "output": {
+                "dimensions": ["*NUMERIC(count={{inp.a}})"],
+                "count": [],
+                "generate": {
+                    "name": "{{inp.b}} {{dim.1}}",
+                },
+                "childs": []
+            }
+        }).generate()
+
+        self.assertEqual(2, len(res))
+        self.assertDictEqual({"name": "Hello 1"}, res[0][0])
+        self.assertDictEqual({"name": "Hello 2"}, res[1][0])
+        self.assertEqual(0, len(res[0][1]))
+        self.assertEqual(0, len(res[1][1]))
+
     def test_invalid_template(self):
-        with self.assertRaisesRegex(ValueError, "Exception: 'hello' is undefined"):
+        with self.assertRaisesRegex(Exception, "1 validation error for BulkDefinitionSchema\noutput\n  output.dimensions.0: 'hello' is undefined"):
             BulkGenerator({
                 "version": "0.1.0",
                 "input": {},
                 "templates": [],
                 "output": {
-                    "dimensions": [],
+                    "dimensions": ["{{hello.1}}"],
                     "count": [],
                     "generate": {
-                        "name": "{{hello.world}}",
+                        "name": "A",
                     },
                     "childs": []
                 }
             }).generate()
+
+    # remove validator for early template validation to catch other errors on runtime
+    @mock.patch.object(BulkDefinitionSchema.__pydantic_decorators__, "field_validators", {})
+    def test_invalid_template_on_dimensions_render(self):
+        cases = [
+            ("Invalid template", "{{}", ValueError, r".*"),
+            ("Invalid variable", "{{hello.world}}", ValueError, "Exception: 'hello' is undefined"),
+        ]
+
+        for name, template, error, error_regex in cases:
+            with self.subTest(name, template=template):
+                with self.assertRaisesRegex(error, error_regex):
+                    BulkGenerator({
+                        "version": "0.1.0",
+                        "input": {},
+                        "templates": [],
+                        "output": {
+                            "dimensions": [],
+                            "count": [],
+                            "generate": {
+                                "name": template,
+                            },
+                            "childs": []
+                        }
+                    }).generate()
 
     def test_merge_base_child_to_childs(self):
         res = BulkGenerator({
