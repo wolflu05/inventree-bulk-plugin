@@ -1,8 +1,7 @@
 import unittest
-from unittest import mock
 
 from ...BulkGenerator.BulkGenerator import BulkGenerator, apply_template
-from ...BulkGenerator.validations import BulkDefinitionChild, BulkDefinitionChildTemplate, BulkDefinitionSchema
+from ...BulkGenerator.validations import BulkDefinitionChild, BulkDefinitionChildTemplate
 
 
 class BulkGeneratorTestCase(unittest.TestCase):
@@ -171,8 +170,6 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 }
             }).generate()
 
-    # remove validator for early template validation to catch other errors on runtime
-    @mock.patch.object(BulkDefinitionSchema, "apply_input_to_field", lambda value, field_info: value)
     def test_invalid_template_on_dimensions_render(self):
         cases = [
             ("Invalid template", "{{}", ValueError, r".*"),

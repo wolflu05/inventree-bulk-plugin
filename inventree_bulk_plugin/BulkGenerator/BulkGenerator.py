@@ -139,7 +139,8 @@ class BulkGenerator:
         for key, template_str in child.generate.items():
             try:
                 compiled_templates[key] = Template(template_str).compile()
-            except TemplateError as e:
+            except TemplateError as e:  # pragma: no cover
+                # catch this error in any case it bypasses validation somehow because an error is not handled during ast creation but occurred on compile
                 raise ValueError(f"Invalid generator template '{template_str}'\nException: {e}")
 
         def render(**ctx):

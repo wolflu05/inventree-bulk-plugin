@@ -45,10 +45,6 @@ class BulkDefinitionSchema(BaseModel):
     @field_validator("settings", "templates", "output", mode="before", check_fields=True)
     @classmethod
     def apply_input_hook(cls, value, field_info: FieldValidationInfo):
-        return cls.apply_input_to_field(value, field_info)
-
-    @classmethod
-    def apply_input_to_field(cls, value, field_info: FieldValidationInfo):
         errors = list[str]()
 
         def _apply_input(value, path: str):
