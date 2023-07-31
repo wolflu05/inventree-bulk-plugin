@@ -82,7 +82,6 @@ class BulkGenerator:
             child = apply_template(child, template)
 
         # generate
-        ctx = {'inp': self.schema.input, 'par': parent_ctx}
         render = self.compile_child_templates(child)
         product = []
         if len(child.dimensions) > 0:
@@ -91,12 +90,10 @@ class BulkGenerator:
             # no dimensions
             product = [{}]
 
+        ctx = {'inp': self.schema.input, 'par': parent_ctx}
         for p in product:
             dim = {(i + 1): x for i, x in enumerate(p)}
-            product_ctx = {
-                **ctx,
-                'dim': dim
-            }
+            product_ctx = {**ctx, 'dim': dim}
             generate_values = render(**product_ctx)
             res.append((generate_values, []))
             child_ctx.append({'dim': dim, 'par': parent_ctx, 'gen': generate_values})
