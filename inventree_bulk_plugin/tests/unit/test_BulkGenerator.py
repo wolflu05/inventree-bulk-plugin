@@ -279,3 +279,23 @@ class BulkGeneratorTestCase(unittest.TestCase):
                     ]
                 }
             }).generate()
+
+    def test_parent_context(self):
+        res = BulkGenerator({
+            "version": "0.1.0",
+            "input": {},
+            "templates": [],
+            "output": {
+                "dimensions": ["A-B"],
+                "generate": {"name": "First {{dim.1}}"},
+                "child": {
+                    "generate": {"name": "Second {{dim.1}}"},
+                    "child": {
+                        "generate": {"parent_name": "{{par.gen.name}}", "parent_parent_dim_1": "{{par.par.dim.1}}"}
+                    }
+                }
+            }
+        }).generate()
+
+        self.assertListEqual([({'name': 'First A'}, [({'name': 'Second '}, [({'parent_name': 'Second ', 'parent_parent_dim_1': 'A'}, [])])]), ({
+                             'name': 'First B'}, [({'name': 'Second '}, [({'parent_name': 'Second ', 'parent_parent_dim_1': 'B'}, [])])])], res)
