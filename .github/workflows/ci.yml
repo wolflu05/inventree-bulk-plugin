@@ -182,7 +182,6 @@ jobs:
         if: success() && steps.pr.outputs.number
         with:
           number: ${{ steps.pr.outputs.number }}
-          recreate: true
           path: coverage.md
 
       - name: Write to Job Summary
