@@ -163,8 +163,8 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
                 all_objects = list(object_class.objects.all())
                 self.assertEqual(26, len(all_objects))
 
-                # wrong schema, existing parent should produce an error
-                self.post(url(0), {"no valid data": "should produce error"}, expected_code=400)
+                # existing parent, wrong schema should produce an error
+                self.post(url(parent.pk), {"no valid data": "should produce error"}, expected_code=400)
 
     def test__bulk_create(self):
         items = BulkGenerator(self.complex_valid_generation_template).generate()
