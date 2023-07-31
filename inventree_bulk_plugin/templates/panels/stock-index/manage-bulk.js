@@ -151,7 +151,7 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
       </div>
 
       <div class="d-flex" style="gap: 5px">
-        <button class="btn ${hasChanged ? 'btn-outline-secondary' : 'btn-outline-primary'}" onClick=${handleBack} disabled=${hasChanged}>Back</button>
+        <button class="btn ${(hasChanged && !create) ? 'btn-outline-secondary' : 'btn-outline-primary'}" onClick=${handleBack} disabled=${hasChanged && !create}>Back</button>
         <button class="btn ${!hasChanged ? 'btn-outline-secondary' : 'btn-outline-success'}" onClick=${saveOrUpdate} disabled=${!hasChanged}>${create ? "Create" : "Update"}</button>
         ${!create && html`<button class="btn ${!hasChanged ? 'btn-outline-secondary' : 'btn-outline-danger'}" onClick=${handleReset} disabled=${!hasChanged}>Reset</button>`}
         <button type="button" class="btn btn-primary" onClick=${showPreview} disabled=${btnPreviewLoading}>
