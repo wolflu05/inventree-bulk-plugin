@@ -1,5 +1,6 @@
 import itertools
 import re
+from typing import Any
 
 from jinja2.exceptions import TemplateError
 
@@ -51,9 +52,9 @@ class BulkGenerator:
         self.inp = inp
         self.schema: BulkDefinitionSchema = None
 
-    def generate(self):
+    def generate(self, parent_ctx: dict[str, Any] = {}):
         self.validate(apply_input=True)
-        return self.parse_child(self.schema.output)
+        return self.parse_child(self.schema.output, parent_ctx)
 
     def validate(self, apply_input=False):
         self.schema = BulkDefinitionSchema(**self.inp, apply_input=apply_input)
@@ -67,8 +68,9 @@ class BulkGenerator:
 
     ParseChildReturnType = list[tuple[dict[str, str], list["ParseChildReturnType"]]]
 
-    def parse_child(self, child: BulkDefinitionChild) -> ParseChildReturnType:
+    def parse_child(self, child: BulkDefinitionChild, parent_ctx: dict[str, Any] = {}) -> ParseChildReturnType:
         res = []
+        child_ctx = []
 
         # merge extend template
         if child.extends:
@@ -80,19 +82,24 @@ class BulkGenerator:
             child = apply_template(child, template)
 
         # generate
-        ctx = {'inp': self.schema.input}
+        ctx = {'inp': self.schema.input, 'par': parent_ctx}
         render = self.compile_child_templates(child)
+        product = []
         if len(child.dimensions) > 0:
             product = self.generate_product(child.dimensions, child.count, child)
-            for p in product:
-                product_ctx = {
-                    **ctx,
-                    'dim': {(i + 1): x for i, x in enumerate(p)}
-                }
-                res.append((render(**product_ctx), []))
         else:
             # no dimensions
-            res.append((render(**ctx), []))
+            product = [{}]
+
+        for p in product:
+            dim = {(i + 1): x for i, x in enumerate(p)}
+            product_ctx = {
+                **ctx,
+                'dim': dim
+            }
+            generate_values = render(**product_ctx)
+            res.append((generate_values, []))
+            child_ctx.append({'dim': dim, 'par': parent_ctx, 'gen': generate_values})
 
         # merge child/childs
         if child.child:
@@ -119,7 +126,7 @@ class BulkGenerator:
                 has_matched = True
 
                 # add child items if child found
-                res[i][1].extend(self.parse_child(c))
+                res[i][1].extend(self.parse_child(c, child_ctx[i]))
                 break
 
             if not has_matched and len(child.childs) > 0:
