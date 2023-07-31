@@ -63,8 +63,16 @@ function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = {} }) {
   , [setInput]);
   // hook input array state up to schema.input as an object
   useEffect(() => {
-    setSchema(s => ({...s, input: Object.fromEntries(input.map(({key, value}) => [key,value]))}))
-  }, [input, setSchema])
+    if (input.length > 0) {
+      setSchema(s => ({...s, input: Object.fromEntries(input.map(({key, value}) => [key,value]))}))
+    }
+  }, [input, setSchema]);
+  // load input on initial load
+  useEffect(() => {
+    if(input.length === 0 && schema?.input && Object.keys(schema.input).length !== 0) {
+      setInput(Object.entries(schema.input).map(([key, value]) => ({ key, value })));
+    }
+  }, [schema?.input, input, setInput]);
 
   // template
   const setTemplate = useCallback((i) => (newTemplate) => setSchema(s => {

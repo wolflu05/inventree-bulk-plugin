@@ -8,18 +8,18 @@ class DimensionsTestCase(unittest.TestCase):
     def test_parse_dimension(self):
         cases = [
             ("hello", [(GeneratorTypes.WORD, "hello", {}, "hello")]),
-            ("hello{hello=world}", [(GeneratorTypes.WORD, "hello", {"hello": "world"}, "hello{hello=world}")]),
+            ("hello(hello=world)", [(GeneratorTypes.WORD, "hello", {"hello": "world"}, "hello(hello=world)")]),
             ("*TEST", [(GeneratorTypes.INFINITY, "TEST", {}, "*TEST")]),
-            ("*TEST{hello=world}", [(GeneratorTypes.INFINITY, "TEST", {"hello": "world"}, "*TEST{hello=world}")]),
+            ("*TEST(hello=world)", [(GeneratorTypes.INFINITY, "TEST", {"hello": "world"}, "*TEST(hello=world)")]),
             ("1-3", [(GeneratorTypes.RANGE, ("1", "3"), {}, "1-3")]),
-            ("12-3435{hello=world}", [(GeneratorTypes.RANGE,
-             ("12", "3435"), {"hello": "world"}, "12-3435{hello=world}")]),
+            ("12-3435(hello=world)", [(GeneratorTypes.RANGE,
+             ("12", "3435"), {"hello": "world"}, "12-3435(hello=world)")]),
             ("A-B", [(GeneratorTypes.RANGE, ("A", "B"), {}, "A-B")]),
             ("ax-za", [(GeneratorTypes.RANGE, ("ax", "za"), {}, "ax-za")]),
-            ("Hello,*abc{a=1,b=(2,3)},1-3{a=1}", [
+            ("Hello,*abc(a=1,b='(2,3)',c=4),1-3(a=1)", [
                 (GeneratorTypes.WORD, "Hello", {}, "Hello"),
-                (GeneratorTypes.INFINITY, "abc", {"a": "1", "b": "(2,3)"}, "*abc{a=1,b=(2,3)}"),
-                (GeneratorTypes.RANGE, ("1", "3"), {"a": "1"}, "1-3{a=1}")
+                (GeneratorTypes.INFINITY, "abc", {"a": "1", "b": "'(2,3)'", "c": "4"}, "*abc(a=1,b='(2,3)',c=4)"),
+                (GeneratorTypes.RANGE, ("1", "3"), {"a": "1"}, "1-3(a=1)")
             ]),
         ]
 
@@ -64,12 +64,12 @@ class DimensionsTestCase(unittest.TestCase):
     def test_get_dimension_values(self):
         cases = [
             ("abc", None, {}, ["abc"]),
-            ("*NUMERIC{start=10, end=14}", None, {}, ["10", "11", "12", "13", "14"]),
-            ("*NUMERIC{start=10, end=14, count=2}", None, {}, ["10", "11"]),
+            ("*NUMERIC(start=10, end=14)", None, {}, ["10", "11", "12", "13", "14"]),
+            ("*NUMERIC(start=10, end=14, count=2)", None, {}, ["10", "11"]),
             ("42-45", None, {}, ["42", "43", "44", "45"]),
-            ("*NUMERIC{start=42,end=45,step=3}", None, {}, ["42", "45"]),
-            ("42-45{step=3}", None, {}, ["42", "45"]),
-            ("*NUMERIC{start=10,count=2}", None, {}, ["10", "11"]),
+            ("*NUMERIC(start=42,end=45,step=3)", None, {}, ["42", "45"]),
+            ("42-45(step=3)", None, {}, ["42", "45"]),
+            ("*NUMERIC(start=10,count=2)", None, {}, ["10", "11"]),
             ("0-2,hello,world", 4, {}, ["0", "1", "2", "hello"]),
         ]
 

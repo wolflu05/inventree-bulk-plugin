@@ -32,7 +32,8 @@ setuptools.setup(
     packages=setuptools.find_packages(),
 
     install_requires=[
-        "pydantic==2.*"
+        "pydantic==2.*",
+        "Jinja2==3.*",
     ],
 
     setup_requires=[
@@ -40,7 +41,7 @@ setuptools.setup(
         "twine",
     ],
 
-    python_requires=">=3.6",
+    python_requires=">=3.9",
 
     entry_points={
         "inventree_plugins": [

@@ -73,16 +73,16 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
                 "dimensions": ["*NUMERIC"],
                 "count": [5],
                 "generate": {
-                    "name": "N{dim.1}",
-                            "description": "D{dim.1}"
+                    "name": "N{{dim.1}}",
+                            "description": "D{{dim.1}}"
                 },
                 "childs": [
                     {
-                        "dimensions": ["*ALPHA{casing=lower}"],
+                        "dimensions": ["*ALPHA(casing=lower)"],
                         "count": [2],
                         "generate": {
-                            "name": "CN{dim.1}",
-                                    "description": "CD{dim.1}"
+                            "name": "CN{{dim.1}}",
+                                    "description": "CD{{dim.1}}"
                         },
                         "childs": [
                             {"generate": {"name": "Name", "description": "Description"}}
@@ -135,7 +135,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
             "templates": [],
             "output": {
                 "generate": {
-                    "name": "{not.existing.context}",
+                    "name": "{{not.existing.context}}",
                 },
             }
         }

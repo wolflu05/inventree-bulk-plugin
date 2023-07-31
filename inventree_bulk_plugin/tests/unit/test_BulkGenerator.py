@@ -8,8 +8,8 @@ class BulkGeneratorTestCase(unittest.TestCase):
     def test_1D_generation(self):
         dimensions = [
             ("*NUMERIC", list(range(1, 6))),
-            ("*ALPHA{casing=upper}", ["A", "B", "C", "D", "E"]),
-            ("*ALPHA{casing=lower}", ["a", "b", "c", "d", "e"]),
+            ("*ALPHA(casing=upper)", ["A", "B", "C", "D", "E"]),
+            ("*ALPHA(casing=lower)", ["a", "b", "c", "d", "e"]),
         ]
 
         for dim, exp in dimensions:
@@ -22,7 +22,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                         "dimensions": [dim],
                         "count": ["5"],
                         "generate": {
-                            "name": "before{dim.1}after",
+                            "name": "before{{dim.1}}after",
                         },
                         "childs": []
                     }
@@ -42,9 +42,9 @@ class BulkGeneratorTestCase(unittest.TestCase):
                     "dimensions": ["*NUMERIC"],
                     "count": ["4"],
                     "generate": {
-                        "name": "{dim.1} from template",
+                        "name": "{{dim.1}} from template",
                         "description": "",
-                        "abc": "{dim.1} from template"
+                        "abc": "{{dim.1}} from template"
                     },
                     "childs": []
                 }
@@ -54,8 +54,8 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 "dimensions": [""],
                 "count": ["10"],
                 "generate": {
-                    "name": "{dim.1} from child",
-                    "description": "{dim.1} from child",
+                    "name": "{{dim.1}} from child",
+                    "description": "{{dim.1}} from child",
                     "abc": ""
                 },
                 "childs": []
@@ -133,21 +133,65 @@ class BulkGeneratorTestCase(unittest.TestCase):
         self.assertDictEqual({"name": "test"}, res[0][0])
         self.assertEqual(0, len(res[0][1]))
 
+    def test_input_variables(self):
+        res = BulkGenerator({
+            "version": "0.1.0",
+            "input": {"a": "2", "b": "Hello"},
+            "templates": [],
+            "output": {
+                "dimensions": ["*NUMERIC(count={{inp.a}})"],
+                "count": [],
+                "generate": {
+                    "name": "{{inp.b}} {{dim.1}}",
+                },
+                "childs": []
+            }
+        }).generate()
+
+        self.assertEqual(2, len(res))
+        self.assertDictEqual({"name": "Hello 1"}, res[0][0])
+        self.assertDictEqual({"name": "Hello 2"}, res[1][0])
+        self.assertEqual(0, len(res[0][1]))
+        self.assertEqual(0, len(res[1][1]))
+
     def test_invalid_template(self):
-        with self.assertRaisesRegex(ValueError, "Invalid generator template '{hello.world}'\nException: .*"):
+        with self.assertRaisesRegex(Exception, "1 validation error for BulkDefinitionSchema\noutput\n  output.dimensions.0: 'hello' is undefined"):
             BulkGenerator({
                 "version": "0.1.0",
                 "input": {},
                 "templates": [],
                 "output": {
-                    "dimensions": [],
+                    "dimensions": ["{{hello.1}}"],
                     "count": [],
                     "generate": {
-                        "name": "{hello.world}",
+                        "name": "A",
                     },
                     "childs": []
                 }
             }).generate()
+
+    def test_invalid_template_on_dimensions_render(self):
+        cases = [
+            ("Invalid template", "{{}", ValueError, r".*"),
+            ("Invalid variable", "{{hello.world}}", ValueError, "Exception: 'hello' is undefined"),
+        ]
+
+        for name, template, error, error_regex in cases:
+            with self.subTest(name, template=template):
+                with self.assertRaisesRegex(error, error_regex):
+                    BulkGenerator({
+                        "version": "0.1.0",
+                        "input": {},
+                        "templates": [],
+                        "output": {
+                            "dimensions": [],
+                            "count": [],
+                            "generate": {
+                                "name": template,
+                            },
+                            "childs": []
+                        }
+                    }).generate()
 
     def test_merge_base_child_to_childs(self):
         res = BulkGenerator({
@@ -199,7 +243,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
             "output": {
                 "dimensions": ["*NUMERIC"],
                 "count": [9],
-                "generate": {"name": "{dim.1}"},
+                "generate": {"name": "{{dim.1}}"},
                 "childs": [
                     {
                         "parent_name_match": "[0-4]",
@@ -226,7 +270,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 "output": {
                     "dimensions": ["*NUMERIC"],
                     "count": [9],
-                    "generate": {"name": "{dim.1}"},
+                    "generate": {"name": "{{dim.1}}"},
                     "childs": [
                         {
                             "parent_name_match": "this pattern wont match",

@@ -43,10 +43,9 @@ jobs:
         with:
           python-version: "3.10"
 
-      - name: Install test dependencies
+      - name: Install pip dependencies
         run: |
-          pip install pydantic==2.*
-          pip install coverage==7.0.1
+          pip install pydantic==2.* Jinja2==3.* coverage==7.0.1
 
       - name: Run tests
         run: |

@@ -9,9 +9,9 @@ from ...BulkGenerator.dimensions import get_dimension_values
 
 class NumericGeneratorTestCase(unittest.TestCase):
     def test_integration(self):
-        self.assertListEqual(list(map(str, range(42, 47, 2))), get_dimension_values("42-46{step=2}", None, {}))
+        self.assertListEqual(list(map(str, range(42, 47, 2))), get_dimension_values("42-46(step=2)", None, {}))
         self.assertListEqual(list(map(str, range(2, 11, 2))), get_dimension_values(
-            "*NUMERIC{start=2,end=10,step=2}", None, {}))
+            "*NUMERIC(start=2,end=10,step=2)", None, {}))
 
     def test_is_generator(self):
         self.assertFalse(NumericGenerator.is_generator("A", "B"))
@@ -29,10 +29,10 @@ class NumericGeneratorTestCase(unittest.TestCase):
 
 class AlphaGeneratorTestCase(unittest.TestCase):
     def test_integration(self):
-        self.assertListEqual(["B", "D", "F"], get_dimension_values("B-F{step=2}", None, {}))
-        self.assertListEqual(["b", "d", "f"], get_dimension_values("*ALPHA{start=B,end=F,step=2}", None, {}))
+        self.assertListEqual(["B", "D", "F"], get_dimension_values("B-F(step=2)", None, {}))
+        self.assertListEqual(["b", "d", "f"], get_dimension_values("*ALPHA(start=B,end=F,step=2)", None, {}))
         self.assertListEqual(["C", "E", "G", "I"], get_dimension_values(
-            "*ALPHA{casing=upper,start=C,end=I,step=2}", None, {}))
+            "*ALPHA(casing=upper,start=C,end=I,step=2)", None, {}))
 
     def test_is_generator(self):
         self.assertFalse(AlphaGenerator.is_generator("1", "2"))
