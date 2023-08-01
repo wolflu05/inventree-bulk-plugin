@@ -101,7 +101,11 @@ These fields my differ between stock location and part category. They correspond
 
 > [!NOTE]
 > **Extended Jinja2 context**:
-> - `dim.<x>` - reference the n-th dimension, one-based (e.g. `{{dim.1}}` to access the first dimension)
+> - `dim.<x>` - n-th dimension, one-based (e.g. `{{dim.1}}` to access the first dimension)
+> - `par.<...>` - parent's context
+> - `par.dim.<x>` - parents's dimensions
+> - `par.gen.<name>` - parent's generated fields (e.g. to reuse the parents name `{{par.gen.name}}`)  
+> - `par.par.<...>` - parent's parent context, can be nested deeply
 
 ##### Child's
 

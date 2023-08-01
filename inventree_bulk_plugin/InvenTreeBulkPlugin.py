@@ -77,44 +77,48 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
     @csrf_exempt
     def url_bulk_create_location(self, request, pk):
         if request.method == "POST":
-            error, output = self._parse_bulk_schema(request.body)
-            if error is not None:
-                return error
-
             try:
                 root_location = StockLocation.objects.get(pk=pk)
             except (StockLocation.DoesNotExist):
                 return HttpResponse(status=status.HTTP_404_NOT_FOUND)
 
-            self._bulk_create(StockLocation, root_location, output, ["name", "description"])
+            allowed_fields = ["name", "description"]
+            parent = {key: getattr(root_location, key) for key in allowed_fields if hasattr(root_location, key)}
+            error, output = self._parse_bulk_schema(request.body, parent)
+            if error is not None:
+                return error
+
+            self._bulk_create(StockLocation, root_location, output, allowed_fields)
 
             return HttpResponse(status=status.HTTP_201_CREATED)
 
     @csrf_exempt
     def url_bulk_create_category(self, request, pk):
         if request.method == "POST":
-            error, output = self._parse_bulk_schema(request.body)
-            if error is not None:
-                return error
-
             try:
                 root_category = PartCategory.objects.get(pk=pk)
             except (PartCategory.DoesNotExist):
                 return HttpResponse(status=status.HTTP_404_NOT_FOUND)
 
-            self._bulk_create(PartCategory, root_category, output, ["name", "description"])
+            allowed_fields = ["name", "description"]
+            parent = {key: getattr(root_category, key) for key in allowed_fields if hasattr(root_category, key)}
+            error, output = self._parse_bulk_schema(request.body, parent)
+            if error is not None:
+                return error
+
+            self._bulk_create(PartCategory, root_category, output, allowed_fields)
 
             return HttpResponse(status=status.HTTP_201_CREATED)
 
-    def _parse_bulk_schema(self, schema):
+    def _parse_bulk_schema(self, schema, parent={}):
         try:
             parsed = json.loads(schema)
-            bg = BulkGenerator(parsed).generate()
+            bg = BulkGenerator(parsed).generate({"gen": parent})
             return None, bg
         except (ValueError, ValidationError) as e:
             return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST, safe=False), None
         except Exception:
-            return JsonResponse({"error": "An error occured"}, status=status.HTTP_400_BAD_REQUEST, safe=False), None
+            return JsonResponse({"error": "An error occurred"}, status=status.HTTP_400_BAD_REQUEST, safe=False), None
 
     def _bulk_create(self, object_class, parent, childs, allowed_keys):
         for c in childs:
