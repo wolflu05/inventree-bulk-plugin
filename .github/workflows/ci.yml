@@ -1,8 +1,10 @@
 name: CI
 
 on:
- push:
- pull_request:
+  push:
+  pull_request:
+  release:
+    types: [published]
 
 jobs:
   style:
@@ -186,3 +188,35 @@ jobs:
 
       - name: Write to Job Summary
         run: cat coverage.md >> $GITHUB_STEP_SUMMARY
+
+  publish:
+    if: true || github.event_name == 'release' && github.event.action == 'published'
+    needs: report
+    name: 📦 Publish to PyPi
+    runs-on: ubuntu-latest
+    environment:
+      name: testpypi
+      url: https://test.pypi.org/p/inventree-bulk-plugin
+    permissions:
+      id-token: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v3
+
+      - name: Setup python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install build dependencies
+        run: pip install --upgrade wheel setuptools twine build
+
+      - name: Build binary
+        run: |
+          python3 -m build
+
+      - name: Publish package distributions to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
