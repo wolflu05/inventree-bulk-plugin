@@ -134,7 +134,7 @@ class BulkGenerator:
     def generate_product(self, dimensions: BulkDefinitionChildDimensions, count: BulkDefinitionChildCount, child: BulkDefinitionChild):
         seq = []
         for d, c in itertools.zip_longest(dimensions, count, fillvalue=None):
-            seq.append(get_dimension_values(d, c, self.schema.settings))
+            seq.append(get_dimension_values(d, c))
 
         return itertools.product(*seq, repeat=1)
 

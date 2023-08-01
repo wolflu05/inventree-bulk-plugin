@@ -63,28 +63,28 @@ class DimensionsTestCase(unittest.TestCase):
 
     def test_get_dimension_values(self):
         cases = [
-            ("abc", None, {}, ["abc"]),
-            ("*NUMERIC(start=10, end=14)", None, {}, ["10", "11", "12", "13", "14"]),
-            ("*NUMERIC(start=10, end=14, count=2)", None, {}, ["10", "11"]),
-            ("42-45", None, {}, ["42", "43", "44", "45"]),
-            ("*NUMERIC(start=42,end=45,step=3)", None, {}, ["42", "45"]),
-            ("42-45(step=3)", None, {}, ["42", "45"]),
-            ("*NUMERIC(start=10,count=2)", None, {}, ["10", "11"]),
-            ("0-2,hello,world", 4, {}, ["0", "1", "2", "hello"]),
+            ("abc", None, ["abc"]),
+            ("*NUMERIC(start=10, end=14)", None, ["10", "11", "12", "13", "14"]),
+            ("*NUMERIC(start=10, end=14, count=2)", None, ["10", "11"]),
+            ("42-45", None, ["42", "43", "44", "45"]),
+            ("*NUMERIC(start=42,end=45,step=3)", None, ["42", "45"]),
+            ("42-45(step=3)", None, ["42", "45"]),
+            ("*NUMERIC(start=10,count=2)", None, ["10", "11"]),
+            ("0-2,hello,world", 4, ["0", "1", "2", "hello"]),
         ]
 
-        for dim, global_count, settings, expected in cases:
+        for dim, global_count, expected in cases:
             with self.subTest(dim):
-                res = get_dimension_values(dim, global_count, settings)
+                res = get_dimension_values(dim, global_count)
                 self.assertListEqual(expected, res)
 
         # these cases should throw exceptions
         cases = [
-            ("*NO_EXISTING_GENERATOR", None, {}, "No generator named: '\\*NO_EXISTING_GENERATOR'"),
-            ("*NUMERIC", None, {}, "Missing count for generator: '\\*NUMERIC' or dimension count")
+            ("*NO_EXISTING_GENERATOR", None, "No generator named: '\\*NO_EXISTING_GENERATOR'"),
+            ("*NUMERIC", None, "Missing count for generator: '\\*NUMERIC' or dimension count")
         ]
 
-        for dim, global_count, settings, error_pattern in cases:
+        for dim, global_count, error_pattern in cases:
             with self.subTest(dim):
                 with self.assertRaisesRegex(ValueError, error_pattern):
-                    get_dimension_values(dim, global_count, settings)
+                    get_dimension_values(dim, global_count)

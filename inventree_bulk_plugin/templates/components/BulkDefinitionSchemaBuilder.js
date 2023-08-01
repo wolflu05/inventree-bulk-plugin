@@ -35,10 +35,6 @@ function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = {} }) {
       setSchema({
         version: "0.1.0",
         input: {},
-        settings: {
-          count_from: 1,
-          leading_zeros: true
-        },
         templates: [],
         output: null,
       })
@@ -47,9 +43,7 @@ function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = {} }) {
 
   const setChildSchema = useCallback((newSchema) => setSchema(s =>
     ({ ...s, output: newSchema(s.output) })), [setSchema]);
-  const setSetting = useCallback((key, k = "value") => (e) => setSchema(s =>
-    ({ ...s, settings: { ...s.settings, [key]: e.target[k] } })), [setSchema]);
-      
+    
   // input
   const [input, setInput] = useState([]);
   const setInputKey = useCallback((i, key) => (e) => setInput(inp => {
@@ -122,21 +116,6 @@ function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = {} }) {
             `)}
 
             <button onClick=${addInput} class="btn btn-outline-primary btn-sm">Add input</button>
-          </div>
-        </div>
-      </div>
-
-      <div class="card mt-2">
-        <div class="card-header">
-          <h5 class="mb-0 user-select-none" role="button" data-bs-toggle="collapse" data-bs-target=${`#accordion-${accordionId}-settings`}>
-            Settings
-          </h5>
-        </div>
-
-        <div id=${`accordion-${accordionId}-settings`} class="collapse">
-          <div class="card-body">
-            <${Input} label="Count from" tooltip="Number where to start counting the dimensions" type="number" value=${schema.settings.count_from} onInput=${setSetting("count_from")} />
-            <${Input} label="Leading zeros" tooltip="Add leading zeros " type="checkbox" value=${schema.settings.leading_zeros} onInput=${setSetting("leading_zeros", "checked")} />
           </div>
         </div>
       </div>
