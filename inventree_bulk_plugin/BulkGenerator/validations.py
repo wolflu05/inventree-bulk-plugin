@@ -28,21 +28,15 @@ class BulkDefinitionChildTemplate(BulkDefinitionChild):
     name: str
 
 
-class BulkDefinitionSettings(BaseModel):
-    count_from: Optional[int] = 1
-    leading_zeros: Optional[bool] = True
-
-
 class BulkDefinitionSchema(BaseModel):
     apply_input: bool = False  # is not part of the definition schema, but used to determine if the input should be applied
 
     version: str
     input: Dict[str, str]
-    settings: Optional[BulkDefinitionSettings] = BulkDefinitionSettings()
     templates: List["BulkDefinitionChildTemplate"]
     output: "BulkDefinitionChild"
 
-    @field_validator("settings", "templates", "output", mode="before", check_fields=True)
+    @field_validator("templates", "output", mode="before", check_fields=True)
     @classmethod
     def apply_input_hook(cls, value, field_info: FieldValidationInfo):
         errors = list[str]()

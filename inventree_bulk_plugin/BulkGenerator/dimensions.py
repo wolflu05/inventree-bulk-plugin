@@ -37,7 +37,7 @@ def match_generator(generators: list[Generator], gen_type: GeneratorTypes, gen: 
     return None
 
 
-def get_dimension_values(dimension: str, global_count: Union[int, None], settings: dict) -> Iterable[str]:
+def get_dimension_values(dimension: str, global_count: Union[int, None]) -> Iterable[str]:
     seq = []
     parsed_dimension = parse_dimension(dimension)
     for gen_type, gen, settings, gen_name in parsed_dimension:
