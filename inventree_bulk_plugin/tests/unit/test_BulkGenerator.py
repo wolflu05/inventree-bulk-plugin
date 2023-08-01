@@ -306,12 +306,14 @@ class BulkGeneratorTestCase(unittest.TestCase):
             "input": {},
             "templates": [],
             "output": {
-                "dimensions": ["*NUMERIC"],
-                "count": [8],
-                "generate": {"length": "{{len}}"},
+                "dimensions": ["*NUMERIC", "*ALPHA"],
+                "count": [10, 2],
+                "generate": {"length": "{{len}}", "dim1len": "{{dim.1.len}}", "dim2len": "{{dim.2.len}}"},
             }
         }).generate()
 
-        self.assertEqual(8, len(res))
+        self.assertEqual(20, len(res))
         for e, _ in res:
-            self.assertEqual("8", e['length'])
+            self.assertEqual("20", e['length'])
+            self.assertEqual("10", e['dim1len'])
+            self.assertEqual("2", e['dim2len'])
