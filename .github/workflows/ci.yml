@@ -14,10 +14,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.3
 
       - name: Setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@v4.7.0
         with:
           python-version: "3.10"
 
@@ -38,10 +38,10 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.3
 
       - name: Setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@v4.7.0
         with:
           python-version: "3.10"
 
@@ -55,7 +55,7 @@ jobs:
           echo $GITHUB_WORKSPACE > coverage_info
 
       - name: Upload coverage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
           name: unit-coverage
           path: |
@@ -69,7 +69,7 @@ jobs:
     runs-on: ubuntu-latest
 
     container:
-      image: inventree/inventree:latest # TODO change to :stable if v0.9.3 is released
+      image: inventree/inventree:latest
       env:
         INVENTREE_DB_ENGINE: postgresql
         INVENTREE_DB_NAME: inventree
@@ -93,7 +93,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.3
 
       - name: Setup inventree
         run: |
@@ -116,7 +116,7 @@ jobs:
           echo $GITHUB_WORKSPACE > coverage_info
 
       - name: Upload coverage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
           name: integration-coverage
           path: |
@@ -130,10 +130,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.3
 
       - name: Setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@v4.7.0
         with:
           python-version: "3.10"
 
@@ -141,7 +141,7 @@ jobs:
         run: pip install coverage==7.0.1
 
       - name: Download coverage
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # pin@v3.0.2
         with:
           path: coverage
 
@@ -165,7 +165,7 @@ jobs:
           coverage report --format=markdown -m >> coverage.md
 
       - name: Upload full-coverage
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
           name: coverage
           path: |
@@ -173,14 +173,14 @@ jobs:
             htmlcov
 
       - name: Get PR number
-        uses: 8BitJonny/gh-get-current-pr@2.2.0
+        uses: 8BitJonny/gh-get-current-pr@2215326c76d51bfa3f2af0a470f32677f6c0cae9 # pin@v2.2.0
         id: pr
         with:
           sha: ${{ github.event.pull_request.head.sha }}
           filterOutClosed: true
 
       - name: Add Coverage PR Comment
-        uses: marocchino/sticky-pull-request-comment@v2
+        uses: marocchino/sticky-pull-request-comment@f6a2580ed520ae15da6076e7410b088d1c5dddd9 # pin@v2.7.0
         if: success() && steps.pr.outputs.number
         with:
           number: ${{ steps.pr.outputs.number }}
@@ -202,21 +202,20 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v3
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.3
 
       - name: Setup python
-        uses: actions/setup-python@v4
+        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@v4.7.0
         with:
           python-version: "3.10"
 
       - name: Install build dependencies
         run: pip install --upgrade wheel setuptools twine build
 
-      - name: Build binary
-        run: |
-          python3 -m build
+      - name: Build pip package
+        run: python3 -m build
 
-      - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Publish package to PyPI
+        uses: pypa/gh-action-pypi-publish@f8c70e705ffc13c3b4d1221169b84f12a75d6ca8 # pin@v1.8.8
         with:
           repository-url: https://test.pypi.org/legacy/
