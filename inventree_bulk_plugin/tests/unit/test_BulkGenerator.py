@@ -299,3 +299,19 @@ class BulkGeneratorTestCase(unittest.TestCase):
 
         self.assertListEqual([({'name': 'First A'}, [({'name': 'Second '}, [({'parent_name': 'Second ', 'parent_parent_dim_1': 'A'}, [])])]), ({
                              'name': 'First B'}, [({'name': 'Second '}, [({'parent_name': 'Second ', 'parent_parent_dim_1': 'B'}, [])])])], res)
+
+    def test_len_context_variable(self):
+        res = BulkGenerator({
+            "version": "0.1.0",
+            "input": {},
+            "templates": [],
+            "output": {
+                "dimensions": ["*NUMERIC"],
+                "count": [8],
+                "generate": {"length": "{{len}}"},
+            }
+        }).generate()
+
+        self.assertEqual(8, len(res))
+        for e, _ in res:
+            self.assertEqual("8", e['length'])

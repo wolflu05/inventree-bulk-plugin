@@ -66,6 +66,9 @@ class BulkGenerator:
             raise ValueError(
                 f"The server runs on v{BULK_PLUGIN_VERSION} which is incompatible to v{self.schema.version}.")
 
+    def get_default_context(self):
+        return {"inp": self.schema.input}
+
     ParseChildReturnType = list[tuple[dict[str, str], list["ParseChildReturnType"]]]
 
     def parse_child(self, child: BulkDefinitionChild, parent_ctx: dict[str, Any] = {}) -> ParseChildReturnType:
@@ -85,18 +88,19 @@ class BulkGenerator:
         render = self.compile_child_templates(child)
         product = []
         if len(child.dimensions) > 0:
-            product = self.generate_product(child.dimensions, child.count, child)
+            product = list(self.generate_product(child.dimensions, child.count, child))
         else:
             # no dimensions
             product = [{}]
 
-        ctx = {'inp': self.schema.input, 'par': parent_ctx}
+        default_context = self.get_default_context()
+        ctx = {'par': parent_ctx, 'len': len(product)}
         for p in product:
             dim = {(i + 1): x for i, x in enumerate(p)}
-            product_ctx = {**ctx, 'dim': dim}
+            product_ctx = {**default_context, **ctx, 'dim': dim}
             generate_values = render(**product_ctx)
             res.append((generate_values, []))
-            child_ctx.append({'dim': dim, 'par': parent_ctx, 'gen': generate_values})
+            child_ctx.append({**ctx, 'dim': dim, 'gen': generate_values})
 
         # merge child/childs
         if child.child:
