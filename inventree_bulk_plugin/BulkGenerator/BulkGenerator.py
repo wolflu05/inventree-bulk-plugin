@@ -1,6 +1,6 @@
 import itertools
 import re
-from typing import Any
+from typing import Any, Iterable
 
 from jinja2.exceptions import TemplateError
 
@@ -47,6 +47,15 @@ def apply_template(obj: BulkDefinitionChild, template: BulkDefinitionChildTempla
     return obj
 
 
+class DimStr(str):
+    """String that also has a len attribute."""
+    def __new__(cls, value, *args, **kwargs) -> None:
+        return super(DimStr, cls).__new__(cls, value)
+
+    def __init__(self, value, length):
+        self.len = length
+
+
 class BulkGenerator:
     def __init__(self, inp):
         self.inp = inp
@@ -66,6 +75,9 @@ class BulkGenerator:
             raise ValueError(
                 f"The server runs on v{BULK_PLUGIN_VERSION} which is incompatible to v{self.schema.version}.")
 
+    def get_default_context(self):
+        return {"inp": self.schema.input}
+
     ParseChildReturnType = list[tuple[dict[str, str], list["ParseChildReturnType"]]]
 
     def parse_child(self, child: BulkDefinitionChild, parent_ctx: dict[str, Any] = {}) -> ParseChildReturnType:
@@ -84,19 +96,25 @@ class BulkGenerator:
         # generate
         render = self.compile_child_templates(child)
         product = []
+        dimensions = []
         if len(child.dimensions) > 0:
-            product = self.generate_product(child.dimensions, child.count, child)
+            dimensions = self.get_dimensions(child.dimensions, child.count)
+            product = list(itertools.product(*dimensions, repeat=1))
         else:
             # no dimensions
-            product = [{}]
+            product = [()]
 
-        ctx = {'inp': self.schema.input, 'par': parent_ctx}
+        # get length from dimensions
+        dimensions = list(map(len, dimensions))
+
+        default_context = self.get_default_context()
+        ctx = {'par': parent_ctx, 'len': len(product)}
         for p in product:
-            dim = {(i + 1): x for i, x in enumerate(p)}
-            product_ctx = {**ctx, 'dim': dim}
+            dim = {(i + 1): DimStr(x, dimensions[i]) for i, x in enumerate(p)}
+            product_ctx = {**default_context, **ctx, 'dim': dim}
             generate_values = render(**product_ctx)
             res.append((generate_values, []))
-            child_ctx.append({'dim': dim, 'par': parent_ctx, 'gen': generate_values})
+            child_ctx.append({**ctx, 'dim': dim, 'gen': generate_values})
 
         # merge child/childs
         if child.child:
@@ -131,12 +149,12 @@ class BulkGenerator:
 
         return res
 
-    def generate_product(self, dimensions: BulkDefinitionChildDimensions, count: BulkDefinitionChildCount, child: BulkDefinitionChild):
+    def get_dimensions(self, dimensions: BulkDefinitionChildDimensions, count: BulkDefinitionChildCount) -> list[Iterable[str]]:
         seq = []
         for d, c in itertools.zip_longest(dimensions, count, fillvalue=None):
             seq.append(get_dimension_values(d, c))
 
-        return itertools.product(*seq, repeat=1)
+        return seq
 
     def compile_child_templates(self, child: BulkDefinitionChild):
         compiled_templates = {}
