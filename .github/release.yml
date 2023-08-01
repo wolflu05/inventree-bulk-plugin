@@ -1,0 +1,24 @@
+# .github/release.yml
+
+changelog:
+  categories:
+    - title: ":boom: Breaking Changes"
+      labels:
+        - Semver-Major
+        - breaking
+    - title: ":sparkles: New Features"
+      labels:
+        - Semver-Minor
+        - type/feature
+        - type/enhancement
+    - title: ":bug: Bug Fixes"
+      labels:
+        - Semver-Patch
+        - type/bug
+    - title: ":package: Devops / Setup / Docs Changes"
+      labels:
+        - type/setup
+        - type/documentation
+    - title: ":memo: Other Changes"
+      labels:
+        - "*"

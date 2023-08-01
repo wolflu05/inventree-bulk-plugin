@@ -1,4 +1,4 @@
 include LICENSE
 include README.md
-recursive-include inventree_bulk/static *
-recursive-include inventree_bulk/templates *
+recursive-include inventree_bulk_plugin/static *
+recursive-include inventree_bulk_plugin/templates *

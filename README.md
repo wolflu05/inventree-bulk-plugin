@@ -14,7 +14,7 @@ Install this plugin as follows:
 
 1. Make sure you allow the use of the url integration and app integration (see [Why does this plugin needs the app mixin?](#why-does-this-plugin-needs-the-app-mixin))
 
-2. Goto Settings > Plugins > Install Plugin, set `inventree-bulk-plugin` as package name and `git+https://github.com/wolflu05/inventree-bulk-plugin` as source URL. Enable the confirm switch and click submit.
+2. Goto Settings > Plugins > Install Plugin, enter `inventree-bulk-plugin` as package name. Enable the confirm switch and click submit.
 
 3. Restart your server and activate the plugin.
 
