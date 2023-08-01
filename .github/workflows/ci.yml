@@ -193,13 +193,13 @@ jobs:
         run: cat coverage.md >> $GITHUB_STEP_SUMMARY
 
   publish:
-    if: true || github.event_name == 'release' && github.event.action == 'published'
+    if: github.event_name == 'release' && github.event.action == 'published'
     needs: report
     name: 📦 Publish to PyPi
     runs-on: ubuntu-latest
     environment:
-      name: testpypi
-      url: https://test.pypi.org/p/inventree-bulk-plugin
+      name: release
+      url: https://pypi.org/p/inventree-bulk-plugin
     permissions:
       id-token: write
 
@@ -220,5 +220,3 @@ jobs:
 
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@f8c70e705ffc13c3b4d1221169b84f12a75d6ca8 # pin@v1.8.8
-        with:
-          repository-url: https://test.pypi.org/legacy/
