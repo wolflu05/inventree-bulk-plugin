@@ -1,6 +1,6 @@
 {% include "components/BulkDefinitionSchemaBuilder.js" %}
 
-function generateBulkCreateView({ target, generateKeys, createURL, name, defaultSchema = null, tableSelector, templateType }) {
+function generateBulkCreateView({ target, createURL, name, defaultSchema = null, tableSelector, templateType }) {
   function App() {
     const [savedTemplates, setSavedTemplates] = useState();
     const [isLoading, setIsLoading] = useState(true);
@@ -9,6 +9,12 @@ function generateBulkCreateView({ target, generateKeys, createURL, name, default
     const [success, setSuccess] = useState("");
     const [btnPreviewLoading, setBtnPreviewLoading] = useState(false);
     const [btnCreateLoading, setBtnCreateLoading] = useState(false);
+    const [generateKeys, setGenerateKeys] = useState(null);
+
+    // fetch generate keys on initial render
+    useEffect(() => {
+      getGenerateKeysForTemplateType(templateType).then((keys) => setGenerateKeys(keys));
+    }, []);
 
     const reloadSavedTemplates = useCallback(async () => {
       const res = await fetch("{% url 'plugin:inventree-bulk-plugin:templates' %}" + `?template_type=${templateType}`);
@@ -30,7 +36,7 @@ function generateBulkCreateView({ target, generateKeys, createURL, name, default
       setSuccess("");
       setBtnPreviewLoading(true);
       
-      const res = await fetch("{% url 'plugin:inventree-bulk-plugin:parse' %}", {
+      const res = await fetch("{% url 'plugin:inventree-bulk-plugin:parse' %}" + `?template_type=${templateType}`, {
         method: "POST",
         body: JSON.stringify(beautifySchema(schema))
       });
@@ -152,7 +158,7 @@ function generateBulkCreateView({ target, generateKeys, createURL, name, default
           </div>
         </div>
 
-        <${BulkDefinitionSchemaBuilder} schema=${schema} setSchema=${setSchema} generateKeys=${generateKeys} />
+        ${generateKeys !== null && html`<${BulkDefinitionSchemaBuilder} schema=${schema} setSchema=${setSchema} generateKeys=${generateKeys} />`}
 
         <div class="mt-3">
           ${success && html`<div class="alert alert-success">${success}</div>`}

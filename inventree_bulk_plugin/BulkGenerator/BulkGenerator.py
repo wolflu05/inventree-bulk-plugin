@@ -57,9 +57,10 @@ class DimStr(str):
 
 
 class BulkGenerator:
-    def __init__(self, inp):
+    def __init__(self, inp, fields=None):
         self.inp = inp
         self.schema: BulkDefinitionSchema = None
+        self.fields = fields
 
     def generate(self, parent_ctx: dict[str, Any] = {}):
         self.validate(apply_input=True)
@@ -159,15 +160,22 @@ class BulkGenerator:
     def compile_child_templates(self, child: BulkDefinitionChild):
         compiled_templates = {}
         for key, template_str in child.generate.items():
+            if self.fields and key not in self.fields:
+                raise ValueError(f"'{key}' is not allowed to be generated")
+
+            cast_func = str
+            if self.fields and (func := self.fields.get(key, {}).get("cast_func", None)):
+                cast_func = func
+
             try:
-                compiled_templates[key] = Template(template_str).compile()
+                compiled_templates[key] = Template(template_str).compile(), cast_func
             except TemplateError as e:  # pragma: no cover
                 # catch this error in any case it bypasses validation somehow because an error is not handled during ast creation but occurred on compile
                 raise ValueError(f"Invalid generator template '{template_str}'\nException: {e}")
 
         def render(**ctx):
             try:
-                return {key: template.render(**ctx) for key, template in compiled_templates.items()}
+                return {key: cast_func(template.render(**ctx)) for key, (template, cast_func) in compiled_templates.items()}
             except TemplateError as e:
                 raise ValueError(f"Exception: {e}")
 

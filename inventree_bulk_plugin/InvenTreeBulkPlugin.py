@@ -12,6 +12,7 @@ from stock.views import StockLocationDetail, StockIndex
 from stock.models import StockLocation
 from part.views import CategoryDetail
 from part.models import PartCategory
+from InvenTree.helpers import str2bool, str2int
 
 from pydantic import ValidationError
 
@@ -32,6 +33,24 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
     TITLE = "InvenTree Bulk Plugin"
     SLUG = "inventree-bulk-plugin"
     NAME = "InvenTreeBulkPlugin"
+
+    ALLOWED_FIELDS = {
+        "STOCK_LOCATION": {
+            "name": {"name": "Name", "required": True},
+            "description": {"name": "Description"},
+            "structural": {"name": "Structural", "type": "boolean"},
+            "external": {"name": "External", "type": "boolean"},
+            "icon": {"name": "Icon"},
+        },
+        "PART_CATEGORY": {
+            "name": {"name": "Name", "required": True},
+            "description": {"name": "Description"},
+            "default_location_id": {"name": "Default location", "type": "number"},
+            "default_keywords": {"name": "Default keywords"},
+            "structural": {"name": "Structural", "type": "boolean"},
+            "icon": {"name": "Icon"},
+        },
+    }
 
     def get_custom_panels(self, view, request):
         panels = []
@@ -68,11 +87,21 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
     @csrf_exempt
     def url_parse(self, request):
         if request.method == "POST":
-            error, output = self._parse_bulk_schema(request.body)
+            allowed_fields = None
+            if template_type := request.GET.get("template_type"):
+                if fields := self.ALLOWED_FIELDS.get(template_type, None):
+                    allowed_fields = self.add_casts_to_field(fields)
+                else:
+                    return JsonResponse({"error": f"Template type '{template_type}' not found, choose one of {','.join(self.ALLOWED_FIELDS.keys())}"}, status=status.HTTP_400_BAD_REQUEST, safe=False)
+
+            error, output = self._parse_bulk_schema(request.body, {}, allowed_fields)
             if error is not None:
                 return error
 
             return JsonResponse(output, safe=False)
+
+        if request.method == "OPTIONS":
+            return JsonResponse(self.ALLOWED_FIELDS)
 
     @csrf_exempt
     def url_bulk_create_location(self, request, pk):
@@ -82,13 +111,13 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
             except (StockLocation.DoesNotExist):
                 return HttpResponse(status=status.HTTP_404_NOT_FOUND)
 
-            allowed_fields = ["name", "description"]
+            allowed_fields = self.add_casts_to_field(self.ALLOWED_FIELDS["STOCK_LOCATION"])
             parent = {key: getattr(root_location, key) for key in allowed_fields if hasattr(root_location, key)}
-            error, output = self._parse_bulk_schema(request.body, parent)
+            error, output = self._parse_bulk_schema(request.body, parent, fields=allowed_fields)
             if error is not None:
                 return error
 
-            self._bulk_create(StockLocation, root_location, output, allowed_fields)
+            self._bulk_create(StockLocation, root_location, output, allowed_fields.keys())
 
             return HttpResponse(status=status.HTTP_201_CREATED)
 
@@ -100,20 +129,20 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
             except (PartCategory.DoesNotExist):
                 return HttpResponse(status=status.HTTP_404_NOT_FOUND)
 
-            allowed_fields = ["name", "description"]
+            allowed_fields = self.add_casts_to_field(self.ALLOWED_FIELDS["PART_CATEGORY"])
             parent = {key: getattr(root_category, key) for key in allowed_fields if hasattr(root_category, key)}
-            error, output = self._parse_bulk_schema(request.body, parent)
+            error, output = self._parse_bulk_schema(request.body, parent, fields=allowed_fields)
             if error is not None:
                 return error
 
-            self._bulk_create(PartCategory, root_category, output, allowed_fields)
+            self._bulk_create(PartCategory, root_category, output, allowed_fields.keys())
 
             return HttpResponse(status=status.HTTP_201_CREATED)
 
-    def _parse_bulk_schema(self, schema, parent={}):
+    def _parse_bulk_schema(self, schema, parent={}, fields=None):
         try:
             parsed = json.loads(schema)
-            bg = BulkGenerator(parsed).generate({"gen": parent})
+            bg = BulkGenerator(parsed, fields=fields).generate({"gen": parent})
             return None, bg
         except (ValueError, ValidationError) as e:
             return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST, safe=False), None
@@ -133,6 +162,14 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
             )
 
             self._bulk_create(object_class, obj, c[1], allowed_keys)
+
+    def add_casts_to_field(self, fields):
+        cast_map = {
+            "number": str2int,
+            "boolean": str2bool,
+            "string": str,
+        }
+        return {field_name: {**field_definition, "cast_func": cast_map[field_definition.get("type", "string")]} for field_name, field_definition in fields.items()}
 
     @csrf_exempt
     def url_templates(self, request, pk=None):

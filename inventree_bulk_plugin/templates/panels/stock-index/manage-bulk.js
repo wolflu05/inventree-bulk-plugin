@@ -44,7 +44,14 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
   const hasChanged = useMemo(() => !isEqual(template, initialTemplate), [template, initialTemplate]);
   const create = template.id === null;
 
-  const generateKeys = useMemo(() => generateKeysForTemplateType[template.template_type] || {}, [template.template_type])
+  const [allGenerateKeys, setAllGenerateKeys] = useState({});
+
+  // fetch generate keys on initial render
+  useEffect(() => {
+    getGenerateKeysForTemplate().then((keys) => setAllGenerateKeys(keys));
+  }, []);
+
+  const generateKeys = useMemo(() => allGenerateKeys[template.template_type] || null, [allGenerateKeys, template.template_type])
 
   const saveOrUpdate = useCallback(() => {
     (async () => {
@@ -80,7 +87,7 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
     setSuccess("");
     setBtnPreviewLoading(true);
 
-    const res = await fetch("{% url 'plugin:inventree-bulk-plugin:parse' %}", {
+    const res = await fetch("{% url 'plugin:inventree-bulk-plugin:parse' %}" + `?template_type=${template.template_type}`, {
       method: "POST",
       body: JSON.stringify(beautifySchema(template.template))
     });
@@ -143,7 +150,7 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
       <${Input} label="Name" type="text" value=${template.name} onInput=${updateField("name")} />
       <${Input} label="Template type" type="select" value=${template.template_type} options=${templateTypeOptions} onInput=${updateField("template_type")} />
 
-      <${BulkDefinitionSchemaBuilder} schema=${template.template} setSchema=${updateTemplate} generateKeys=${generateKeys} />
+      ${generateKeys !== null && html`<${BulkDefinitionSchemaBuilder} schema=${template.template} setSchema=${updateTemplate} generateKeys=${generateKeys} />`}
 
       <div class="mt-3">
         ${success && html`<div class="alert alert-success">${success}</div>`}
