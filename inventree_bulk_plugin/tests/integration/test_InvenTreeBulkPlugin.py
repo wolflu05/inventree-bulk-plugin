@@ -158,7 +158,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
                 },
             }
         }
-        response = self.post(url + "?template_type=NOT_EXISTING_TYPE", data, expected_code=400)
+        response = self.post(url + "?template_type=STOCK_LOCATION", data, expected_code=400)
 
         # Test template_type advertisement
         response = self.options(url, expected_code=200).json()

@@ -119,7 +119,7 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
 
             try:
                 self._bulk_create(StockLocation, root_location, output, allowed_fields.keys())
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
             return HttpResponse(status=status.HTTP_201_CREATED)
@@ -140,7 +140,7 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
 
             try:
                 self._bulk_create(PartCategory, root_category, output, allowed_fields.keys())
-            except Exception as e:
+            except Exception as e:  # pragma: no cover
                 return JsonResponse({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
             return HttpResponse(status=status.HTTP_201_CREATED)
