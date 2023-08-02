@@ -59,13 +59,15 @@ function generateBulkCreateView({ target, createURL, name, defaultSchema = null,
 
       setSuccess(`Successfully parsed. This will generate ${data.length} ${name}.`);
 
+      const usedGenerateKeys = getUsedGenerateKeys(schema);
+
       const $table = $(tableSelector);
       $table.bootstrapTable("destroy");
       $table.bootstrapTable({
         data: data,
         idField: 'id',
         columns: [
-          ...Object.entries(generateKeys).map(([key, { name }]) => ({ field: key, title: name })),
+          ...Object.entries(generateKeys).filter(([key, _definition]) => usedGenerateKeys.includes(key)).map(([key, { name }]) => ({ field: key, title: name })),
           { field: 'path', title: 'Path' }
         ],
         treeShowField: 'name',

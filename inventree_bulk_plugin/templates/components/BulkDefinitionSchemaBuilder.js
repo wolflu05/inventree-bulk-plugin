@@ -32,6 +32,22 @@ const beautifySchema = (schema) => {
   }
 }
 
+const getUsedGenerateKeys = (schema) => {
+  const keys = new Set();
+
+  const collectKeys = (childSchema) => {
+    for(const k of Object.keys(childSchema.generate)) {
+      keys.add(k)
+    }
+    childSchema.childs.forEach(x => collectKeys(x));
+  }
+
+  collectKeys(schema.output);
+  schema.templates.forEach(x => collectKeys(x));
+
+  return [...keys];
+}
+
 // Components
 function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = {} }) {
   // initially populate schema if null

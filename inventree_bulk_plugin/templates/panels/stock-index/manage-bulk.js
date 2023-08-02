@@ -110,13 +110,15 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
 
     setSuccess(`Successfully parsed. This will generate ${data.length} items.`);
 
+    const usedGenerateKeys = getUsedGenerateKeys(template.template);
+
     const $table = $("#bulk-create-manage-preview-table");
     $table.bootstrapTable("destroy");
     $table.bootstrapTable({
       data: data,
       idField: 'id',
       columns: [
-        ...Object.entries(generateKeys).map(([key, { name }]) => ({ field: key, title: name })),
+        ...Object.entries(generateKeys).filter(([key, _definition]) => usedGenerateKeys.includes(key)).map(([key, { name }]) => ({ field: key, title: name })),
         { field: 'path', title: 'Path' }
       ],
       treeShowField: 'name',
