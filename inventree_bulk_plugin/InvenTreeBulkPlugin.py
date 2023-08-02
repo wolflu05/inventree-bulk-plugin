@@ -1,6 +1,7 @@
 import json
 
 from django.conf.urls import url
+from django.db import IntegrityError
 from django.http import JsonResponse, HttpResponse
 from django.views.decorators.csrf import csrf_exempt
 from django.forms.models import modelform_factory, model_to_dict
@@ -135,7 +136,10 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
             if error is not None:
                 return error
 
-            self._bulk_create(PartCategory, root_category, output, allowed_fields.keys())
+            try:
+                self._bulk_create(PartCategory, root_category, output, allowed_fields.keys())
+            except IntegrityError:
+                return JsonResponse({"error": "Default stock location not found"}, status=status.HTTP_400_BAD_REQUEST)
 
             return HttpResponse(status=status.HTTP_201_CREATED)
 
