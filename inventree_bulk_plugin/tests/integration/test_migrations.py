@@ -29,7 +29,7 @@ class TestForwardMigrations(MigratorTestCase):
         bulk_creation_template = self.old_state.apps.get_model('inventree_bulk_plugin', 'bulkCreationTemplate')
 
         simple_valid_generation_template = {
-            "version": "0.1.0",
+            "version": "1.0.0",
             "input": {},
             "templates": [],
             "output": {

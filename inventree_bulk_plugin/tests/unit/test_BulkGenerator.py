@@ -15,7 +15,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
         for dim, exp in dimensions:
             with self.subTest(f"test {dim} dimension"):
                 res = BulkGenerator({
-                    "version": "0.1.0",
+                    "version": "1.0.0",
                     "input": {},
                     "templates": [],
                     "output": {
@@ -34,7 +34,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
 
     def test_template(self):
         res = BulkGenerator({
-            "version": "0.1.0",
+            "version": "1.0.0",
             "input": {},
             "templates": [
                 {
@@ -106,7 +106,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
     def test_reference_undefined_template(self):
         with self.assertRaisesRegex(ValueError, "template Drawer is not defined"):
             BulkGenerator({
-                "version": "0.1.0",
+                "version": "1.0.0",
                 "input": {},
                 "templates": [],
                 "output": {
@@ -116,7 +116,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
 
     def test_without_dimensions(self):
         res = BulkGenerator({
-            "version": "0.1.0",
+            "version": "1.0.0",
             "input": {},
             "templates": [],
             "output": {
@@ -135,7 +135,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
 
     def test_input_variables(self):
         res = BulkGenerator({
-            "version": "0.1.0",
+            "version": "1.0.0",
             "input": {"a": "2", "b": "Hello"},
             "templates": [],
             "output": {
@@ -157,7 +157,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
     def test_invalid_template(self):
         with self.assertRaisesRegex(Exception, "1 validation error for BulkDefinitionSchema\noutput\n  output.dimensions.0: 'hello' is undefined"):
             BulkGenerator({
-                "version": "0.1.0",
+                "version": "1.0.0",
                 "input": {},
                 "templates": [],
                 "output": {
@@ -180,7 +180,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
             with self.subTest(name, template=template):
                 with self.assertRaisesRegex(error, error_regex):
                     BulkGenerator({
-                        "version": "0.1.0",
+                        "version": "1.0.0",
                         "input": {},
                         "templates": [],
                         "output": {
@@ -195,7 +195,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
 
     def test_merge_base_child_to_childs(self):
         res = BulkGenerator({
-            "version": "0.1.0",
+            "version": "1.0.0",
             "input": {},
             "templates": [],
             "output": {
@@ -217,7 +217,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
 
     def test_merge_base_child_to_childs_with_no_childs(self):
         res = BulkGenerator({
-            "version": "0.1.0",
+            "version": "1.0.0",
             "input": {},
             "templates": [],
             "output": {
@@ -237,7 +237,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
 
     def test_parent_name_match(self):
         res = BulkGenerator({
-            "version": "0.1.0",
+            "version": "1.0.0",
             "input": {},
             "templates": [],
             "output": {
@@ -264,7 +264,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
     def test_missing_child_match(self):
         with self.assertRaisesRegex(ValueError, "No match for 1"):
             BulkGenerator({
-                "version": "0.1.0",
+                "version": "1.0.0",
                 "input": {},
                 "templates": [],
                 "output": {
@@ -283,7 +283,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
     def test_error_in_parent_name_match(self):
         with self.assertRaisesRegex(ValueError, "Invalid generator template '{{something.not.existing}}'"):
             BulkGenerator({
-                "version": "0.1.0",
+                "version": "1.0.0",
                 "input": {},
                 "templates": [],
                 "output": {
@@ -301,7 +301,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
 
     def test_parent_context(self):
         res = BulkGenerator({
-            "version": "0.1.0",
+            "version": "1.0.0",
             "input": {},
             "templates": [],
             "output": {
@@ -321,7 +321,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
 
     def test_len_context_variable(self):
         res = BulkGenerator({
-            "version": "0.1.0",
+            "version": "1.0.0",
             "input": {},
             "templates": [],
             "output": {
@@ -340,7 +340,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
     def test_not_allowed_field(self):
         with self.assertRaisesRegex(ValueError, "'NOT_ALLOWED_KEY' is not allowed to be generated"):
             BulkGenerator({
-                "version": "0.1.0",
+                "version": "1.0.0",
                 "input": {},
                 "templates": [],
                 "output": {"generate": {"NOT_ALLOWED_KEY": "1"}, }
@@ -348,7 +348,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
 
     def test_cast_field(self):
         res = BulkGenerator({
-            "version": "0.1.0",
+            "version": "1.0.0",
             "input": {},
             "templates": [],
             "output": {"generate": {"number_field": "42"}, }
@@ -359,7 +359,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
     def test_required_field(self):
         with self.assertRaisesRegex(ValueError, "'required_field' is a required field, but template returned empty string"):
             BulkGenerator({
-                "version": "0.1.0",
+                "version": "1.0.0",
                 "input": {},
                 "templates": [],
                 "output": {"generate": {"required_field": ""}, }
@@ -367,7 +367,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "'name' is missing in generated keys"):
             BulkGenerator({
-                "version": "0.1.0",
+                "version": "1.0.0",
                 "input": {},
                 "templates": [],
                 "output": {"generate": {"description": ""}, }
@@ -375,7 +375,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
 
         with self.assertRaisesRegex(ValueError, "'name' is a required field, but template returned empty string"):
             BulkGenerator({
-                "version": "0.1.0",
+                "version": "1.0.0",
                 "input": {},
                 "templates": [],
                 "output": {"generate": {"name": "", "description": "AA"}, }

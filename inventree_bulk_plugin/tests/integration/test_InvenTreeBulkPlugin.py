@@ -35,7 +35,7 @@ class InvenTreeBulkPluginModelTestCase(TestCase):
             validate_template(schema)
 
         valid_schema = json.dumps({
-            "version": "0.1.0",
+            "version": "1.0.0",
             "input": {},
             "templates": [],
             "output": {
@@ -53,7 +53,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         super().setUp()
 
         self.simple_valid_generation_template = {
-            "version": "0.1.0",
+            "version": "1.0.0",
             "input": {},
             "templates": [],
             "output": {
@@ -66,7 +66,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         self.simple_valid_generation_template_json = json.dumps(self.simple_valid_generation_template)
 
         self.complex_valid_generation_template = {
-            "version": "0.1.0",
+            "version": "1.0.0",
             "input": {},
             "templates": [],
             "output": {
@@ -130,7 +130,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
 
         # There should be a 400 on invalid user input - invalid generation template
         data = {
-            "version": "0.1.0",
+            "version": "1.0.0",
             "input": {},
             "templates": [],
             "output": {
@@ -149,7 +149,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
 
         # If template_type is provided and exists, everything should work
         data = {
-            "version": "0.1.0",
+            "version": "1.0.0",
             "input": {},
             "templates": [],
             "output": {
@@ -189,7 +189,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
 
                 # generation without name should raise an error
                 schema = {
-                    "version": "0.1.0",
+                    "version": "1.0.0",
                     "input": {},
                     "templates": [],
                     "output": {"generate": {"description": "Test description"}}
