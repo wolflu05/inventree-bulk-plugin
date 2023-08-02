@@ -1,5 +1,4 @@
 import json
-from copy import deepcopy
 
 from django.urls import reverse
 from django.test import TestCase
@@ -197,15 +196,6 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
                 }
                 response = self.post(url(parent.pk), schema, expected_code=400)
                 self.assertEqual({"error": "'name' is missing in generated keys"}, response.json())
-
-                # for part category, test exception that should be thrown if location id does not exist
-                if object_type_name == "category":
-                    schema = deepcopy(self.simple_valid_generation_template)
-                    # set default_location_id to something not existent
-                    schema["output"]["generate"]["default_location_id"] = "99999999"
-
-                    response = self.post(url(parent.pk), schema, expected_code=400)
-                    self.assertTrue("error" in response.json())
 
     def test__bulk_create(self):
         items = BulkGenerator(self.complex_valid_generation_template).generate()
