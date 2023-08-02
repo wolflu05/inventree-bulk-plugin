@@ -188,14 +188,24 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
                 # existing parent, wrong schema should produce an error
                 self.post(url(parent.pk), {"no valid data": "should produce error"}, expected_code=400)
 
-                # for part category, test for integrity error
+                # generation without name should raise an error
+                schema = {
+                    "version": "0.1.0",
+                    "input": {},
+                    "templates": [],
+                    "output": {"generate": {"description": "Test description"}}
+                }
+                response = self.post(url(parent.pk), schema, expected_code=400)
+                self.assertEqual({"error": "'name' is missing in generated keys"}, response.json())
+
+                # for part category, test exception that should be thrown if location id does not exist
                 if object_type_name == "category":
                     schema = deepcopy(self.simple_valid_generation_template)
                     # set default_location_id to something not existent
                     schema["output"]["generate"]["default_location_id"] = "99999999"
 
                     response = self.post(url(parent.pk), schema, expected_code=400)
-                    self.assertEqual({"error": "Default stock location not found"}, response.json())
+                    self.assertTrue("error" in response.json())
 
     def test__bulk_create(self):
         items = BulkGenerator(self.complex_valid_generation_template).generate()

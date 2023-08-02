@@ -336,3 +336,28 @@ class BulkGeneratorTestCase(unittest.TestCase):
         }, {"number_field": {"cast_func": int}}).generate()
 
         self.assertEqual(res[0][0]["number_field"], 42)
+
+    def test_required_field(self):
+        with self.assertRaisesRegex(ValueError, "'required_field' is a required field, but template returned empty string"):
+            BulkGenerator({
+                "version": "0.1.0",
+                "input": {},
+                "templates": [],
+                "output": {"generate": {"required_field": ""}, }
+            }, {"required_field": {"required": True}}).generate()
+
+        with self.assertRaisesRegex(ValueError, "'name' is missing in generated keys"):
+            BulkGenerator({
+                "version": "0.1.0",
+                "input": {},
+                "templates": [],
+                "output": {"generate": {"description": ""}, }
+            }, {"name": {"required": True}}).generate()
+
+        with self.assertRaisesRegex(ValueError, "'name' is a required field, but template returned empty string"):
+            BulkGenerator({
+                "version": "0.1.0",
+                "input": {},
+                "templates": [],
+                "output": {"generate": {"name": "", "description": "AA"}, }
+            }, {"name": {"required": True}, "description": {}}).generate()

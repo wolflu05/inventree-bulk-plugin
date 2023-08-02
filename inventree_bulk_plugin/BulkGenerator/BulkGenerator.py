@@ -158,24 +158,43 @@ class BulkGenerator:
         return seq
 
     def compile_child_templates(self, child: BulkDefinitionChild):
+        # check required fields
+        if self.fields:
+            for k, v in self.fields.items():
+                if v.get("required", False) and k not in child.generate:
+                    raise ValueError(f"'{k}' is missing in generated keys")
+
+        def get_wrapper(key):
+            cast_func = None
+            field_required = False
+            if self.fields and (field := self.fields.get(key, None)):
+                if func := field.get("cast_func", None):
+                    cast_func = func
+                if required := field.get("required", None):
+                    field_required = required
+
+            def wrapper(v):
+                if field_required and v == "":
+                    raise ValueError(f"'{key}' is a required field, but template returned empty string")
+                if cast_func:
+                    return cast_func(v)
+                return v
+            return wrapper
+
         compiled_templates = {}
         for key, template_str in child.generate.items():
             if self.fields and key not in self.fields:
                 raise ValueError(f"'{key}' is not allowed to be generated")
 
-            cast_func = str
-            if self.fields and (func := self.fields.get(key, {}).get("cast_func", None)):
-                cast_func = func
-
             try:
-                compiled_templates[key] = Template(template_str).compile(), cast_func
+                compiled_templates[key] = Template(template_str).compile(), get_wrapper(key)
             except TemplateError as e:  # pragma: no cover
                 # catch this error in any case it bypasses validation somehow because an error is not handled during ast creation but occurred on compile
                 raise ValueError(f"Invalid generator template '{template_str}'\nException: {e}")
 
         def render(**ctx):
             try:
-                return {key: cast_func(template.render(**ctx)) for key, (template, cast_func) in compiled_templates.items()}
+                return {key: wrapper(template.render(**ctx)) for key, (template, wrapper) in compiled_templates.items()}
             except TemplateError as e:
                 raise ValueError(f"Exception: {e}")
 
