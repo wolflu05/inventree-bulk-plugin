@@ -3,12 +3,67 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![CI](https://github.com/wolflu05/inventree-bulk-plugin/actions/workflows/ci.yml/badge.svg)
 
-> [!WARNING]
-> This plugin is currently in beta because it needs to be properly tested to be used in production.
+This plugin helps you bulk create storage locations and part categories in [InvenTree](https://inventree.org/) by using customized naming strategies. That means you not only have the option to generate multidimensional* names for stock locations or part categories, but also have the option to save the templates for later usage if your storage room uses e.g. drawer towers, saved templates help to ensure naming consistency for all later added towers.
 
-A bulk creation plugin for [InvenTree](https://inventree.org), which helps you generating locations/categories in bulk by using customized naming strategies and ensure them along your complete storage tree.
+> [!NOTE]
+> multidimensional means that you are not limited to namings like `D1`,`D2`, .. but also something like `D1.A`, `D1.B`, `D2.A`, `D2.B`, ...
 
-## Installation
+## 🌟Screenshots
+
+<details open>
+<summary>This will generate the previous mentioned example:</summary>
+
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/f0cd29fc-50c0-4880-afa2-f3bd1c2cdaf7)
+
+</details>
+
+### 📄 Some more examples
+
+<details>
+<summary>But even nested generations don't stop you.</summary>
+
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/cd560237-94cb-485b-a1cc-cf9e7ab70335)
+
+</details>
+
+<details>
+<summary>And with parent name match, you can even generate different sub-locations depending of the name of the parent.</summary>
+
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/ebe53203-1682-4aea-be39-6e79e2d542f2)
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/61ef2fa4-d765-4043-89e3-99840181768e)
+
+</details>
+
+<details>
+<summary>Pad your numeric dimensions with zeros.</summary>
+
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/d90b42e5-eca8-433c-962f-05fbedc48f03)
+
+</details>
+
+<details>
+<summary>Extend from a template.</summary>
+
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/b9622a93-b6b3-4dc7-91f8-d8c145fbdd3a)
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/7a7fbc78-e9e9-471a-8427-8b4b15389a57)
+
+</details>
+
+<details>
+<summary>Use more generate keys.</summary>
+
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/81b4617a-24ef-49c3-8b5a-b4ef9bb3ebac)
+
+</details>
+
+<details>
+<summary>Using input to reuse a saved template.</summary>
+
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/8c56498b-c4a9-4a93-9a68-2ef87defe8da)
+
+</details>
+
+## ⚙️ Installation
 
 Install this plugin as follows:
 
@@ -20,7 +75,7 @@ Install this plugin as follows:
 
 4. Stop your server and run `invoke update` (for docker installs it is `docker-compose inventree-server invoke update`). This ensures that all migrations run and the static files get collected. You can now start your server again and start using the plugin.
 
-## Usage
+## 🏃 Usage
 
 ### Bulk create
 
@@ -52,14 +107,6 @@ The bulk creation editor helps you to define the generation schema.
 
 You can define key/value pairs of inputs which you can later reference in your schema via `{{inp.<key>}}`. This is useful for [saved templates](#saved-templates) to dynamically generate the amount of locations as you want, but still keep the structure.
 
-#### Settings
-
-- `Count from` - defines from where to start with counting numbers in dimensions.
-- `Leading zeros` - defines if it needs to add leading zeros to numbers to ensure consistent length.
-
-> [!NOTE]
-> :construction: These settings are currently not working - see [#18](https://github.com/wolflu05/inventree-bulk-plugin/issues/18)
-
 #### Templates
 
 You can define templates from which you can later extend in your output. Template values can also be overwritten.
@@ -71,7 +118,7 @@ For the rest of the fields see [output](#output).
 #### Output
 
 ##### Parent name match
-First child that matches the parent name matcher regex will be chosen for generating the child's for a specific parent.
+First child that matches the parent name matcher will be chosen for generating the child's for a specific parent. This must evaluate to something that can be casted to a boolean. You can use Jinja2 for dynamically decide based on the parent. E.g. `{{par.gen.name == "D1"}}`. The global jinja2 and `par` context is available here.
 
 ##### Extends
 Select a template to extend from
@@ -87,7 +134,7 @@ Ranges: _ranges are defined with a - in the middle_ E.g. `a-bx`<br/>
 Infinity: _infinity generators start with a *_ E.g. `*NUMERIC`<br/>
 
 **Available Generators:**<br/>
-Numeric generator: `*NUMERIC(start=0,end=10,step=2,count=5}` or `0-10(step=2}`<br/>
+Numeric generator: `*NUMERIC(start=0,end=10,step=2,count=5)` or `0-10(step=2}`<br/>
 Alpha generator: `*ALPHA(casing=upper|lower,start=A,end=F,step=2,count=3)` or `a-z(step=2)`<br/><br />
 
 Example: `1-3,hello,*NUMERIC(start=1,step=2,end=10),*ALPHA(casing=upper,end=B),A-D(step=2)`, this will generate the following dimension: `12,3,hello,1,3,5,7,9,A,B,A,C`.
@@ -97,7 +144,7 @@ Example: `1-3,hello,*NUMERIC(start=1,step=2,end=10),*ALPHA(casing=upper,end=B),A
 
 ##### Generate
 
-These fields my differ between stock location and part category. They correspond to the generated items property. For example "Generate Name" will be the name of the created location/category. 
+These fields my differ between stock location and part category. They correspond to the generated items property. For example "Name" will be the name of the created location/category. Fields like "Structural" must evaluate to something that ca be casted to a boolean (e.g. `true` or `false`).
 
 > [!NOTE]
 > **Extended Jinja2 context**:
@@ -113,7 +160,7 @@ These fields my differ between stock location and part category. They correspond
 
 Child's are a way to add some nesting to your bulk creation tree. You can use them for e.g. generating sections in every of your drawer. You can use the [Parent name match](#parent-name-match) option to add for your drawers named from `Drawer 1` - `Drawer 10` two sections while your other drawers have different sections. 
 
-## FAQ
+## ❓ FAQ
 
 #### Why does this plugin needs the App Mixin?
 
