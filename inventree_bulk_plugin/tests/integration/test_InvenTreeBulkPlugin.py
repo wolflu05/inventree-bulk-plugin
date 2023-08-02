@@ -1,4 +1,5 @@
 import json
+from copy import deepcopy
 
 from django.urls import reverse
 from django.test import TestCase
@@ -144,6 +145,27 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         # There should be a 400 on invalid user input - invalid json syntax
         response = self.post(url, "no json structure", expected_code=400)
 
+        # If template_type is provided, but does not exist, expect status code 400
+        response = self.post(url + "?template_type=NOT_EXISTING_TYPE", expected_code=400)
+
+        # If template_type is provided and exists, everything should work
+        data = {
+            "version": "0.1.0",
+            "input": {},
+            "templates": [],
+            "output": {
+                "generate": {
+                    "name": "AAA",
+                },
+            }
+        }
+        response = self.post(url + "?template_type=NOT_EXISTING_TYPE", data, expected_code=400)
+
+        # Test template_type advertisement
+        response = self.options(url, expected_code=200).json()
+        self.assertTrue("STOCK_LOCATION" in response)
+        self.assertTrue("PART_CATEGORY" in response)
+
     def test_url_bulk_create(self):
         objects = [("location", StockLocation), ("category", PartCategory)]
         for object_type_name, object_class in objects:
@@ -165,6 +187,15 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
 
                 # existing parent, wrong schema should produce an error
                 self.post(url(parent.pk), {"no valid data": "should produce error"}, expected_code=400)
+
+                # for part category, test for integrity error
+                if object_type_name == "category":
+                    schema = deepcopy(self.simple_valid_generation_template)
+                    # set default_location_id to something not existent
+                    schema["output"]["generate"]["default_location_id"] = "99999999"
+
+                    response = self.post(url(parent.pk), schema, expected_code=400)
+                    self.assertEqual({"error": "Default stock location not found"}, response.json())
 
     def test__bulk_create(self):
         items = BulkGenerator(self.complex_valid_generation_template).generate()
