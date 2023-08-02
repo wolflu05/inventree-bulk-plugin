@@ -4,6 +4,11 @@ const { render, h } = window.preact;
 const { useState, useCallback, useEffect, useMemo, useId, useImperativeHandle, useRef } = window.preactHooks;
 const html = window.htm.bind(h);
 
+const typeHelpTexts = {
+  "boolean": "This must evaluate to something that can be casted to a boolean (e.g. 'true' or 'false').",
+  "number": "This must evaluate to something that can be casted as number."
+}
+
 // helpers
 const beautifyChildSchema = (childSchema) => {
   const out = { ...childSchema };
@@ -25,6 +30,22 @@ const beautifySchema = (schema) => {
     templates: schema.templates.map(beautifyChildSchema),
     output: beautifyChildSchema(schema.output)
   }
+}
+
+const getUsedGenerateKeys = (schema) => {
+  const keys = new Set();
+
+  const collectKeys = (childSchema) => {
+    for(const k of Object.keys(childSchema.generate)) {
+      keys.add(k)
+    }
+    childSchema.childs.forEach(x => collectKeys(x));
+  }
+
+  collectKeys(schema.output);
+  schema.templates.forEach(x => collectKeys(x));
+
+  return [...keys];
 }
 
 // Components
@@ -196,12 +217,12 @@ function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generat
 
   const [remainingGenerateKeysValue, setRemainingGenerateKeysValue] = useState("");
 
-  const handleAddGenerateKey = useCallback(() => {
-    if (remainingGenerateKeysValue !== "") {
-      setGenerateValue(remainingGenerateKeysValue)({target: { value: "" } });
+  const handleAddGenerateKey = useCallback((key) => {
+    if (key !== "") {
+      setGenerateValue(key)({target: { value: "" } });
       setRemainingGenerateKeysValue("");
     }
-  }, [remainingGenerateKeysValue, setRemainingGenerateKeysValue, setGenerateValue]);
+  }, [setGenerateValue, setRemainingGenerateKeysValue]);
 
   const handleDeleteGenerateKey = useCallback((key) => () => {
     setChildSchema(s => ({...s, generate: Object.fromEntries(Object.entries(s.generate).filter(([k,_v]) => k !== key))}))
@@ -268,16 +289,15 @@ function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generat
           <h5>Generate</h5>
         <//>
       </div>
-      ${Object.entries(generateKeys).filter(([key, _definition]) => childSchema.generate[key] !== undefined).map(([key, { name, required }]) => html`
-        <${Input} label=${name} type="text" value=${childSchema.generate[key]} onInput=${setGenerateValue(key)} onDelete=${required ? null : handleDeleteGenerateKey(key)} />
+      ${Object.entries(generateKeys).filter(([key, _definition]) => childSchema.generate[key] !== undefined).map(([key, { name, required, type }]) => html`
+        <${Input} label=${name} tooltip=${typeHelpTexts[type]} type="text" value=${childSchema.generate[key]} onInput=${setGenerateValue(key)} onDelete=${required ? null : handleDeleteGenerateKey(key)} />
       `)}
       ${remainingGenerateKeys.length > 0 && html`
-        <div style="display: flex; max-width: 250px; gap: 4px;">
-          <select class="form-select form-select-sm" value=${remainingGenerateKeysValue} onInput=${(e) => setRemainingGenerateKeysValue(e.target.value)}>
-            <option selected value="">Select a key</option>
+        <div style="display: flex; max-width: 200px;">
+          <select class="form-select form-select-sm" value=${remainingGenerateKeysValue} onInput=${(e) => handleAddGenerateKey(e.target.value)}>
+            <option selected value="">Add key</option>
             ${remainingGenerateKeys.map(([key, { name }]) => html`<option value=${key}>${name}</option>`)}
           </select>
-          <button class="btn btn-outline-${remainingGenerateKeysValue === "" ? "secondary" : "primary"} btn-sm" onClick=${handleAddGenerateKey} disabled=${remainingGenerateKeysValue === ""}>+</button>
         </div>
       `}
 

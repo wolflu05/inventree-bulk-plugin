@@ -3,13 +3,14 @@ const templateTypeOptions = {
   STOCK_LOCATION: "Stock Location",
 }
 
-const generateKeysForTemplateType = {
-  PART_CATEGORY: {
-    name: { name: "Name", required: true },
-    description: { name: "Description" }
-  },
-  STOCK_LOCATION: {
-    name: { name: "Name", required: true },
-    description: { name: "Description" }
-  },
+const getGenerateKeysForTemplate = async () => {
+  const res = await fetch("{% url 'plugin:inventree-bulk-plugin:parse' %}", {
+    method: "OPTIONS",
+  });
+  return await res.json();
+}
+
+const getGenerateKeysForTemplateType = async (type) => {
+  const keys = await getGenerateKeysForTemplate();
+  return keys[type];
 }

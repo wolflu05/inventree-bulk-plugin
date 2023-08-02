@@ -317,3 +317,47 @@ class BulkGeneratorTestCase(unittest.TestCase):
             self.assertEqual("20", e['length'])
             self.assertEqual("10", e['dim1len'])
             self.assertEqual("2", e['dim2len'])
+
+    def test_not_allowed_field(self):
+        with self.assertRaisesRegex(ValueError, "'NOT_ALLOWED_KEY' is not allowed to be generated"):
+            BulkGenerator({
+                "version": "0.1.0",
+                "input": {},
+                "templates": [],
+                "output": {"generate": {"NOT_ALLOWED_KEY": "1"}, }
+            }, {"BBBB": {}}).generate()
+
+    def test_cast_field(self):
+        res = BulkGenerator({
+            "version": "0.1.0",
+            "input": {},
+            "templates": [],
+            "output": {"generate": {"number_field": "42"}, }
+        }, {"number_field": {"cast_func": int}}).generate()
+
+        self.assertEqual(res[0][0]["number_field"], 42)
+
+    def test_required_field(self):
+        with self.assertRaisesRegex(ValueError, "'required_field' is a required field, but template returned empty string"):
+            BulkGenerator({
+                "version": "0.1.0",
+                "input": {},
+                "templates": [],
+                "output": {"generate": {"required_field": ""}, }
+            }, {"required_field": {"required": True}}).generate()
+
+        with self.assertRaisesRegex(ValueError, "'name' is missing in generated keys"):
+            BulkGenerator({
+                "version": "0.1.0",
+                "input": {},
+                "templates": [],
+                "output": {"generate": {"description": ""}, }
+            }, {"name": {"required": True}}).generate()
+
+        with self.assertRaisesRegex(ValueError, "'name' is a required field, but template returned empty string"):
+            BulkGenerator({
+                "version": "0.1.0",
+                "input": {},
+                "templates": [],
+                "output": {"generate": {"name": "", "description": "AA"}, }
+            }, {"name": {"required": True}, "description": {}}).generate()

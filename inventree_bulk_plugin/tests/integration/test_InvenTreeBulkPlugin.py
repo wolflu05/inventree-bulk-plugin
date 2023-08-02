@@ -144,6 +144,27 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         # There should be a 400 on invalid user input - invalid json syntax
         response = self.post(url, "no json structure", expected_code=400)
 
+        # If template_type is provided, but does not exist, expect status code 400
+        response = self.post(url + "?template_type=NOT_EXISTING_TYPE", expected_code=400)
+
+        # If template_type is provided and exists, everything should work
+        data = {
+            "version": "0.1.0",
+            "input": {},
+            "templates": [],
+            "output": {
+                "generate": {
+                    "name": "AAA",
+                },
+            }
+        }
+        response = self.post(url + "?template_type=STOCK_LOCATION", data, expected_code=200)
+
+        # Test template_type advertisement
+        response = self.options(url, expected_code=200).json()
+        self.assertTrue("STOCK_LOCATION" in response)
+        self.assertTrue("PART_CATEGORY" in response)
+
     def test_url_bulk_create(self):
         objects = [("location", StockLocation), ("category", PartCategory)]
         for object_type_name, object_class in objects:
@@ -165,6 +186,16 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
 
                 # existing parent, wrong schema should produce an error
                 self.post(url(parent.pk), {"no valid data": "should produce error"}, expected_code=400)
+
+                # generation without name should raise an error
+                schema = {
+                    "version": "0.1.0",
+                    "input": {},
+                    "templates": [],
+                    "output": {"generate": {"description": "Test description"}}
+                }
+                response = self.post(url(parent.pk), schema, expected_code=400)
+                self.assertEqual({"error": "'name' is missing in generated keys"}, response.json())
 
     def test__bulk_create(self):
         items = BulkGenerator(self.complex_valid_generation_template).generate()
