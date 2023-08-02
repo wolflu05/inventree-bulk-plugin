@@ -41,6 +41,8 @@ function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = {} }) {
     }
   }, [schema]);
 
+  const firstUpdate = useRef(true);
+
   const setChildSchema = useCallback((newSchema) => setSchema(s =>
     ({ ...s, output: newSchema(s.output) })), [setSchema]);
     
@@ -63,8 +65,9 @@ function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = {} }) {
   }, [input, setSchema]);
   // load input on initial load
   useEffect(() => {
-    if(input.length === 0 && schema?.input && Object.keys(schema.input).length !== 0) {
+    if(firstUpdate.current && schema?.input && Object.keys(schema.input).length !== 0) {
       setInput(Object.entries(schema.input).map(([key, value]) => ({ key, value })));
+      firstUpdate.current = false;
     }
   }, [schema?.input, input, setInput]);
 
@@ -172,19 +175,37 @@ function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generat
         parent_name_match: ".*",
         ...(addNameField ? {name: ""} : {}),
         ...(extendsKeys ? {extends: ""} : {}),
-        dimensions: [],
-        count: [],
-        generate: Object.fromEntries(Object.keys(generateKeys).map(k => [k, ""])),
+        dimensions: [""],
+        count: [""],
+        generate: Object.fromEntries(Object.entries(generateKeys).filter(([_k,{ required }]) => !!required).map(([k,_v]) => [k, ""])),
         childs: []
       }))
     }
-  }, [childSchema, generateKeys])
+  }, [childSchema, generateKeys]);
 
   // setValue callback for inputs, accepts key and event
   const setValue = useCallback((key) => (e) => setChildSchema(s => ({ ...s, [key]: e.target.value })), [setChildSchema]);
   
   // set a generated value by key and event
   const setGenerateValue = useCallback((key) => (e) => setChildSchema(s => ({ ...s, generate: { ...s.generate, [key]: e.target.value }})), [setChildSchema]);
+
+  const remainingGenerateKeys = useMemo(() => {
+    const currentKeys = Object.keys(childSchema?.generate || {});
+    return Object.entries(generateKeys).filter(([k,_v]) => !currentKeys.includes(k));
+  }, [generateKeys, childSchema?.generate]);
+
+  const [remainingGenerateKeysValue, setRemainingGenerateKeysValue] = useState("");
+
+  const handleAddGenerateKey = useCallback(() => {
+    if (remainingGenerateKeysValue !== "") {
+      setGenerateValue(remainingGenerateKeysValue)({target: { value: "" } });
+      setRemainingGenerateKeysValue("");
+    }
+  }, [remainingGenerateKeysValue, setRemainingGenerateKeysValue, setGenerateValue]);
+
+  const handleDeleteGenerateKey = useCallback((key) => () => {
+    setChildSchema(s => ({...s, generate: Object.fromEntries(Object.entries(s.generate).filter(([k,_v]) => k !== key))}))
+  });
   
   // dimensions
   const setDimension = useCallback((key) => (i) => (newValue) => setChildSchema(s => {
@@ -215,29 +236,53 @@ function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generat
     setChildSchema(s => ({ ...s, childs: s.childs.filter((_,i) => i !== n) })
   ), [setChildSchema]);
 
+  // collapsable handling for advanced child options
+  const id = useId();
+  const outputAdvancedId = `bulk-child-schema-editor-${id}`;
+  const [outputAdvancedState, setOutputAdvancedState] = useState(false);
+
+  const onOutputAdvanceToggle = useCallback(() => {
+    setOutputAdvancedState(oldState => {
+      $(`#${outputAdvancedId}`).collapse(!oldState ? "show" : "hide");
+      return !oldState;
+    });
+  }, []);
+
   if (childSchema === null) {
     return "";
   }
 
   return html`
     <div class="">
-      <${Input} label="Parent name match" tooltip="First child that matches the parent name matcher will be choosen for generating the childs for a specific parent" type="text" value=${childSchema.parent_name_match} onInput=${setValue("parent_name_match")} />
-      ${extendsKeys && html`<${Input} label="Extends" tooltip="Choose to extend from a template" type="select" options=${extendsKeys} value=${childSchema.extends} onInput=${setValue("extends")} />`}
-      <${Input} label="Dimensions" tooltip="A childs naming convention could have multiple dimensions where it is counting in" type="array" onDelete=${removeDimension} value=${childSchema.dimensions} onInput=${setDimension("dimensions")} />
+      <${Input} label="Dimensions" tooltip="A childs naming convention could have multiple dimensions where it is counting in" type="array" onDelete=${removeDimension} value=${childSchema.dimensions} onInput=${setDimension("dimensions")} onAdd=${addDimension}/>
       <${Input} label="Count" tooltip="Limit the amount of generated items for the individual dimension" type="array" value=${childSchema.count} onInput=${setDimension("count")} />
-      <button onClick=${addDimension} class="btn btn-outline-primary btn-sm">Add dimension</button>
-      
-      <div class="mt-4">
-        <${Tooltip} text="You can use {dim.x} as a placeholder for the generated output of the dimension and {inp.KEY} for replacing with the given input value.">
-          <h5>Generate</h5>
-          <//>
-      </div>
-      ${Object.entries(generateKeys).map(([key, name]) => html`
-        <${Input} label="Generate ${name}" type="text" value=${childSchema.generate[key]} onInput=${setGenerateValue(key)} />
-      `)}
 
-      <div class="ms-4 mt-2">
-        <h5>Childs</h5>
+      <h6 class="user-select-none collapsable-heading ${outputAdvancedState ? "active" : ""}" role="button" onClick=${onOutputAdvanceToggle}>Advanced</h6>
+      <div class="collapse" id=${outputAdvancedId}>
+        <${Input} label="Parent name match" tooltip="First child that matches the parent name matcher will be chosen for generating the childs for a specific parent" type="text" value=${childSchema.parent_name_match} onInput=${setValue("parent_name_match")} />
+        ${extendsKeys && html`<${Input} label="Extends" tooltip="Choose to extend from a template" type="select" options=${extendsKeys} value=${childSchema.extends} onInput=${setValue("extends")} />`}
+      </div>
+      
+      <div class="mt-3">
+        <${Tooltip} text="You can use \{\{dim.x\}\} as a placeholder for the generated output of the dimension. For more info see the Readme.">
+          <h5>Generate</h5>
+        <//>
+      </div>
+      ${Object.entries(generateKeys).filter(([key, _definition]) => childSchema.generate[key] !== undefined).map(([key, { name, required }]) => html`
+        <${Input} label=${name} type="text" value=${childSchema.generate[key]} onInput=${setGenerateValue(key)} onDelete=${required ? null : handleDeleteGenerateKey(key)} />
+      `)}
+      ${remainingGenerateKeys.length > 0 && html`
+        <div style="display: flex; max-width: 250px; gap: 4px;">
+          <select class="form-select form-select-sm" value=${remainingGenerateKeysValue} onInput=${(e) => setRemainingGenerateKeysValue(e.target.value)}>
+            <option selected value="">Select a key</option>
+            ${remainingGenerateKeys.map(([key, { name }]) => html`<option value=${key}>${name}</option>`)}
+          </select>
+          <button class="btn btn-outline-${remainingGenerateKeysValue === "" ? "secondary" : "primary"} btn-sm" onClick=${handleAddGenerateKey} disabled=${remainingGenerateKeysValue === ""}>+</button>
+        </div>
+      `}
+
+      <h5 class="mt-3">Childs</h5>
+      <div class="ms-3">
         ${childSchema.childs.map((child, i) => html`
           <div class="card mb-2">
             <div class="d-flex justify-content-between">
@@ -250,8 +295,8 @@ function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generat
             </div>
           </div>
         `)}
-        <button onClick=${addChild} class="btn btn-outline-primary btn-sm">Add child</button>
       </div>
+      <button onClick=${addChild} class="btn btn-outline-primary btn-sm">Add child</button>
     </div>
   `;
 }
@@ -269,8 +314,9 @@ function Input({ type, label, tooltip, options, ...inputProps }) {
       ${(() => {
           if (["text", "email", "number"].includes(type)) {
             return html`
-              <div class="col-sm-10">
+              <div class="col-sm-10 input-group" style="flex: 1;">
                 <input type=${type} class="form-control form-control-sm" id="input-${id}" ...${inputProps} />
+                ${inputProps.onDelete && html`<button class="btn btn-outline-danger btn-sm" onClick=${inputProps.onDelete}>X</button>`}
               </div>
             `;
           } else if (type === "checkbox") {
@@ -294,11 +340,12 @@ function Input({ type, label, tooltip, options, ...inputProps }) {
               <div class="col-sm-10">
                 <div class="d-flex flex-row flex-nowrap" style="gap: 4px">
                   ${inputProps.value.map((v, i) => html`
-                    <div class="input-group" style="max-width: 200px">
+                    <div class="input-group" style=${`max-width: 350px; ${!inputProps.onAdd && inputProps.value.length === i+1 ? "margin-right: 31px;" : ""}`}>
                       <input type="text" class="form-control form-control-sm" id="input-${id}-${i}" value=${v} onInput=${(e) => inputProps.onInput(i)(_=>e.target.value)} />
                       ${inputProps.onDelete && html`<button class="btn btn-outline-danger btn-sm" onClick=${inputProps.onDelete(i)}>X</button>`}
                     </div>
                   `)}
+                  ${inputProps.onAdd && html`<button class="btn btn-outline-primary btn-sm" onClick=${() => inputProps.onAdd()}>+</button>`}
                 </div>
               </div>
             `;
@@ -350,6 +397,28 @@ const styles = `
 .preact-tooltip:hover .preact-tooltiptext {
   visibility: visible;
   opacity: 1;
+}
+
+.collapsable-heading {
+  position: relative;
+  margin-left: 12px;
+}
+
+.collapsable-heading:before {
+  position: absolute;
+  left: -11px;
+  top: 6px;
+  content: "";
+  display: block;
+  width: 6px;
+  height: 6px;
+  border-top: 2px solid #68686a;
+  border-left: 2px solid #68686a;
+  transform: rotate(135deg);
+  transition: all 0.5s;
+}
+.collapsable-heading.active:before {
+	transform: rotate(225deg);
 }
 `;
 const styleSheet = document.createElement("style");

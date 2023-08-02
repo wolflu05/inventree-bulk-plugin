@@ -4,6 +4,12 @@ const templateTypeOptions = {
 }
 
 const generateKeysForTemplateType = {
-  PART_CATEGORY: { name: "Name", description: "Description" },
-  STOCK_LOCATION: { name: "Name", description: "Description" },
+  PART_CATEGORY: {
+    name: { name: "Name", required: true },
+    description: { name: "Description" }
+  },
+  STOCK_LOCATION: {
+    name: { name: "Name", required: true },
+    description: { name: "Description" }
+  },
 }
