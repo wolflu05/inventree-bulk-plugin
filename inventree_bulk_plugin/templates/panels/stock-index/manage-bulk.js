@@ -109,7 +109,7 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
       data: data,
       idField: 'id',
       columns: [
-        ...Object.entries(generateKeys).map(([key, name]) => ({ field: key, title: name })),
+        ...Object.entries(generateKeys).map(([key, { name }]) => ({ field: key, title: name })),
         { field: 'path', title: 'Path' }
       ],
       treeShowField: 'name',
@@ -141,7 +141,7 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
       <h5>${create ? "Create" : "Edit"} ${!create ? "\"" + template.name + "\" " : ""}template</h5>
 
       <${Input} label="Name" type="text" value=${template.name} onInput=${updateField("name")} />
-      <${Input} label="Name" type="select" value=${template.template_type} options=${templateTypeOptions} onInput=${updateField("template_type")} />
+      <${Input} label="Template type" type="select" value=${template.template_type} options=${templateTypeOptions} onInput=${updateField("template_type")} />
 
       <${BulkDefinitionSchemaBuilder} schema=${template.template} setSchema=${updateTemplate} generateKeys=${generateKeys} />
 
