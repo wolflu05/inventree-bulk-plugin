@@ -134,7 +134,7 @@ Ranges: _ranges are defined with a - in the middle_ E.g. `a-bx`<br/>
 Infinity: _infinity generators start with a *_ E.g. `*NUMERIC`<br/>
 
 **Available Generators:**<br/>
-Numeric generator: `*NUMERIC(start=0,end=10,step=2,count=5}` or `0-10(step=2}`<br/>
+Numeric generator: `*NUMERIC(start=0,end=10,step=2,count=5)` or `0-10(step=2}`<br/>
 Alpha generator: `*ALPHA(casing=upper|lower,start=A,end=F,step=2,count=3)` or `a-z(step=2)`<br/><br />
 
 Example: `1-3,hello,*NUMERIC(start=1,step=2,end=10),*ALPHA(casing=upper,end=B),A-D(step=2)`, this will generate the following dimension: `12,3,hello,1,3,5,7,9,A,B,A,C`.
