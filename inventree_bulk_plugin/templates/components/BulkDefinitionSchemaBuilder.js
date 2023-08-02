@@ -193,7 +193,7 @@ function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generat
   useEffect(() => {
     if (childSchema === null) {
       setChildSchema(_=>({
-        parent_name_match: ".*",
+        parent_name_match: "true",
         ...(addNameField ? {name: ""} : {}),
         ...(extendsKeys ? {extends: ""} : {}),
         dimensions: [""],
@@ -280,7 +280,7 @@ function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generat
 
       <h6 class="user-select-none collapsable-heading ${outputAdvancedState ? "active" : ""}" role="button" onClick=${onOutputAdvanceToggle}>Advanced</h6>
       <div class="collapse" id=${outputAdvancedId}>
-        <${Input} label="Parent name match" tooltip="First child that matches the parent name matcher will be chosen for generating the childs for a specific parent" type="text" value=${childSchema.parent_name_match} onInput=${setValue("parent_name_match")} />
+        <${Input} label="Parent name match" tooltip="First child that matches the parent name matcher will be chosen for generating the childs for a specific parent. Must evalueate to something that can be casted to a boolean." type="text" value=${childSchema.parent_name_match} onInput=${setValue("parent_name_match")} />
         ${extendsKeys && html`<${Input} label="Extends" tooltip="Choose to extend from a template" type="select" options=${extendsKeys} value=${childSchema.extends} onInput=${setValue("extends")} />`}
       </div>
       
