@@ -1,5 +1,4 @@
 import itertools
-import re
 from typing import Any, Iterable
 
 from jinja2.exceptions import TemplateError
@@ -136,8 +135,12 @@ class BulkGenerator:
 
             # search for matching child
             for c in child.childs:
-                if not re.match(c.parent_name_match, generated[0]['name']):
-                    continue
+                try:
+                    match = Template(c.parent_name_match).compile().render(**default_context, par=child_ctx[i])
+                    if match.lower() not in ['1', 'y', 'yes', 't', 'true', 'ok', 'on']:
+                        continue
+                except TemplateError as e:
+                    raise ValueError(f"Invalid generator template '{c.parent_name_match}'\nException: {e}")
 
                 has_matched = True
 

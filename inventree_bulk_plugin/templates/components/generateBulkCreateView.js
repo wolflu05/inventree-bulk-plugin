@@ -92,7 +92,7 @@ function generateBulkCreateView({ target, createURL, name, defaultSchema = null,
       });
 
       setBtnPreviewLoading(false);
-    }, [schema]);
+    }, [schema, generateKeys]);
 
     const onCreate = useCallback(async () => {
       setError("");

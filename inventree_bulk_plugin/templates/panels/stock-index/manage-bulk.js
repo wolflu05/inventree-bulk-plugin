@@ -143,7 +143,7 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
     });
 
     setBtnPreviewLoading(false);
-  }, [template.template]);
+  }, [template, generateKeys]);
 
   return html`
     <div>

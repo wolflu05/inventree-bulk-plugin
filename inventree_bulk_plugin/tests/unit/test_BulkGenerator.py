@@ -246,11 +246,11 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 "generate": {"name": "{{dim.1}}"},
                 "childs": [
                     {
-                        "parent_name_match": "[0-4]",
+                        "parent_name_match": "{{0 <= par.dim.1|int <= 4}}",
                         "generate": {"a": "first"}
                     },
                     {
-                        "parent_name_match": "[5-9]",
+                        "parent_name_match": "{{5 <= par.dim.1|int <= 9}}",
                         "generate": {"a": "second"}
                     }
                 ]
@@ -273,7 +273,26 @@ class BulkGeneratorTestCase(unittest.TestCase):
                     "generate": {"name": "{{dim.1}}"},
                     "childs": [
                         {
-                            "parent_name_match": "this pattern wont match",
+                            "parent_name_match": "false",
+                            "generate": {"a": "first"}
+                        },
+                    ]
+                }
+            }).generate()
+
+    def test_error_in_parent_name_match(self):
+        with self.assertRaisesRegex(ValueError, "Invalid generator template '{{something.not.existing}}'"):
+            BulkGenerator({
+                "version": "0.1.0",
+                "input": {},
+                "templates": [],
+                "output": {
+                    "dimensions": ["*NUMERIC"],
+                    "count": [9],
+                    "generate": {"name": "{{dim.1}}"},
+                    "childs": [
+                        {
+                            "parent_name_match": "{{something.not.existing}}",
                             "generate": {"a": "first"}
                         },
                     ]
