@@ -54,7 +54,7 @@ function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = {} }) {
   useEffect(() => {
     if (schema === null) {
       setSchema({
-        version: "0.1.0",
+        version: "1.0.0",
         input: {},
         templates: [],
         output: null,
