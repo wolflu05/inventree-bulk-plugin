@@ -59,8 +59,7 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
             panels.append({
                 'title': 'Manage bulk creation',
                 'icon': 'fas fa-tools',
-                'content_template': 'panels/stock-index/manage-bulk.html',
-                'javascript_template': 'panels/stock-index/manage-bulk.js',
+                'content': '{% include "setup-preact.html" with page="manage-bulk" ctxId="" %}',
                 'description': 'Manage bulk creation',
             })
 
@@ -68,8 +67,7 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
             panels.append({
                 'title': 'Bulk creation',
                 'icon': 'fas fa-tools',
-                'content_template': 'panels/stock-location-detail/create-bulk.html',
-                'javascript_template': 'panels/stock-location-detail/create-bulk.js',
+                'content': '{% include "setup-preact.html" with page="stock-location-detail" ctxId=location.id %}',
                 'description': 'Bulk creation tools',
             })
 
@@ -77,8 +75,7 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
             panels.append({
                 'title': 'Bulk creation',
                 'icon': 'fas fa-tools',
-                'content_template': 'panels/category-detail/create-bulk.html',
-                'javascript_template': 'panels/category-detail/create-bulk.js',
+                'content': '{% include "setup-preact.html" with page="category-detail" ctxId=category.id %}',
                 'description': 'Bulk creation tools',
             })
 

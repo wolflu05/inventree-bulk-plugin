@@ -1,0 +1,20 @@
+{
+  "name": "frontend",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build --emptyOutDir",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "preact": "^10.16.0"
+  },
+  "devDependencies": {
+    "@preact/preset-vite": "^2.5.0",
+    "@types/jquery": "^3.5.16",
+    "typescript": "^5.0.2",
+    "vite": "^4.4.5"
+  }
+}
