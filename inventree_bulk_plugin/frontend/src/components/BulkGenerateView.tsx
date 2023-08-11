@@ -175,7 +175,7 @@ export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultS
         {error && <div class="alert alert-danger">{error}</div>}
 
         <button type="button" class="btn btn-primary" onClick={onPreview} disabled={btnPreviewLoading}>
-          <span class="spinner-border spinner-border-sm loadingindicator me-1" style={btnPreviewLoading ? 'display: inline-block;' : ''} role="status" aria-hidden="true" id="loadingindicator-preview"></span>
+          <span class="spinner-border spinner-border-sm me-1" style={`display: ${btnPreviewLoading ? 'inline-block' : 'none'};`} role="status" aria-hidden="true" id="loadingindicator-preview"></span>
           Preview
         </button>
         <button type="button" class="btn btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#bulkCreateModal">
@@ -196,7 +196,7 @@ export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultS
             <div class="modal-footer">
               <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" disabled={btnCreateLoading}>Close</button>
               <button type="button" class="btn btn-primary" onClick={onCreate} disabled={btnCreateLoading}>
-                <span class="spinner-border spinner-border-sm loadingindicator me-1" style={btnCreateLoading ? 'display: inline-block;' : ''} role="status" aria-hidden="true" id="loadingindicator-create"></span>
+                <span class="spinner-border spinner-border-sm me-1" style={`display: ${btnCreateLoading ? 'inline-block' : 'none'};`} role="status" aria-hidden="true" id="loadingindicator-create"></span>
                 Bulk generate
               </button>
             </div>

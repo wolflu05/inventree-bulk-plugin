@@ -1,5 +1,5 @@
 import { render as preact_render } from "preact";
-import { BulkGenerateView } from "../components/generateBulkCreateView";
+import { BulkGenerateView } from "../components/BulkGenerateView";
 import { PageRenderProps, TemplateType } from "../utils/types";
 
 export function render({ target, ctxId }: PageRenderProps) {

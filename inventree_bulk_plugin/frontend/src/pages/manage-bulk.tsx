@@ -2,7 +2,8 @@ import { render as preact_render, JSX } from 'preact'
 import { StateUpdater, useCallback, useEffect, useMemo, useState } from "preact/hooks";
 import { beautifySchema, getCounter, getUsedGenerateKeys, isEqual, toFlat } from "../utils";
 import { defaultSchema, getGenerateKeysForTemplate, templateTypeOptions } from "../utils/constants";
-import { BulkDefinitionSchemaBuilder, Input } from "../components/BulkDefinitionSchemaBuilder";
+import { BulkDefinitionSchemaBuilder } from "../components/BulkDefinitionSchemaBuilder";
+import { Input } from "../components/Input";
 import { BulkDefinitionSchema, GenerateKeys, PageRenderProps, TemplateModel, TemplateType } from "../utils/types";
 
 interface EditFormProps {
@@ -137,7 +138,7 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
             <button class={"btn " + (!hasChanged ? 'btn-outline-secondary' : 'btn-outline-success')} onClick={saveOrUpdate} disabled={!hasChanged}>{create ? "Create" : "Update"}</button>
             {!create && <button class={"btn " + (!hasChanged ? 'btn-outline-secondary' : 'btn-outline-danger')} onClick={handleReset} disabled={!hasChanged}>Reset</button>}
             <button type="button" class="btn btn-primary" onClick={showPreview} disabled={btnPreviewLoading}>
-                <span class="spinner-border spinner-border-sm loadingindicator me-1" style={btnPreviewLoading ? 'display: inline-block;' : ''} role="status" aria-hidden="true" id="loadingindicator-preview"></span>
+                <span class="spinner-border spinner-border-sm me-1" style={`display: ${btnPreviewLoading ? 'inline-block' : 'none'};`} role="status" aria-hidden="true" id="loadingindicator-preview"></span>
                 Preview
             </button>
         </div>
