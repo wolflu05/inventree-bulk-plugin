@@ -16,8 +16,11 @@ export default defineConfig({
       input: inputs,
       output: {
         dir: resolve(__dirname, "../static/inventree-bulk-plugin/dist"),
-        entryFileNames: "[name].js"
+        entryFileNames: "[name].js",
+        assetFileNames: "assets/[name].[ext]"
       },
-    }
+      preserveEntrySignatures: "exports-only"
+    },
+    cssCodeSplit: false
   }
 })

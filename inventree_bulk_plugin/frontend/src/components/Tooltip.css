@@ -3,7 +3,7 @@
     position: relative;
     display: inline-block;
 }
-  
+
 .preact-tooltip .preact-tooltiptext {
     visibility: hidden;
     width: 350px;
