@@ -1,3 +1,5 @@
+import { BulkDefinitionChild, BulkDefinitionSchema, BulkGenerateAPIResult } from "./types";
+
 export const isEqual = (x: any, y: any): boolean => {
     if (x === y) return true;
 
@@ -27,22 +29,19 @@ export const isEqual = (x: any, y: any): boolean => {
     return false;
 };
 
-export const beautifyChildSchema = (childSchema) => {
+export const beautifyChildSchema = <T extends BulkDefinitionChild>(childSchema: T): T => {
     const out = { ...childSchema };
 
-    for (const k of ["parent_name_match", "extends"]) {
-        if (out[k] === "") {
-            delete out[k];
-        }
-    }
+    if (out.parent_name_match === "") delete out.parent_name_match;
+    if (out.extends === "") delete out.extends;
 
     out.count = childSchema.count.map(c => c || null);
-    out.childs = childSchema.childs.map(beautifyChildSchema);
+    out.childs = childSchema.childs?.map(beautifyChildSchema);
 
     return out;
 };
 
-export const beautifySchema = (schema) => {
+export const beautifySchema = (schema: BulkDefinitionSchema): BulkDefinitionSchema => {
     return {
         ...schema,
         templates: schema.templates.map(beautifyChildSchema),
@@ -50,14 +49,14 @@ export const beautifySchema = (schema) => {
     }
 }
 
-export const getUsedGenerateKeys = (schema) => {
-    const keys = new Set();
+export const getUsedGenerateKeys = (schema: BulkDefinitionSchema) => {
+    const keys = new Set<string>();
 
-    const collectKeys = (childSchema) => {
+    const collectKeys = (childSchema: BulkDefinitionChild) => {
         for (const k of Object.keys(childSchema.generate)) {
             keys.add(k)
         }
-        childSchema.childs.forEach(x => collectKeys(x));
+        childSchema.childs?.forEach(x => collectKeys(x));
     }
 
     collectKeys(schema.output);
@@ -65,3 +64,11 @@ export const getUsedGenerateKeys = (schema) => {
 
     return [...keys];
 }
+
+export const getCounter = (i = 1) => () => i++;
+
+export const toFlat = (data: BulkGenerateAPIResult, counter: () => number, pid = 0, pa = "...") => data.flatMap(([parent, childs]): Array<{ id: number, pid: number, path: string, [key: string]: number | string | boolean }> => {
+    const id = counter();
+    const path = `${pa}/${parent.name}`
+    return [{ ...parent, id, pid, path }, ...toFlat(childs, counter, id, path)]
+});

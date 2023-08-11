@@ -1,43 +1,36 @@
-import { useState, useCallback, useEffect, useMemo, useId, useRef } from "preact/hooks"
+import { useState, useCallback, useEffect, useMemo, useId, useRef, StateUpdater } from "preact/hooks"
+import { BulkDefinitionChild, BulkDefinitionChildTemplate, BulkDefinitionSchema, GenerateKeys } from "../utils/types";
+import { ComponentChildren, JSX } from "preact";
+import { defaultSchema } from "../utils/constants";
 
 const typeHelpTexts = {
   "boolean": "This must evaluate to something that can be casted to a boolean (e.g. 'true' or 'false').",
-  "number": "This must evaluate to something that can be casted as number."
+  "number": "This must evaluate to something that can be casted as number.",
+  "text": "",
 }
 
 interface BulkDefinitionSchemaBuildeProps {
-  schema: any;
-  setSchema: any;
-  generateKeys: Record<string, string>;
+  schema: BulkDefinitionSchema;
+  setSchema: StateUpdater<BulkDefinitionSchema>;
+  generateKeys: GenerateKeys;
 }
 
 export function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = {} }: BulkDefinitionSchemaBuildeProps) {
-  // initially populate schema if null
-  useEffect(() => {
-    if (schema === null) {
-      setSchema({
-        version: "1.0.0",
-        input: {},
-        templates: [],
-        output: null,
-      })
-    }
-  }, [schema]);
-
   const firstUpdate = useRef(true);
 
-  const setChildSchema = useCallback((newSchema) => setSchema(s =>
-    ({ ...s, output: newSchema(s.output) })), [setSchema]);
+  const setChildSchema: StateUpdater<BulkDefinitionChild> = useCallback((newSchema) => setSchema(s =>
+    ({ ...s, output: typeof newSchema === "function" ? newSchema(s.output) : newSchema })), [setSchema]);
 
   // input
-  const [input, setInput] = useState([]);
-  const setInputKey = useCallback((i, key) => (e) => setInput(inp => {
-    inp[i][key] = e.target.value;
+  type InputType = { key: string, value: string };
+  const [input, setInput] = useState<InputType[]>([]);
+  const setInputKey = useCallback((i: number, key: keyof InputType) => (e: JSX.TargetedEvent<HTMLInputElement, Event>) => setInput(inp => {
+    inp[i][key] = e.currentTarget.value;
     return [...inp];
   }), [setInput]);
   const addInput = useCallback(() =>
     setInput(inp => [...inp, { key: "", value: "" }]), [setInput]);
-  const removeInput = useCallback((n) => () =>
+  const removeInput = useCallback((n: number) => () =>
     setInput(inp => inp.filter((_, i) => i !== n))
     , [setInput]);
   // hook input array state up to schema.input as an object
@@ -55,16 +48,16 @@ export function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = 
   }, [schema?.input, input, setInput]);
 
   // template
-  const setTemplate = useCallback((i) => (newTemplate) => setSchema(s => {
-    s.templates[i] = newTemplate(s.templates[i]);
+  const setTemplate: (i: number) => StateUpdater<BulkDefinitionChildTemplate> = useCallback((i: number) => (newTemplate) => setSchema(s => {
+    s.templates[i] = typeof newTemplate === "function" ? newTemplate(s.templates[i]) : newTemplate;
     return { ...s, templates: s.templates };
   }), [setSchema]);
   const addTemplate = useCallback(() =>
     setSchema(s => {
-      s.templates.push(null);
+      s.templates.push({ name: "", ...structuredClone(defaultSchema.output) });
       return { ...s, templates: s.templates };
     }), [setSchema]);
-  const removeTemplate = useCallback((n) => () =>
+  const removeTemplate = useCallback((n: number) => () =>
     setSchema(s => ({ ...s, templates: s.templates.filter((_, i) => i !== n) })
     ), [setSchema]);
 
@@ -116,8 +109,8 @@ export function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = 
           {schema.templates.map((template, i) => <div class="card mb-2">
             <div class="d-flex justify-content-between">
               <div class="col p-3">
-                {template !== null && <Input label="Template name" type="text" value={template.name} onInput={(e) => setTemplate(i)(t => ({ ...t, name: e.target.value }))} />}
-                <BulkDefinitionChildSchemaBuilder childSchema={template} setChildSchema={setTemplate(i)} generateKeys={generateKeys} extendsKeys={extendsKeys} addNameField={true} />
+                {template !== null && <Input label="Template name" type="text" value={template.name} onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) => setTemplate(i)(t => ({ ...t, name: e.currentTarget.value }))} />}
+                <BulkDefinitionChildSchemaBuilder childSchema={template} setChildSchema={setTemplate(i) as unknown as StateUpdater<BulkDefinitionChild>} generateKeys={generateKeys} extendsKeys={extendsKeys} />
               </div>
               <div class="p-1">
                 <button onClick={removeTemplate(i)} class="btn btn-outline-danger">X</button>
@@ -147,34 +140,28 @@ export function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = 
 }
 
 interface BulkDefinitionChildSchemaBuilderProps {
-  childSchema: any;
-  setChildSchema: any;
-  generateKeys: Record<string, any>;
-  extendsKeys: any;
-  addNameField?: boolean;
+  childSchema: BulkDefinitionChild;
+  setChildSchema: StateUpdater<BulkDefinitionChild>;
+  generateKeys: GenerateKeys;
+  extendsKeys: Record<string, string>;
 }
 
-function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generateKeys, extendsKeys, addNameField = false }: BulkDefinitionChildSchemaBuilderProps) {
+function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generateKeys, extendsKeys }: BulkDefinitionChildSchemaBuilderProps) {
   // initially populate childSchema with values
   useEffect(() => {
-    if (childSchema === null) {
-      setChildSchema(_ => ({
-        parent_name_match: "true",
-        ...(addNameField ? { name: "" } : {}),
-        ...(extendsKeys ? { extends: "" } : {}),
-        dimensions: [""],
-        count: [""],
+    if (Object.keys(childSchema.generate).length === 0) {
+      setChildSchema(s => ({
+        ...s,
         generate: Object.fromEntries(Object.entries(generateKeys).filter(([_k, { required }]) => !!required).map(([k, _v]) => [k, ""])),
-        childs: []
       }))
     }
   }, [childSchema, generateKeys]);
 
   // setValue callback for inputs, accepts key and event
-  const setValue = useCallback((key) => (e) => setChildSchema(s => ({ ...s, [key]: e.target.value })), [setChildSchema]);
+  const setValue = useCallback((key: string) => (e: JSX.TargetedEvent<HTMLInputElement, Event>) => setChildSchema(s => ({ ...s, [key]: e.currentTarget.value })), [setChildSchema]);
 
   // set a generated value by key and event
-  const setGenerateValue = useCallback((key) => (e) => setChildSchema(s => ({ ...s, generate: { ...s.generate, [key]: e.target.value } })), [setChildSchema]);
+  const setGenerateValue = useCallback((key: string) => (value: string) => setChildSchema(s => ({ ...s, generate: { ...s.generate, [key]: value } })), [setChildSchema]);
 
   const remainingGenerateKeys = useMemo(() => {
     const currentKeys = Object.keys(childSchema?.generate || {});
@@ -183,20 +170,20 @@ function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generat
 
   const [remainingGenerateKeysValue, setRemainingGenerateKeysValue] = useState("");
 
-  const handleAddGenerateKey = useCallback((key) => {
+  const handleAddGenerateKey = useCallback((key: string) => {
     if (key !== "") {
-      setGenerateValue(key)({ target: { value: "" } });
+      setGenerateValue(key)("");
       setRemainingGenerateKeysValue("");
     }
   }, [setGenerateValue, setRemainingGenerateKeysValue]);
 
-  const handleDeleteGenerateKey = useCallback((key) => () => {
+  const handleDeleteGenerateKey = useCallback((key: string) => () => {
     setChildSchema(s => ({ ...s, generate: Object.fromEntries(Object.entries(s.generate).filter(([k, _v]) => k !== key)) }))
   }, []);
 
   // dimensions
-  const setDimension = useCallback((key) => (i) => (newValue) => setChildSchema(s => {
-    s[key][i] = newValue(s[key][i]);
+  const setDimension: (key: "dimensions" | "count") => (i: number) => StateUpdater<string | null> = useCallback((key) => (i) => (newValue) => setChildSchema(s => {
+    s[key][i] = typeof newValue === "function" ? newValue(s[key][i]) : newValue;
     return { ...s, [key]: s[key] };
   }), [setChildSchema]);
   const addDimension = useCallback(() =>
@@ -205,22 +192,27 @@ function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generat
       s.count.push("");
       return { ...s, dimensions: s.dimensions, count: s.count };
     }), [setChildSchema]);
-  const removeDimension = useCallback((n) => () =>
+  const removeDimension = useCallback((n: number) => () =>
     setChildSchema(s => ({ ...s, dimensions: s.dimensions.filter((_, i) => i !== n), count: s.count.filter((_, i) => i !== n) })
     ), [setChildSchema]);
 
   // child's childs schemas
-  const setChildChildSchema = useCallback((i) => (newValue) => setChildSchema(s => {
-    s.childs[i] = newValue(s.childs[i]);
+  const setChildChildSchema: (i: number) => StateUpdater<BulkDefinitionChild> = useCallback((i) => (newValue) => setChildSchema(s => {
+    if (!s.childs) s.childs = []
+    s.childs[i] = typeof newValue === "function" ? newValue(s.childs[i]) : newValue;
     return { ...s, childs: s.childs };
   }), [setChildSchema]);
   const addChild = useCallback(() =>
     setChildSchema(s => {
-      s.childs.push(null);
+      if (!s.childs) s.childs = []
+      s.childs.push(structuredClone(defaultSchema.output));
       return { ...s, childs: s.childs };
     }), [setChildSchema]);
-  const removeChild = useCallback((n) => () =>
-    setChildSchema(s => ({ ...s, childs: s.childs.filter((_, i) => i !== n) })
+  const removeChild = useCallback((n: number) => () =>
+    setChildSchema(s => {
+      if (!s.childs) return s
+      return ({ ...s, childs: s.childs.filter((_, i) => i !== n) })
+    }
     ), [setChildSchema]);
 
   // collapsable handling for advanced child options
@@ -230,7 +222,7 @@ function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generat
 
   const onOutputAdvanceToggle = useCallback(() => {
     setOutputAdvancedState(oldState => {
-      // @ts-ignore
+      // @ts-ignore: correct types for bootstrap table are not available
       $(`#${outputAdvancedId}`).collapse(!oldState ? "show" : "hide");
       return !oldState;
     });
@@ -242,13 +234,13 @@ function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generat
 
   return (
     <div class="">
-      <Input label="Dimensions" tooltip="A childs naming convention could have multiple dimensions where it is counting in" type="array" onDelete={removeDimension} value={childSchema.dimensions} onInput={setDimension("dimensions")} onAdd={addDimension} />
-      <Input label="Count" tooltip="Limit the amount of generated items for the individual dimension" type="array" value={childSchema.count} onInput={setDimension("count")} />
+      <Input label="Dimensions" tooltip="A childs naming convention could have multiple dimensions where it is counting in" type="array" onDelete={removeDimension} value={childSchema.dimensions.map(x => x || "")} onInput={setDimension("dimensions")} onAdd={addDimension} />
+      <Input label="Count" tooltip="Limit the amount of generated items for the individual dimension" type="array" value={childSchema.count.map(x => x || "")} onInput={setDimension("count")} />
 
       <h6 class={`user-select-none collapsable-heading ${outputAdvancedState ? "active" : ""}`} role="button" onClick={onOutputAdvanceToggle}>Advanced</h6>
       <div class="collapse" id={outputAdvancedId}>
-        <Input label="Parent name match" tooltip="First child that matches the parent name matcher will be chosen for generating the childs for a specific parent. Must evalueate to something that can be casted to a boolean." type="text" value={childSchema.parent_name_match} onInput={setValue("parent_name_match")} />
-        {extendsKeys && <Input label="Extends" tooltip="Choose to extend from a template" type="select" options={extendsKeys} value={childSchema.extends} onInput={setValue("extends")} />}
+        <Input label="Parent name match" tooltip="First child that matches the parent name matcher will be chosen for generating the childs for a specific parent. Must evalueate to something that can be casted to a boolean." type="text" value={childSchema.parent_name_match || ""} onInput={setValue("parent_name_match")} />
+        {extendsKeys && <Input label="Extends" tooltip="Choose to extend from a template" type="select" options={extendsKeys} value={childSchema.extends || ""} onInput={setValue("extends")} />}
       </div>
 
       <div class="mt-3">
@@ -257,12 +249,11 @@ function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generat
         </Tooltip>
       </div>
       {Object.entries(generateKeys).filter(([key, _definition]) => childSchema.generate[key] !== undefined).map(([key, { name, required, type }]) => (
-        <Input label={name} tooltip={typeHelpTexts[type]} type="text" value={childSchema.generate[key]} onInput={setGenerateValue(key)} onDelete={required ? null : handleDeleteGenerateKey(key)} />
+        <Input label={name} tooltip={typeHelpTexts[type]} type="text" value={childSchema.generate[key]} onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) => setGenerateValue(key)(e.currentTarget.value)} onDelete={required ? undefined : handleDeleteGenerateKey(key)} />
       ))}
       {remainingGenerateKeys.length > 0 && (
         <div style="display: flex; max-width: 200px;">
-          {/* @ts-ignore */}
-          <select class="form-select form-select-sm" value={remainingGenerateKeysValue} onInput={(e) => handleAddGenerateKey(e.target.value)}>
+          <select class="form-select form-select-sm" value={remainingGenerateKeysValue} onInput={(e) => handleAddGenerateKey(e.currentTarget.value)}>
             <option selected value="">Add key</option>
             {remainingGenerateKeys.map(([key, { name }]) => <option value={key}>{name}</option>)}
           </select>
@@ -271,7 +262,7 @@ function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generat
 
       <h5 class="mt-3">Childs</h5>
       <div class="ms-3">
-        {childSchema.childs.map((child, i) => (
+        {childSchema.childs?.map((child, i) => (
           <div class="card mb-2">
             <div class="d-flex justify-content-between">
               <div class="col p-3">
@@ -289,56 +280,89 @@ function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, generat
   )
 }
 
-interface InputProps {
-  type: "text" | "email" | "number" | "checkbox" | "select" | "array";
+
+interface DefaultInputProps {
   label: string;
   tooltip?: string;
-  options?: Record<string, string>;
   [key: string]: any;
 }
 
-export function Input({ type, label, tooltip, options, ...inputProps }: InputProps) {
+interface TextInputProps extends DefaultInputProps {
+  type: "text" | "email" | "number";
+  value: string;
+  onDelete?: () => void;
+}
+
+interface NumberInputProps extends DefaultInputProps {
+  type: "number";
+  value: number;
+  onDelete?: () => void;
+}
+
+interface CheckboxInputProps extends DefaultInputProps {
+  type: "checkbox";
+  value: boolean;
+}
+
+interface SelectInputProps extends DefaultInputProps {
+  type: "select";
+  value: string;
+  options: Record<string, string>
+}
+
+interface ArrayInputProps extends DefaultInputProps {
+  type: "array";
+  value: string[];
+  onDelete?: (i: number) => () => void;
+  onAdd?: () => void
+}
+
+type InputProps = TextInputProps | NumberInputProps | CheckboxInputProps | SelectInputProps | ArrayInputProps;
+
+export function Input(props: InputProps) {
   const id = useId();
 
   return <div class="form-group row">
     <div class="col-sm-2">
-      <Tooltip text={tooltip}>
-        <label for={`input-${id}`} class="col-form-label col-form-label-sm">{label}</label>
+      <Tooltip text={props.tooltip}>
+        <label for={`input-${id}`} class="col-form-label col-form-label-sm">{props.label}</label>
       </Tooltip>
     </div>
     {(() => {
-      if (["text", "email", "number"].includes(type)) {
+      if (props.type === "text" || props.type === "number" || props.type === "email") {
+        const { type, ...inputProps } = props;
         return (
           <div class="col-sm-10 input-group" style="flex: 1;">
             <input type={type} class="form-control form-control-sm" id={`input-${id}`} {...inputProps} />
-            {inputProps.onDelete && <button class="btn btn-outline-danger btn-sm" onClick={inputProps.onDelete}>X</button>}
+            {props.onDelete && <button class="btn btn-outline-danger btn-sm" onClick={props.onDelete}>X</button>}
           </div>
         )
-      } else if (type === "checkbox") {
+      } else if (props.type === "checkbox") {
+        const { type, value, ...inputProps } = props;
         return (
           <div class="col-sm-10">
-            <input type={type} class="form-check-input form-check-sm" id={`input-${id}`} checked={inputProps.value} {...inputProps} />
+            <input type={type} class="form-check-input form-check-sm" id={`input-${id}`} checked={value} {...inputProps} />
           </div>
         )
-      } else if (type === "select") {
+      } else if (props.type === "select") {
         return (
           <div class="col-sm-10">
-            <select class="form-select form-select-sm" id={`input-${id}`} {...inputProps}>
-              {Object.entries(options).map(([k, v]) => <option value={k}>{v}</option>)}
+            <select class="form-select form-select-sm" id={`input-${id}`} {...props}>
+              {Object.entries(props.options).map(([k, v]) => <option value={k}>{v}</option>)}
             </select>
           </div>
         )
-      } else if (type === "array") {
+      } else if (props.type === "array") {
+        const { onDelete, onAdd } = props;
         return (
           <div class="col-sm-10">
             <div class="d-flex flex-row flex-nowrap" style="gap: 4px">
-              {inputProps.value.map((v, i) => <div class="input-group" style={`max-width: 350px; ${!inputProps.onAdd && inputProps.value.length === i + 1 ? "margin-right: 31px;" : ""}`}>
-                {/* @ts-ignore */}
-                <input type="text" class="form-control form-control-sm" id={`input-${id}-${i}`} value={v} onInput={(e) => inputProps.onInput(i)(_ => e.target.value)} />
-                {inputProps.onDelete && <button class="btn btn-outline-danger btn-sm" onClick={inputProps.onDelete(i)}>X</button>}
+              {props.value.map((v: string, i: number) => <div class="input-group" style={`max-width: 350px; ${!props.onAdd && props.value.length === i + 1 ? "margin-right: 31px;" : ""}`}>
+                <input type="text" class="form-control form-control-sm" id={`input-${id}-${i}`} value={v} onInput={(e) => props.onInput(i)(() => e.currentTarget.value)} />
+                {onDelete && <button class="btn btn-outline-danger btn-sm" onClick={onDelete(i)}>X</button>}
               </div>
               )}
-              {inputProps.onAdd && <button class="btn btn-outline-primary btn-sm" onClick={() => inputProps.onAdd()}>+</button>}
+              {onAdd && <button class="btn btn-outline-primary btn-sm" onClick={() => onAdd()}>+</button>}
             </div>
           </div>
         )
@@ -349,9 +373,13 @@ export function Input({ type, label, tooltip, options, ...inputProps }: InputPro
   </div>
 }
 
-export function Tooltip({ text, children }) {
+interface TooltipProps {
+  text?: string;
+  children: ComponentChildren;
+}
+export function Tooltip({ text, children }: TooltipProps) {
   if (!text) {
-    return children;
+    return <>{children}</>;
   }
 
   return <div class="preact-tooltip">

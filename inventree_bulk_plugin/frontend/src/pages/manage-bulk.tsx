@@ -1,26 +1,32 @@
-import { render as preact_render } from 'preact'
-import { useCallback, useEffect, useMemo, useState } from "preact/hooks";
-import { beautifySchema, getUsedGenerateKeys, isEqual } from "../utils";
-import { getGenerateKeysForTemplate, templateTypeOptions } from "../utils/constants";
+import { render as preact_render, JSX } from 'preact'
+import { StateUpdater, useCallback, useEffect, useMemo, useState } from "preact/hooks";
+import { beautifySchema, getCounter, getUsedGenerateKeys, isEqual, toFlat } from "../utils";
+import { defaultSchema, getGenerateKeysForTemplate, templateTypeOptions } from "../utils/constants";
 import { BulkDefinitionSchemaBuilder, Input } from "../components/BulkDefinitionSchemaBuilder";
+import { BulkDefinitionSchema, GenerateKeys, PageRenderProps, TemplateModel, TemplateType } from "../utils/types";
 
+interface EditFormProps {
+    template: TemplateModel;
+    setTemplate: StateUpdater<TemplateModel>;
+    templateTypeOptions: Record<string, string>;
+    handleBack: () => void
+}
 
-function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack }) {
-    const [initialTemplate, setInitialTemplate] = useState({});
-    useEffect(() => { setInitialTemplate(structuredClone(template)) }, []);
+function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack }: EditFormProps) {
+    const [initialTemplate, setInitialTemplate] = useState<TemplateModel>(() => structuredClone(template));
 
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
     const [btnPreviewLoading, setBtnPreviewLoading] = useState(false);
 
-    const updateField = useCallback((k) => (e) => setTemplate(t => ({ ...t, [k]: e.target.value })), []);
-    const updateTemplate = useCallback((valueOrFunc) => {
-        setTemplate((t => ({ ...t, template: typeof valueOrFunc === "function" ? valueOrFunc(t.template) : valueOrFunc })))
+    const updateField = useCallback((k: string) => (e: JSX.TargetedEvent<HTMLInputElement, Event>) => setTemplate(t => ({ ...t, [k]: e.currentTarget.value })), []);
+    const updateTemplate: StateUpdater<BulkDefinitionSchema> = useCallback((valueOrFunc) => {
+        setTemplate((t) => ({ ...t, template: typeof valueOrFunc === "function" ? valueOrFunc(t.template) : valueOrFunc }))
     }, []);
     const hasChanged = useMemo(() => !isEqual(template, initialTemplate), [template, initialTemplate]);
     const create = template.id === null;
 
-    const [allGenerateKeys, setAllGenerateKeys] = useState({});
+    const [allGenerateKeys, setAllGenerateKeys] = useState<Record<string, GenerateKeys>>({});
 
     // fetch generate keys on initial render
     useEffect(() => {
@@ -42,7 +48,6 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
             const data = await res.json();
 
             if (200 <= res.status && res.status < 300) {
-
                 if (create) {
                     template.id = data.id;
                     setSuccess("Template successfully created.");
@@ -52,8 +57,7 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
 
                 setInitialTemplate(structuredClone(template));
             } else {
-                // @ts-ignore
-                setError("An error occurred. " + Object.entries(data).map(([key, v]) => `${key}: ${v.map(({ message }) => message).join(", ")}`).join(", "))
+                setError("An error occurred. " + Object.entries(data as Record<string, { message: string }[]>).map(([key, v]) => `${key}: ${v.map(({ message }) => message).join(", ")}`).join(", "))
             }
         })()
     }, [template]);
@@ -76,13 +80,6 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
             return;
         }
 
-        const getCounter = (i = 1) => () => i++
-        const toFlat = (data, counter, pid = 0, pa = "...") => data.flatMap(([parent, childs]) => {
-            const id = counter();
-            const path = `${pa}/${parent.name}`
-            return [{ ...parent, id, pid, path }, ...toFlat(childs, counter, id, path)]
-        });
-
         const data = toFlat(json, getCounter());
 
         setSuccess(`Successfully parsed. This will generate ${data.length} items.`);
@@ -95,7 +92,6 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
             data: data,
             idField: 'id',
             columns: [
-                // @ts-ignore
                 ...Object.entries(generateKeys).filter(([key, _definition]) => usedGenerateKeys.includes(key)).map(([key, { name }]) => ({ field: key, title: name })),
                 { field: 'path', title: 'Path' }
             ],
@@ -149,10 +145,10 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
 }
 
 function App() {
-    const [savedTemplates, setSavedTemplates] = useState();
+    const [savedTemplates, setSavedTemplates] = useState<TemplateModel[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    const [editingTemplate, setEditingTemplate] = useState(null);
-    const [deletingTemplate, setDeletingTemplate] = useState(null);
+    const [editingTemplate, setEditingTemplate] = useState<TemplateModel | null>(null);
+    const [deletingTemplate, setDeletingTemplate] = useState<TemplateModel | null>(null);
 
     const [error, setError] = useState("");
     const [success, setSuccess] = useState("");
@@ -161,10 +157,10 @@ function App() {
         const res = await fetch("/plugin/inventree-bulk-plugin/templates");
         const data = await res.json();
 
-        setSavedTemplates(data.map(t => ({
+        setSavedTemplates(data.map((t: Record<string, unknown>) => ({
             ...t,
-            template: JSON.parse(t.template),
-        })));
+            template: JSON.parse(t.template as string),
+        })) as TemplateModel[]);
         setIsLoading(false);
     }, []);
 
@@ -172,7 +168,7 @@ function App() {
         reloadSavedTemplates();
     }, []);
 
-    const startEditing = useCallback((template) => () => {
+    const startEditing = useCallback((template: TemplateModel) => () => {
         setEditingTemplate(template);
     }, []);
 
@@ -180,8 +176,8 @@ function App() {
         setEditingTemplate({
             id: null,
             name: "",
-            template_type: "STOCK_LOCATION",
-            template: null,
+            template_type: TemplateType.STOCK_LOCATION,
+            template: structuredClone(defaultSchema),
         });
     }, []);
 
@@ -191,10 +187,10 @@ function App() {
         reloadSavedTemplates();
     }, []);
 
-    const startDeleting = useCallback((template) => () => {
+    const startDeleting = useCallback((template: TemplateModel) => () => {
         setDeletingTemplate(template);
         const modalEl = document.getElementById('createTemplateModal')!;
-        // @ts-ignore
+        // @ts-ignore: correct types for bootstrap modal are not available
         bootstrap.Modal.getOrCreateInstance("#createTemplateModal").show();
         modalEl.addEventListener("hidden.bs.modal", () => {
             setDeletingTemplate(null);
@@ -202,6 +198,8 @@ function App() {
     }, []);
 
     const deleteTemplate = useCallback(async () => {
+        if (deletingTemplate === null) return;
+
         setError("");
         setSuccess("");
 
@@ -211,14 +209,13 @@ function App() {
 
         if (200 <= res.status && res.status < 300) {
             setSuccess(`Successfully deleted "${deletingTemplate.name}".`);
-            // @ts-ignore
             setSavedTemplates(s => [...s.filter(t => t.id !== deletingTemplate.id)]);
         } else {
             setError("An error occured.")
         }
 
         setDeletingTemplate(null);
-        // @ts-ignore
+        // @ts-ignore: correct types for bootstrap modal are not available
         bootstrap.Modal.getInstance("#createTemplateModal").hide();
     }, [deletingTemplate]);
 
@@ -233,7 +230,7 @@ function App() {
     if (editingTemplate !== null) {
         return (
             <div>
-                <EditForm template={editingTemplate} setTemplate={setEditingTemplate} templateTypeOptions={templateTypeOptions} handleBack={backEditing} />
+                <EditForm template={editingTemplate} setTemplate={setEditingTemplate as unknown as StateUpdater<TemplateModel>} templateTypeOptions={templateTypeOptions} handleBack={backEditing} />
                 <table id="bulk-create-manage-preview-table" class="mt-3"></table>
             </div>
         )
@@ -250,7 +247,7 @@ function App() {
                     </tr>
                 </thead>
                 <tbody>
-                    {(savedTemplates || []).map(template =>
+                    {(savedTemplates).map(template =>
                         <tr>
                             <td>{template.name}</td>
                             <td>{template.template_type}</td>
@@ -295,6 +292,6 @@ function App() {
     )
 }
 
-export function render({ target }) {
+export function render({ target }: PageRenderProps) {
     preact_render(<App />, target)
 }

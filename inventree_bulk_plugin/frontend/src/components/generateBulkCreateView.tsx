@@ -1,24 +1,25 @@
 import { useCallback, useEffect, useId, useMemo, useState } from "preact/hooks";
-import { getGenerateKeysForTemplateType } from "../utils/constants";
-import { beautifySchema, getUsedGenerateKeys } from "../utils";
+import { defaultSchema, getGenerateKeysForTemplateType } from "../utils/constants";
+import { beautifySchema, getCounter, getUsedGenerateKeys, toFlat } from "../utils";
 import { BulkDefinitionSchemaBuilder } from "./BulkDefinitionSchemaBuilder";
+import { BulkDefinitionSchema, GenerateKeys, TemplateModel, TemplateType } from "../utils/types";
 
 interface BulkGenerateViewProps {
   createURL: string;
   name: string;
-  defaultSchema: any;
-  templateType: string;
+  defaultSchema: null | BulkDefinitionSchema;
+  templateType: TemplateType;
 }
 
-export function BulkGenerateView({ createURL, name, defaultSchema = null, templateType }: BulkGenerateViewProps) {
-  const [savedTemplates, setSavedTemplates] = useState([]);
+export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultSchema = null, templateType }: BulkGenerateViewProps) {
+  const [savedTemplates, setSavedTemplates] = useState<TemplateModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [schema, setSchema] = useState(defaultSchema);
+  const [schema, setSchema] = useState(() => propsDefaultSchema || structuredClone(defaultSchema));
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [btnPreviewLoading, setBtnPreviewLoading] = useState(false);
   const [btnCreateLoading, setBtnCreateLoading] = useState(false);
-  const [generateKeys, setGenerateKeys] = useState(null);
+  const [generateKeys, setGenerateKeys] = useState<GenerateKeys | null>(null);
   const id = useId();
   const tableId = useMemo(() => `preview-table-${id}`, [id]);
 
@@ -31,10 +32,10 @@ export function BulkGenerateView({ createURL, name, defaultSchema = null, templa
     const res = await fetch(`/plugin/inventree-bulk-plugin/templates?template_type=${templateType}`);
     const data = await res.json();
 
-    setSavedTemplates(data.map(t => ({
+    setSavedTemplates(data.map((t: Record<string, unknown>) => ({
       ...t,
-      template: JSON.parse(t.template),
-    })));
+      template: JSON.parse(t.template as string),
+    })) as TemplateModel[]);
     setIsLoading(false);
   }, []);
 
@@ -59,13 +60,6 @@ export function BulkGenerateView({ createURL, name, defaultSchema = null, templa
       return;
     }
 
-    const getCounter = (i = 1) => () => i++
-    const toFlat = (data, counter, pid = 0, pa = "...") => data.flatMap(([parent, childs]) => {
-      const id = counter();
-      const path = `${pa}/${parent.name}`
-      return [{ ...parent, id, pid, path }, ...toFlat(childs, counter, id, path)]
-    });
-
     const data = toFlat(json, getCounter());
 
     setSuccess(`Successfully parsed. This will generate ${data.length} ${name}.`);
@@ -78,8 +72,7 @@ export function BulkGenerateView({ createURL, name, defaultSchema = null, templa
       data: data,
       idField: 'id',
       columns: [
-        // @ts-ignore
-        ...Object.entries(generateKeys).filter(([key, _definition]) => usedGenerateKeys.includes(key)).map(([key, { name }]) => ({ field: key, title: name })),
+        ...Object.entries(generateKeys || {}).filter(([key, _definition]) => usedGenerateKeys.includes(key)).map(([key, { name }]) => ({ field: key, title: name })),
         { field: 'path', title: 'Path' }
       ],
       treeShowField: 'name',
@@ -124,11 +117,11 @@ export function BulkGenerateView({ createURL, name, defaultSchema = null, templa
     }
 
     setBtnCreateLoading(false);
-    // @ts-ignore
+    // @ts-ignore: correct types for bootstrap modal are not available
     bootstrap.Modal.getInstance("#bulkCreateModal").hide()
   }, [schema]);
 
-  const loadTemplate = useCallback((template) => () => {
+  const loadTemplate = useCallback((template: TemplateModel) => () => {
     setSchema(template.template);
   }, []);
 

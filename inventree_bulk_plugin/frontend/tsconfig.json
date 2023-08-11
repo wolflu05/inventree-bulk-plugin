@@ -16,21 +16,11 @@
     "jsxImportSource": "preact",
 
     /* Linting */
-    // "strict": true,
-    // "noUnusedLocals": true,
-    // "noUnusedParameters": true,
-    // "noFallthroughCasesInSwitch": true,
-
-    /* migration period */
-    "strict": false,
-    "noImplicitAny": false,
-    "strictNullChecks": false,
-    "noUnusedLocals": false,
-    "noUnusedParameters": false,
-    "noFallthroughCasesInSwitch": false,
-    "alwaysStrict": false,
-    "noImplicitThis": false,
-    "noImplicitReturns": false,
+    "strict": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "noFallthroughCasesInSwitch": true,
+    "noImplicitReturns": true,
   },
   "include": ["src"],
   "references": [{ "path": "./tsconfig.node.json" }]
