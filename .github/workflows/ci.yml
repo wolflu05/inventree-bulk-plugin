@@ -241,7 +241,7 @@ jobs:
 
   publish:
     if: true || github.event_name == 'release' && github.event.action == 'published'
-    needs: [report, build-js] # TODO: add report
+    needs: [build-js] # TODO: add report
     name: 📦 Publish to PyPi
     runs-on: ubuntu-latest
     environment:
