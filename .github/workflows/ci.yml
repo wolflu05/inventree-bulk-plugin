@@ -145,7 +145,7 @@ jobs:
 
   report:
     name: 📝 Report
-    needs: [tests-unit-python, tests-integration-python, style-js]
+    needs: [tests-unit-python, tests-integration-python]
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
     permissions:
@@ -212,33 +212,6 @@ jobs:
       - name: Write to Job Summary
         run: cat coverage.md >> $GITHUB_STEP_SUMMARY
 
-  build-python:
-    name: "🏗️ Build: python"
-    needs: [style-python]
-    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.3
-
-      - name: Setup python
-        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@v4.7.0
-        with:
-          python-version: "3.10"
-
-      - name: Install build dependencies
-        run: pip install --upgrade wheel setuptools twine build
-
-      - name: Build pip package
-        run: python3 -m build
-
-      - name: Upload python artifact
-        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
-        with:
-          name: build-python
-          path: dist/
-
   build-js:
     name: "🏗️ Build: js"
     needs: [style-js]
@@ -263,12 +236,12 @@ jobs:
       - name: Upload js artifact
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
-          name: build-js
+          name: frontend
           path: inventree_bulk_plugin/static/inventree-bulk-plugin/dist
 
   publish:
     if: true || github.event_name == 'release' && github.event.action == 'published'
-    needs: [build-python, build-js]
+    needs: [report, build-js] # TODO: add report
     name: 📦 Publish to PyPi
     runs-on: ubuntu-latest
     environment:
@@ -281,17 +254,22 @@ jobs:
       - name: Checkout
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.3
 
-      - name: Download python artifact
-        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # pin@v3.0.2
+      - name: Setup python
+        uses: actions/setup-python@61a6322f88396a6271a6ee3565807d608ecaddd1 # pin@v4.7.0
         with:
-          name: build-python
-          path: dist/
+          python-version: "3.10"
+
+      - name: Install build dependencies
+        run: pip install --upgrade wheel setuptools twine build
 
       - name: Download js artifact
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # pin@v3.0.2
         with:
           name: build-js
           path: inventree_bulk_plugin/static/inventree-bulk-plugin/dist
+
+      - name: Build pip package
+        run: python3 -m build
 
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@f8c70e705ffc13c3b4d1221169b84f12a75d6ca8 # pin@v1.8.8
