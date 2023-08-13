@@ -20,10 +20,10 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
     const [success, setSuccess] = useState("");
     const [btnPreviewLoading, setBtnPreviewLoading] = useState(false);
 
-    const updateField = useCallback((k: string) => (e: JSX.TargetedEvent<HTMLInputElement, Event>) => setTemplate(t => ({ ...t, [k]: e.currentTarget.value })), []);
+    const updateField = useCallback((k: string) => (e: JSX.TargetedEvent<HTMLInputElement, Event>) => setTemplate(t => ({ ...t, [k]: e.currentTarget.value })), [setTemplate]);
     const updateTemplate: StateUpdater<BulkDefinitionSchema> = useCallback((valueOrFunc) => {
         setTemplate((t) => ({ ...t, template: typeof valueOrFunc === "function" ? valueOrFunc(t.template) : valueOrFunc }))
-    }, []);
+    }, [setTemplate]);
     const hasChanged = useMemo(() => !isEqual(template, initialTemplate), [template, initialTemplate]);
     const create = template.id === null;
 
@@ -58,11 +58,11 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
 
                 setInitialTemplate(structuredClone(template));
             } else {
-                setError("An error occurred. " + Object.entries(data as Record<string, { message: string }[]>).map(([key, v]) => `${key}: ${v.map(({ message }) => message).join(", ")}`).join(", "))
+                setError(`An error occurred. ${Object.entries(data as Record<string, { message: string }[]>).map(([key, v]) => `${key}: ${v.map(({ message }) => message).join(", ")}`).join(", ")}`)
             }
         })()
     }, [template]);
-    const handleReset = useCallback(() => setTemplate(initialTemplate), [initialTemplate]);
+    const handleReset = useCallback(() => setTemplate(initialTemplate), [initialTemplate, setTemplate]);
 
     const showPreview = useCallback(async () => {
         setError("");
@@ -87,24 +87,25 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
 
         const usedGenerateKeys = getUsedGenerateKeys(template.template);
 
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         const $table = $("#bulk-create-manage-preview-table") as any;
         $table.bootstrapTable("destroy");
         $table.bootstrapTable({
-            data: data,
+            data,
             idField: 'id',
             columns: [
-                ...Object.entries(generateKeys).filter(([key, _definition]) => usedGenerateKeys.includes(key)).map(([key, { name }]) => ({ field: key, title: name })),
+                ...Object.entries(generateKeys).filter(([key,]) => usedGenerateKeys.includes(key)).map(([key, { name }]) => ({ field: key, title: name })),
                 { field: 'path', title: 'Path' }
             ],
             treeShowField: 'name',
             parentIdField: 'pid',
-            onPostBody: function () {
-                var columns = $table.bootstrapTable('getOptions').columns
+            onPostBody() {
+                const columns = $table.bootstrapTable('getOptions').columns
 
                 if (columns && columns[0][1].visible) {
                     $table.treegrid({
                         treeColumn: 0,
-                        onChange: function () {
+                        onChange() {
                             $table.bootstrapTable('resetView')
                         }
                     })
@@ -121,7 +122,7 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
     }, [template, generateKeys]);
 
     return <div>
-        <h5>{create ? "Create" : "Edit"} {!create ? "\"" + template.name + "\" " : ""}template</h5>
+        <h5>{create ? "Create" : "Edit"} {!create ? `"${template.name}" ` : ""}template</h5>
 
         <Input label="Name" type="text" value={template.name} onInput={updateField("name")} />
         <Input label="Template type" type="select" value={template.template_type} options={templateTypeOptions} onInput={updateField("template_type")} />
@@ -134,16 +135,16 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
         </div>
 
         <div class="d-flex" style="gap: 5px">
-            <button class={"btn " + ((hasChanged && !create) ? 'btn-outline-secondary' : 'btn-outline-primary')} onClick={handleBack} disabled={hasChanged && !create}>Back</button>
-            <button class={"btn " + (!hasChanged ? 'btn-outline-secondary' : 'btn-outline-success')} onClick={saveOrUpdate} disabled={!hasChanged}>{create ? "Create" : "Update"}</button>
-            {!create && <button class={"btn " + (!hasChanged ? 'btn-outline-secondary' : 'btn-outline-danger')} onClick={handleReset} disabled={!hasChanged}>Reset</button>}
+            <button class={`btn ${(hasChanged && !create) ? 'btn-outline-secondary' : 'btn-outline-primary'}`} onClick={handleBack} disabled={hasChanged && !create}>Back</button>
+            <button class={`btn ${!hasChanged ? 'btn-outline-secondary' : 'btn-outline-success'}`} onClick={saveOrUpdate} disabled={!hasChanged}>{create ? "Create" : "Update"}</button>
+            {!create && <button class={`btn ${!hasChanged ? 'btn-outline-secondary' : 'btn-outline-danger'}`} onClick={handleReset} disabled={!hasChanged}>Reset</button>}
             <button type="button" class="btn btn-primary" onClick={showPreview} disabled={btnPreviewLoading}>
-                <span class="spinner-border spinner-border-sm me-1" style={`display: ${btnPreviewLoading ? 'inline-block' : 'none'};`} role="status" aria-hidden="true" id="loadingindicator-preview"></span>
+                <span class="spinner-border spinner-border-sm me-1" style={`display: ${btnPreviewLoading ? 'inline-block' : 'none'};`} role="status" aria-hidden="true" id="loadingindicator-preview" ></span>
                 Preview
             </button>
         </div>
         <table id="bulk-create-manage-preview-table" class="mt-3"></table>
-    </div>
+    </div >
 }
 
 function App() {
@@ -168,7 +169,7 @@ function App() {
 
     useEffect(() => {
         reloadSavedTemplates();
-    }, []);
+    }, [reloadSavedTemplates]);
 
     const startEditing = useCallback((template: TemplateModel) => () => {
         setEditingTemplate(template);
@@ -187,11 +188,12 @@ function App() {
         setEditingTemplate(null);
         document.getElementById("bulk-create-manage-preview-table")!.innerHTML = "";
         reloadSavedTemplates();
-    }, []);
+    }, [reloadSavedTemplates]);
 
     const startDeleting = useCallback((template: TemplateModel) => () => {
         setDeletingTemplate(template);
         const modalEl = document.getElementById('createTemplateModal')!;
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore: correct types for bootstrap modal are not available
         bootstrap.Modal.getOrCreateInstance("#createTemplateModal").show();
         modalEl.addEventListener("hidden.bs.modal", () => {
@@ -217,6 +219,7 @@ function App() {
         }
 
         setDeletingTemplate(null);
+        // eslint-disable-next-line @typescript-eslint/ban-ts-comment
         // @ts-ignore: correct types for bootstrap modal are not available
         bootstrap.Modal.getInstance("#createTemplateModal").hide();
     }, [deletingTemplate]);

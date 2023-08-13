@@ -4,6 +4,7 @@ import { Tooltip } from "./Tooltip";
 interface DefaultInputProps {
     label: string;
     tooltip?: string;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     [key: string]: any;
 }
 interface TextInputProps extends DefaultInputProps {
@@ -80,9 +81,10 @@ export function Input(props: InputProps) {
                         </div>
                     </div>
                 );
-            } else {
-                return "Not implemented";
             }
+
+            return "Not implemented";
+
         })()}
     </div>;
 }

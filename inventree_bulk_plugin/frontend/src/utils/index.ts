@@ -1,5 +1,7 @@
 import { BulkDefinitionChild, BulkDefinitionSchema, BulkGenerateAPIResult } from "./types";
 
+// types can be any for this function
+// eslint-disable-next-line @typescript-eslint/no-explicit-any 
 export const isEqual = (x: any, y: any): boolean => {
     if (x === y) return true;
 

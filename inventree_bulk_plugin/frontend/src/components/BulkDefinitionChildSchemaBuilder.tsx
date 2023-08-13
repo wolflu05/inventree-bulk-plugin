@@ -25,10 +25,10 @@ export function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, 
         if (Object.keys(childSchema.generate).length === 0) {
             setChildSchema(s => ({
                 ...s,
-                generate: Object.fromEntries(Object.entries(generateKeys).filter(([_k, { required }]) => !!required).map(([k, _v]) => [k, ""])),
+                generate: Object.fromEntries(Object.entries(generateKeys).filter(([, { required }]) => !!required).map(([k,]) => [k, ""])),
             }));
         }
-    }, [childSchema, generateKeys]);
+    }, [childSchema, generateKeys, setChildSchema]);
 
     // setValue callback for inputs, accepts key and event
     const setValue = useCallback((key: string) => (e: JSX.TargetedEvent<HTMLInputElement, Event>) => setChildSchema(s => ({ ...s, [key]: e.currentTarget.value })), [setChildSchema]);
@@ -38,7 +38,7 @@ export function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, 
 
     const remainingGenerateKeys = useMemo(() => {
         const currentKeys = Object.keys(childSchema?.generate || {});
-        return Object.entries(generateKeys).filter(([k, _v]) => !currentKeys.includes(k));
+        return Object.entries(generateKeys).filter(([k,]) => !currentKeys.includes(k));
     }, [generateKeys, childSchema?.generate]);
 
     const [remainingGenerateKeysValue, setRemainingGenerateKeysValue] = useState("");
@@ -51,8 +51,8 @@ export function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, 
     }, [setGenerateValue, setRemainingGenerateKeysValue]);
 
     const handleDeleteGenerateKey = useCallback((key: string) => () => {
-        setChildSchema(s => ({ ...s, generate: Object.fromEntries(Object.entries(s.generate).filter(([k, _v]) => k !== key)) }));
-    }, []);
+        setChildSchema(s => ({ ...s, generate: Object.fromEntries(Object.entries(s.generate).filter(([k,]) => k !== key)) }));
+    }, [setChildSchema]);
 
     // dimensions
     const setDimension: (key: "dimensions" | "count") => (i: number) => StateUpdater<string | null> = useCallback((key) => (i) => (newValue) => setChildSchema(s => {
@@ -91,11 +91,12 @@ export function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, 
 
     const onOutputAdvanceToggle = useCallback(() => {
         setOutputAdvancedState(oldState => {
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore: correct types for bootstrap table are not available
             $(`#${outputAdvancedId}`).collapse(!oldState ? "show" : "hide");
             return !oldState;
         });
-    }, []);
+    }, [outputAdvancedId]);
 
     return (
         <div class="">
@@ -113,7 +114,7 @@ export function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, 
                     <h5>Generate</h5>
                 </Tooltip>
             </div>
-            {Object.entries(generateKeys).filter(([key, _definition]) => childSchema.generate[key] !== undefined).map(([key, { name, required, type }]) => (
+            {Object.entries(generateKeys).filter(([key,]) => childSchema.generate[key] !== undefined).map(([key, { name, required, type }]) => (
                 <Input label={name} tooltip={typeHelpTexts[type]} type="text" value={childSchema.generate[key]} onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) => setGenerateValue(key)(e.currentTarget.value)} onDelete={required ? undefined : handleDeleteGenerateKey(key)} />
             ))}
             {remainingGenerateKeys.length > 0 && (

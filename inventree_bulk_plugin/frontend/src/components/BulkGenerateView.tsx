@@ -26,7 +26,7 @@ export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultS
   // fetch generate keys on initial render
   useEffect(() => {
     getGenerateKeysForTemplateType(templateType).then((keys) => setGenerateKeys(keys));
-  }, []);
+  }, [templateType]);
 
   const reloadSavedTemplates = useCallback(async () => {
     const res = await fetch(`/plugin/inventree-bulk-plugin/templates?template_type=${templateType}`);
@@ -37,11 +37,11 @@ export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultS
       template: JSON.parse(t.template as string),
     })) as TemplateModel[]);
     setIsLoading(false);
-  }, []);
+  }, [templateType]);
 
   useEffect(() => {
     reloadSavedTemplates();
-  }, []);
+  }, [reloadSavedTemplates]);
 
   const onPreview = useCallback(async () => {
     setError("");
@@ -66,24 +66,25 @@ export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultS
 
     const usedGenerateKeys = getUsedGenerateKeys(schema);
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const $table = $(`#${tableId}`) as any;
     $table.bootstrapTable("destroy");
     $table.bootstrapTable({
-      data: data,
+      data,
       idField: 'id',
       columns: [
-        ...Object.entries(generateKeys || {}).filter(([key, _definition]) => usedGenerateKeys.includes(key)).map(([key, { name }]) => ({ field: key, title: name })),
+        ...Object.entries(generateKeys || {}).filter(([key,]) => usedGenerateKeys.includes(key)).map(([key, { name }]) => ({ field: key, title: name })),
         { field: 'path', title: 'Path' }
       ],
       treeShowField: 'name',
       parentIdField: 'pid',
-      onPostBody: function () {
-        var columns = $table.bootstrapTable('getOptions').columns
+      onPostBody() {
+        const columns = $table.bootstrapTable('getOptions').columns
 
         if (columns && columns[0][1].visible) {
           $table.treegrid({
             treeColumn: 0,
-            onChange: function () {
+            onChange() {
               $table.bootstrapTable('resetView')
             }
           })
@@ -97,7 +98,7 @@ export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultS
     });
 
     setBtnPreviewLoading(false);
-  }, [schema, generateKeys]);
+  }, [templateType, schema, name, tableId, generateKeys]);
 
   const onCreate = useCallback(async () => {
     setError("");
@@ -117,9 +118,10 @@ export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultS
     }
 
     setBtnCreateLoading(false);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore: correct types for bootstrap modal are not available
     bootstrap.Modal.getInstance("#bulkCreateModal").hide()
-  }, [schema]);
+  }, [createURL, name, schema]);
 
   const loadTemplate = useCallback((template: TemplateModel) => () => {
     setSchema(template.template);
