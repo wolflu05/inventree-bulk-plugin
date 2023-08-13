@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useId, useMemo, useState } from "preact/hooks";
-import { defaultSchema, getGenerateKeysForTemplateType } from "../utils/constants";
-import { beautifySchema, getCounter, getUsedGenerateKeys, toFlat } from "../utils";
+
 import { BulkDefinitionSchemaBuilder } from "./BulkDefinitionSchemaBuilder";
+import { beautifySchema, getCounter, getUsedGenerateKeys, toFlat } from "../utils";
+import { defaultSchema, getGenerateKeysForTemplateType } from "../utils/constants";
 import { BulkDefinitionSchema, GenerateKeys, TemplateModel, TemplateType } from "../utils/types";
 
 interface BulkGenerateViewProps {
@@ -11,7 +12,12 @@ interface BulkGenerateViewProps {
   templateType: TemplateType;
 }
 
-export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultSchema = null, templateType }: BulkGenerateViewProps) {
+export function BulkGenerateView({
+  createURL,
+  name,
+  defaultSchema: propsDefaultSchema = null,
+  templateType,
+}: BulkGenerateViewProps) {
   const [savedTemplates, setSavedTemplates] = useState<TemplateModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [schema, setSchema] = useState(() => propsDefaultSchema || structuredClone(defaultSchema));
@@ -32,10 +38,12 @@ export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultS
     const res = await fetch(`/plugin/inventree-bulk-plugin/templates?template_type=${templateType}`);
     const data = await res.json();
 
-    setSavedTemplates(data.map((t: Record<string, unknown>) => ({
-      ...t,
-      template: JSON.parse(t.template as string),
-    })) as TemplateModel[]);
+    setSavedTemplates(
+      data.map((t: Record<string, unknown>) => ({
+        ...t,
+        template: JSON.parse(t.template as string),
+      })) as TemplateModel[],
+    );
     setIsLoading(false);
   }, [templateType]);
 
@@ -50,7 +58,7 @@ export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultS
 
     const res = await fetch(`/plugin/inventree-bulk-plugin/parse?template_type=${templateType}`, {
       method: "POST",
-      body: JSON.stringify(beautifySchema(schema))
+      body: JSON.stringify(beautifySchema(schema)),
     });
     const json = await res.json();
 
@@ -71,30 +79,32 @@ export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultS
     $table.bootstrapTable("destroy");
     $table.bootstrapTable({
       data,
-      idField: 'id',
+      idField: "id",
       columns: [
-        ...Object.entries(generateKeys || {}).filter(([key,]) => usedGenerateKeys.includes(key)).map(([key, { name }]) => ({ field: key, title: name })),
-        { field: 'path', title: 'Path' }
+        ...Object.entries(generateKeys || {})
+          .filter(([key]) => usedGenerateKeys.includes(key))
+          .map(([key, { name }]) => ({ field: key, title: name })),
+        { field: "path", title: "Path" },
       ],
-      treeShowField: 'name',
-      parentIdField: 'pid',
+      treeShowField: "name",
+      parentIdField: "pid",
       onPostBody() {
-        const columns = $table.bootstrapTable('getOptions').columns
+        const columns = $table.bootstrapTable("getOptions").columns;
 
         if (columns && columns[0][1].visible) {
           $table.treegrid({
             treeColumn: 0,
             onChange() {
-              $table.bootstrapTable('resetView')
-            }
-          })
+              $table.bootstrapTable("resetView");
+            },
+          });
         }
       },
       rowStyle: () => ({
         css: {
-          padding: "2px 0.5rem"
-        }
-      })
+          padding: "2px 0.5rem",
+        },
+      }),
     });
 
     setBtnPreviewLoading(false);
@@ -107,7 +117,7 @@ export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultS
 
     const res = await fetch(createURL, {
       method: "POST",
-      body: JSON.stringify(beautifySchema(schema))
+      body: JSON.stringify(beautifySchema(schema)),
     });
 
     if (res.status !== 201) {
@@ -120,18 +130,26 @@ export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultS
     setBtnCreateLoading(false);
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore: correct types for bootstrap modal are not available
-    bootstrap.Modal.getInstance("#bulkCreateModal").hide()
+    bootstrap.Modal.getInstance("#bulkCreateModal").hide();
   }, [createURL, name, schema]);
 
-  const loadTemplate = useCallback((template: TemplateModel) => () => {
-    setSchema(template.template);
-  }, []);
+  const loadTemplate = useCallback(
+    (template: TemplateModel) => () => {
+      setSchema(template.template);
+    },
+    [],
+  );
 
   return (
     <div>
       <div class="card mb-2">
         <div class="card-header">
-          <h5 class="mb-0 user-select-none" role="button" data-bs-toggle="collapse" data-bs-target="#accordion-saved-templates">
+          <h5
+            class="mb-0 user-select-none"
+            role="button"
+            data-bs-toggle="collapse"
+            data-bs-target="#accordion-saved-templates"
+          >
             Saved templates
           </h5>
         </div>
@@ -156,31 +174,48 @@ export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultS
                       </div>
                     </td>
                   </tr>
-                ) : savedTemplates.map(template => (
-                  <tr>
-                    <td>{template.name}</td>
-                    <td>
-                      <button class="btn btn-sm btn-outline-success" onClick={loadTemplate(template)}>Load</button>
-                    </td>
-                  </tr>
-                ))}
+                ) : (
+                  savedTemplates.map((template) => (
+                    <tr>
+                      <td>{template.name}</td>
+                      <td>
+                        <button class="btn btn-sm btn-outline-success" onClick={loadTemplate(template)}>
+                          Load
+                        </button>
+                      </td>
+                    </tr>
+                  ))
+                )}
               </tbody>
             </table>
           </div>
         </div>
       </div>
 
-      {generateKeys !== null && <BulkDefinitionSchemaBuilder schema={schema} setSchema={setSchema} generateKeys={generateKeys} />}
+      {generateKeys !== null && (
+        <BulkDefinitionSchemaBuilder schema={schema} setSchema={setSchema} generateKeys={generateKeys} />
+      )}
 
       <div class="mt-3">
         {success && <div class="alert alert-success">{success}</div>}
         {error && <div class="alert alert-danger">{error}</div>}
 
         <button type="button" class="btn btn-primary" onClick={onPreview} disabled={btnPreviewLoading}>
-          <span class="spinner-border spinner-border-sm me-1" style={`display: ${btnPreviewLoading ? 'inline-block' : 'none'};`} role="status" aria-hidden="true" id="loadingindicator-preview"></span>
+          <span
+            class="spinner-border spinner-border-sm me-1"
+            style={`display: ${btnPreviewLoading ? "inline-block" : "none"};`}
+            role="status"
+            aria-hidden="true"
+            id="loadingindicator-preview"
+          ></span>
           Preview
         </button>
-        <button type="button" class="btn btn-outline-primary ms-2" data-bs-toggle="modal" data-bs-target="#bulkCreateModal">
+        <button
+          type="button"
+          class="btn btn-outline-primary ms-2"
+          data-bs-toggle="modal"
+          data-bs-target="#bulkCreateModal"
+        >
           Create
         </button>
       </div>
@@ -189,16 +224,24 @@ export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultS
         <div class="modal-dialog">
           <div class="modal-content">
             <div class="modal-header">
-              <h1 class="modal-title fs-5" id="exampleModalLabel">Bulk create ${name}</h1>
+              <h1 class="modal-title fs-5" id="exampleModalLabel">
+                Bulk create ${name}
+              </h1>
               <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
             </div>
-            <div class="modal-body">
-              Are you sure you want to bulk generate sub-{name} here?
-            </div>
+            <div class="modal-body">Are you sure you want to bulk generate sub-{name} here?</div>
             <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" disabled={btnCreateLoading}>Close</button>
+              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" disabled={btnCreateLoading}>
+                Close
+              </button>
               <button type="button" class="btn btn-primary" onClick={onCreate} disabled={btnCreateLoading}>
-                <span class="spinner-border spinner-border-sm me-1" style={`display: ${btnCreateLoading ? 'inline-block' : 'none'};`} role="status" aria-hidden="true" id="loadingindicator-create"></span>
+                <span
+                  class="spinner-border spinner-border-sm me-1"
+                  style={`display: ${btnCreateLoading ? "inline-block" : "none"};`}
+                  role="status"
+                  aria-hidden="true"
+                  id="loadingindicator-create"
+                ></span>
                 Bulk generate
               </button>
             </div>
@@ -207,5 +250,5 @@ export function BulkGenerateView({ createURL, name, defaultSchema: propsDefaultS
       </div>
       <table id={tableId} class="mt-3"></table>
     </div>
-  )
+  );
 }
