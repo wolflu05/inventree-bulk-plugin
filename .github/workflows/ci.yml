@@ -233,7 +233,7 @@ jobs:
       - name: Build js
         run: cd inventree_bulk_plugin/frontend && npm run build
 
-      - name: Upload js artifact
+      - name: Upload frontend artifact
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
           name: frontend
@@ -262,10 +262,10 @@ jobs:
       - name: Install build dependencies
         run: pip install --upgrade wheel setuptools twine build
 
-      - name: Download js artifact
+      - name: Download frontend artifact
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # pin@v3.0.2
         with:
-          name: build-js
+          name: frontend
           path: inventree_bulk_plugin/static/inventree-bulk-plugin/dist
 
       - name: Build pip package
