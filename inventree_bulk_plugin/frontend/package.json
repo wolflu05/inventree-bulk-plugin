@@ -7,7 +7,7 @@
     "dev": "vite",
     "build": "tsc && vite build --emptyOutDir",
     "preview": "vite preview",
-    "lint": "eslint ."
+    "lint": "eslint . && tsc"
   },
   "dependencies": {
     "preact": "^10.16.0"
