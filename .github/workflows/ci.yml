@@ -7,8 +7,8 @@ on:
     types: [published]
 
 jobs:
-  style:
-    name: 💄 Style checks
+  style-python:
+    name: "💄 Style: python"
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
 
@@ -30,10 +30,30 @@ jobs:
         run: |
           flake8 .
 
-  tests-unit:
-    name: 🧪 Unit tests
+  style-js:
+    name: "💄 Style: js"
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: style
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.3
+
+      - name: Setup node
+        uses: actions/setup-node@e33196f7422957bea03ed53f6fbb155025ffc7b8 # pin@v3.7.0
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: cd inventree_bulk_plugin/frontend && npm ci
+
+      - name: Check style
+        run: cd inventree_bulk_plugin/frontend && npm run lint
+
+  tests-unit-python:
+    name: "🧪 Unit tests: python"
+    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
+    needs: style-python
     runs-on: ubuntu-latest
 
     steps:
@@ -62,10 +82,10 @@ jobs:
             .coverage
             coverage_info
 
-  tests-integration:
-    name: 🧪 Integration tests
+  tests-integration-python:
+    name: "🧪 Integration tests: python"
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
-    needs: style
+    needs: style-python
     runs-on: ubuntu-latest
 
     container:
@@ -125,7 +145,7 @@ jobs:
 
   report:
     name: 📝 Report
-    needs: [tests-unit, tests-integration]
+    needs: [tests-unit-python, tests-integration-python]
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
     permissions:
@@ -162,7 +182,7 @@ jobs:
           coverage html
 
           coverage_percentage=$(jq -r ".totals.percent_covered" coverage.json | xargs printf "%.*f\n" "1")
-          
+
           echo '## Coverage Report' > coverage.md
           echo "![Code Coverage](https://img.shields.io/badge/Code%20Coverage-${coverage_percentage}%25-green?style=flat)" >> coverage.md
           coverage report --format=markdown -m >> coverage.md
@@ -192,9 +212,36 @@ jobs:
       - name: Write to Job Summary
         run: cat coverage.md >> $GITHUB_STEP_SUMMARY
 
+  build-js:
+    name: "🏗️ Build: js"
+    needs: [style-js]
+    if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.3
+
+      - name: Setup node
+        uses: actions/setup-node@e33196f7422957bea03ed53f6fbb155025ffc7b8 # pin@v3.7.0
+        with:
+          node-version: "18"
+
+      - name: Install dependencies
+        run: cd inventree_bulk_plugin/frontend && npm ci
+
+      - name: Build js
+        run: cd inventree_bulk_plugin/frontend && npm run build
+
+      - name: Upload frontend artifact
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+        with:
+          name: frontend
+          path: inventree_bulk_plugin/static/inventree-bulk-plugin/dist
+
   publish:
     if: github.event_name == 'release' && github.event.action == 'published'
-    needs: report
+    needs: [report, build-js]
     name: 📦 Publish to PyPi
     runs-on: ubuntu-latest
     environment:
@@ -214,6 +261,12 @@ jobs:
 
       - name: Install build dependencies
         run: pip install --upgrade wheel setuptools twine build
+
+      - name: Download frontend artifact
+        uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # pin@v3.0.2
+        with:
+          name: frontend
+          path: inventree_bulk_plugin/static/inventree-bulk-plugin/dist
 
       - name: Build pip package
         run: python3 -m build

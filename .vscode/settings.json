@@ -1,3 +1,10 @@
 {
-  "python.analysis.extraPaths": ["/workspaces/InvenTree/InvenTree"]
+  "python.analysis.extraPaths": [
+    "/workspaces/InvenTree/InvenTree"
+  ],
+  "editor.formatOnSave": true,
+  "editor.defaultFormatter": "esbenp.prettier-vscode",
+  "editor.codeActionsOnSave": {
+    "source.fixAll": true
+  },
 }

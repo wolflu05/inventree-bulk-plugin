@@ -101,8 +101,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
                 if panel["title"] == title:
                     found: dict = panel
             self.assertIsNotNone(found)
-            self.assertListEqual(["title", "icon", "content_template",
-                                 "javascript_template", "description"], list(found.keys()))
+            self.assertListEqual(["title", "icon", "content", "description"], list(found.keys()))
 
         panels = bulk_plugin.get_custom_panels(StockIndex(), None)
         assert_contains_by_title("Manage bulk creation", panels)

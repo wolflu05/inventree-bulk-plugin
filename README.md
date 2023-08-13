@@ -160,6 +160,14 @@ These fields my differ between stock location and part category. They correspond
 
 Child's are a way to add some nesting to your bulk creation tree. You can use them for e.g. generating sections in every of your drawer. You can use the [Parent name match](#parent-name-match) option to add for your drawers named from `Drawer 1` - `Drawer 10` two sections while your other drawers have different sections. 
 
+## 🧑‍💻 Development
+
+1. Install as editable install to your inventree installation via `pip install -e /path/to/inventree-bulk-plugin`
+2. Enable the plugin and run `invoke migrate` to run the migration
+3. Install js dependencies via `cd inventree_bulk_plugin/frontend && npm ci`
+4. Configure the base url of your vite dev server (that you need to start via `npm run dev`) in the InvenTree `config.yml` as e.g. `customize.inventree_bulk_plugin_dev_url: http://localhost:5173`
+5. Restart InvenTree and start vite dev server via `npm run dev`
+
 ## ❓ FAQ
 
 #### Why does this plugin needs the App Mixin?

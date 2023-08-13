@@ -1,0 +1,27 @@
+{% load static %}
+{% load inventree_extras %}
+
+{% define "bulk-create-preact-root__"|add:page as dom_root %}
+
+<div id="{{ dom_root }}"></div>
+
+{% inventree_customize "inventree_bulk_plugin_dev_url" as dev_url %}
+{% if dev_url %}
+  <script type="module" src="{{ dev_url }}/@vite/client"></script>
+  <script type="module">
+    import { render } from "{{ dev_url }}/src/pages/{{ page }}.tsx";
+    render({ 
+      target: document.getElementById("{{ dom_root }}"),
+      ctxId: "{{ ctxId }}"
+    });
+  </script>
+{% else %}
+  <script type="module">
+    import { render } from "{% static 'inventree-bulk-plugin/dist/'|add:page|add:'.js' %}";
+    render({ 
+      target: document.getElementById("{{ dom_root }}"),
+      ctxId: "{{ ctxId }}"
+    });
+  </script>
+  <link rel="stylesheet" href="{% static 'inventree-bulk-plugin/dist/assets/style.css' %}">
+{% endif %}
