@@ -67,16 +67,20 @@ export const getUsedGenerateKeys = (schema: BulkDefinitionSchema) => {
   return [...keys];
 };
 
-export const getCounter =
-  (i = 1) =>
-  () =>
-    i++;
+export function getCounter(i = 1) {
+  return () => i++;
+}
+
+type FlatedType = {
+  id: number;
+  pid: number;
+  path: string;
+  [key: string]: number | string | boolean;
+};
 
 export const toFlat = (data: BulkGenerateAPIResult, counter: () => number, pid = 0, pa = "...") =>
-  data.flatMap(
-    ([parent, childs]): Array<{ id: number; pid: number; path: string; [key: string]: number | string | boolean }> => {
-      const id = counter();
-      const path = `${pa}/${parent.name}`;
-      return [{ ...parent, id, pid, path }, ...toFlat(childs, counter, id, path)];
-    },
-  );
+  data.flatMap(([parent, childs]): Array<FlatedType> => {
+    const id = counter();
+    const path = `${pa}/${parent.name}`;
+    return [{ ...parent, id, pid, path }, ...toFlat(childs, counter, id, path)];
+  });

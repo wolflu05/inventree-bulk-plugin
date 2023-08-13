@@ -85,16 +85,13 @@ export function Input(props: InputProps) {
           );
         } else if (props.type === "array") {
           const { onDelete, onAdd } = props;
+          const marginRight = (i: number) => !props.onAdd && props.value.length === i + 1;
+
           return (
             <div class="col-sm-10">
               <div class="d-flex flex-row flex-nowrap" style="gap: 4px">
                 {props.value.map((v: string, i: number) => (
-                  <div
-                    class="input-group"
-                    style={`max-width: 350px; ${
-                      !props.onAdd && props.value.length === i + 1 ? "margin-right: 31px;" : ""
-                    }`}
-                  >
+                  <div class="input-group" style={`max-width: 350px; ${marginRight(i) ? "margin-right: 31px;" : ""}`}>
                     <input
                       type="text"
                       class="form-control form-control-sm"
