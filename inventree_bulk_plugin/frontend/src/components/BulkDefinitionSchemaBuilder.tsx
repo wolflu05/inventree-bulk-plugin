@@ -66,10 +66,6 @@ export function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = 
   // unique identifier if BulkDefinitionSchemaBuilder is used multiple times on same DOM
   const accordionId = useId();
 
-  if (schema === null) {
-    return <></>
-  }
-
   return <div>
     <div class="card">
       <div class="card-header">

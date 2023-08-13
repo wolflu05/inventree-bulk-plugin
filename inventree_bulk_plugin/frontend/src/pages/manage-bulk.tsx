@@ -142,6 +142,7 @@ function EditForm({ template, setTemplate, templateTypeOptions = {}, handleBack 
                 Preview
             </button>
         </div>
+        <table id="bulk-create-manage-preview-table" class="mt-3"></table>
     </div>
 }
 
@@ -232,7 +233,6 @@ function App() {
         return (
             <div>
                 <EditForm template={editingTemplate} setTemplate={setEditingTemplate as unknown as StateUpdater<TemplateModel>} templateTypeOptions={templateTypeOptions} handleBack={backEditing} />
-                <table id="bulk-create-manage-preview-table" class="mt-3"></table>
             </div>
         )
     }

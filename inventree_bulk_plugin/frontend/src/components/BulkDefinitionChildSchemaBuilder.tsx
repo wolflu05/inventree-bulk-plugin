@@ -97,10 +97,6 @@ export function BulkDefinitionChildSchemaBuilder({ childSchema, setChildSchema, 
         });
     }, []);
 
-    if (childSchema === null) {
-        return <></>;
-    }
-
     return (
         <div class="">
             <Input label="Dimensions" tooltip="A childs naming convention could have multiple dimensions where it is counting in" type="array" onDelete={removeDimension} value={childSchema.dimensions.map(x => x || "")} onInput={setDimension("dimensions")} onAdd={addDimension} />
