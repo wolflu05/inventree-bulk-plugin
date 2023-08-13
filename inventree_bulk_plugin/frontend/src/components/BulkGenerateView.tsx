@@ -74,9 +74,6 @@ export function BulkGenerateView({
 
     const usedGenerateKeys = getUsedGenerateKeys(schema);
 
-    a
-
-    
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const $table = $(`#${tableId}`) as any;
     $table.bootstrapTable("destroy");
