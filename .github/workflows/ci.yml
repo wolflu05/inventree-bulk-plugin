@@ -145,7 +145,7 @@ jobs:
 
   report:
     name: 📝 Report
-    needs: [tests-unit-python, tests-integration-python]
+    needs: [tests-unit-python, tests-integration-python, style-js]
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
     permissions:
@@ -240,7 +240,7 @@ jobs:
 
   build-js:
     name: "🏗️ Build: js"
-    needs: [style-js]
+    needs: [report]
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
     runs-on: ubuntu-latest
 
