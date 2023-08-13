@@ -233,7 +233,8 @@ jobs:
       - name: Build pip package
         run: python3 -m build
 
-      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+      - name: Upload python artifact
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
           name: build-python
           path: dist/
@@ -259,10 +260,11 @@ jobs:
       - name: Build js
         run: cd inventree_bulk_plugin/frontend && npm run build
 
-      - uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
+      - name: Upload js artifact
+        uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
           name: build-js
-          path: inventree_bulk_plugin/static/dist/
+          path: inventree_bulk_plugin/static/inventree-bulk-plugin/dist
 
   publish:
     if: true || github.event_name == 'release' && github.event.action == 'published'
@@ -289,7 +291,7 @@ jobs:
         uses: actions/download-artifact@9bc31d5ccc31df68ecc42ccf4149144866c47d8a # pin@v3.0.2
         with:
           name: build-js
-          path: inventree_bulk_plugin/static/dist/
+          path: inventree_bulk_plugin/static/inventree-bulk-plugin/dist
 
       - name: Publish package to PyPI
         uses: pypa/gh-action-pypi-publish@f8c70e705ffc13c3b4d1221169b84f12a75d6ca8 # pin@v1.8.8
