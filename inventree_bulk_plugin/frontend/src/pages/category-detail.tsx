@@ -1,16 +1,18 @@
 import { render as preact_render } from "preact";
 
 import { BulkGenerateView } from "../components/BulkGenerateView";
+import { Page } from "../components/Page";
 import { PageRenderProps, TemplateType } from "../utils/types";
 
 export function render({ target, ctxId }: PageRenderProps) {
   preact_render(
-    <BulkGenerateView
-      createURL={`/plugin/inventree-bulk-plugin/bulkcreate/category/${ctxId}`}
-      name="categories"
-      defaultSchema={null}
-      templateType={TemplateType.PART_CATEGORY}
-    />,
+    <Page>
+      <BulkGenerateView
+        templateType={TemplateType.PART_CATEGORY}
+        parentId={ctxId}
+        createUrl="/plugin/inventree-bulk-plugin/bulkcreate/category/"
+      />
+    </Page>,
     target,
   );
 }

@@ -29,7 +29,7 @@ export function BulkDefinitionChildSchemaBuilder({
 }: BulkDefinitionChildSchemaBuilderProps) {
   // initially populate childSchema with values
   useEffect(() => {
-    if (Object.keys(childSchema.generate).length === 0) {
+    if (Object.keys(childSchema.generate).length === 0 && Object.keys(generateKeys).length > 0) {
       setChildSchema((s) => ({
         ...s,
         generate: Object.fromEntries(

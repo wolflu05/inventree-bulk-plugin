@@ -8,7 +8,7 @@ from rest_framework import status
 
 from plugin import InvenTreePlugin
 from plugin.mixins import PanelMixin, UrlsMixin, AppMixin
-from stock.views import StockLocationDetail, StockIndex
+from stock.views import StockLocationDetail
 from stock.models import StockLocation
 from part.views import CategoryDetail
 from part.models import PartCategory
@@ -54,14 +54,6 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
 
     def get_custom_panels(self, view, request):
         panels = []
-
-        if isinstance(view, StockIndex):
-            panels.append({
-                'title': 'Manage bulk creation',
-                'icon': 'fas fa-tools',
-                'content': '{% include "setup-preact.html" with page="manage-bulk" ctxId="" %}',
-                'description': 'Manage bulk creation',
-            })
 
         if isinstance(view, StockLocationDetail):
             panels.append({

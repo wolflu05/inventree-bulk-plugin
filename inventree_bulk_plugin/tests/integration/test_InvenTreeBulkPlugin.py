@@ -8,7 +8,7 @@ from InvenTree.unit_test import InvenTreeAPITestCase
 from plugin import registry
 from stock.models import StockLocation
 from part.models import PartCategory
-from stock.views import StockLocationDetail, StockIndex
+from stock.views import StockLocationDetail
 from part.views import CategoryDetail
 
 from ...models import validate_template, BulkCreationTemplate
@@ -102,9 +102,6 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
                     found: dict = panel
             self.assertIsNotNone(found)
             self.assertListEqual(["title", "icon", "content", "description"], list(found.keys()))
-
-        panels = bulk_plugin.get_custom_panels(StockIndex(), None)
-        assert_contains_by_title("Manage bulk creation", panels)
 
         panels = bulk_plugin.get_custom_panels(StockLocationDetail(), None)
         assert_contains_by_title("Bulk creation", panels)
