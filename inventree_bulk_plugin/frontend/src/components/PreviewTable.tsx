@@ -26,7 +26,7 @@ export const PreviewTable = ({ template, height }: PreviewTableProps) => {
       const json = await res.json();
 
       if (!res.ok) {
-        showNotification({ type: "danger", message: `An error occourd, ${json.error}` });
+        return showNotification({ type: "danger", message: `An error occourd, ${json.error}` });
       }
 
       const data = toFlat(json, getCounter());
