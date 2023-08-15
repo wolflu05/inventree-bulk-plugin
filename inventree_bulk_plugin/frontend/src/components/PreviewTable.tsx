@@ -7,9 +7,10 @@ import { TemplateModel } from "../utils/types";
 
 interface PreviewTableProps {
   template: TemplateModel;
+  height?: number;
 }
 
-export const PreviewTable = ({ template }: PreviewTableProps) => {
+export const PreviewTable = ({ template, height }: PreviewTableProps) => {
   const { showNotification } = useNotifications();
   const id = useId();
   const tableId = useMemo(() => `preview-table-${id}`, [id]);
@@ -40,6 +41,7 @@ export const PreviewTable = ({ template }: PreviewTableProps) => {
       $table.bootstrapTable({
         data,
         idField: "id",
+        height,
         columns: [
           ...Object.entries(generateKeys)
             .filter(([key]) => usedGenerateKeys.includes(key))
@@ -67,11 +69,11 @@ export const PreviewTable = ({ template }: PreviewTableProps) => {
         }),
       });
     })();
-  }, [generateKeys, showNotification, tableId, template]);
+  }, [generateKeys, height, showNotification, tableId, template]);
 
   return (
-    <div>
-      <table id={tableId} class="mt-3"></table>
+    <div class="mt-3">
+      <table id={tableId}></table>
     </div>
   );
 };

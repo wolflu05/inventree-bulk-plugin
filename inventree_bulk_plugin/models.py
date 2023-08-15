@@ -10,7 +10,7 @@ from .BulkGenerator.BulkGenerator import BulkGenerator
 
 def validate_template(value):
     try:
-        BulkGenerator(json.loads(value)).validate()
+        BulkGenerator(json.loads(value)).validate(True)
         return value
     except PyDanticValidationError as e:
         raise ValidationError(str(e))

@@ -62,7 +62,7 @@ export const NotificationWrapper = ({ children }: NotificationWrapperProps) => {
     >
       <div>
         {children}
-        <div style="position: fixed; bottom: 6px; right: 6px; display: flex; flex-direction: column; gap: 6px;">
+        <div style="position: fixed; bottom: 6px; right: 6px; display: flex; flex-direction: column; gap: 6px; z-index: 999999;">
           {notifications.map(({ id, type, message }, i) => (
             <div
               role="alert"

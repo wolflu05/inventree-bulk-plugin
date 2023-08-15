@@ -1,9 +1,13 @@
 import { ComponentChildren } from "preact";
 import { useEffect, useRef } from "preact/hooks";
 
+type ButtonColorTypes = "primary" | "secondary" | "success" | "danger" | "warning" | "info" | "light" | "dark";
+type ButtonStyleTypes = "" | "outline-";
+type ButtonType = `${ButtonStyleTypes}${ButtonColorTypes}`;
+
 interface Action {
   label: string;
-  type: "primary" | "secondary" | "success" | "danger" | "warning" | "info" | "light" | "dark";
+  type: ButtonType;
   onClick: () => void;
   disabled?: boolean;
   loading?: boolean;
@@ -13,11 +17,13 @@ interface DialogProps {
   title: string;
   children: ComponentChildren;
   show: boolean;
+  scrollable?: boolean;
   onClose?: () => void;
   actions?: Action[];
+  size?: "sm" | "lg" | "xl";
 }
 
-export const Dialog = ({ title, children, show, onClose, actions = [] }: DialogProps) => {
+export const Dialog = ({ title, children, show, scrollable, onClose, actions = [], size }: DialogProps) => {
   const modalRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const modalInstance = useRef<any>(null);
@@ -25,7 +31,7 @@ export const Dialog = ({ title, children, show, onClose, actions = [] }: DialogP
   useEffect(() => {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    modalInstance.current = bootstrap.Modal.getOrCreateInstance(modalRef.current);
+    modalInstance.current = bootstrap.Modal.getOrCreateInstance(modalRef.current, { backdrop: "static" });
   }, []);
 
   useEffect(() => {
@@ -45,9 +51,9 @@ export const Dialog = ({ title, children, show, onClose, actions = [] }: DialogP
   }, [onClose]);
 
   return (
-    <div class="modal fade" tabIndex={-1} ref={modalRef}>
-      <div class="modal-dialog">
-        <div class="modal-content">
+    <div class={`modal fade ${size ? `modal-${size}` : ""}`} tabIndex={-1} ref={modalRef}>
+      <div class={`modal-dialog ${scrollable ? "modal-dialog-scrollable" : ""}`}>
+        <div class="modal-content" style={`${!scrollable ? "max-height: 92vh;" : ""}`}>
           <div class="modal-header">
             <h5 class="modal-title">{title}</h5>
             <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>

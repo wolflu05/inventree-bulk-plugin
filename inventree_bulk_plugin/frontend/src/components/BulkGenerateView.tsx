@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
 import { Dialog } from "./Dialog";
+import { PreviewCreate } from "./PreviewCreate";
 import { TemplateForm } from "./TemplateForm";
 import { useNotifications } from "../contexts/Notification";
 import { TemplateModel, TemplateType } from "../utils/types";
@@ -81,6 +82,22 @@ export const BulkGenerateView = ({ templateType, parentId, createUrl }: BulkGene
     showNotification({ type: "success", message: "Template successfuly deleted." });
   }, [currentTemplate, showNotification]);
 
+  const previewHandler = useRef(() => {
+    //
+  });
+  const createHandler = useRef(() => {
+    //
+  });
+
+  const handleClosePreviewDialog = useCallback(() => {
+    setHasPreviwed(false);
+    setCurrentTemplate(null);
+    setCurrentMode("OVERVIEW");
+  }, []);
+
+  const [isBulkCreateLoading, setIsBulkCreateLoading] = useState(false);
+  const [hasPreviewed, setHasPreviwed] = useState(false);
+
   if (currentMode === "EDITING") {
     return (
       <div>
@@ -126,8 +143,17 @@ export const BulkGenerateView = ({ templateType, parentId, createUrl }: BulkGene
                   >
                     Delete
                   </button>
-                  <button class="btn btn-sm btn-outline-success" onClick={switchModeWithTemplate("EDITING", template)}>
+                  <button
+                    class="btn btn-sm btn-outline-success me-1"
+                    onClick={switchModeWithTemplate("EDITING", template)}
+                  >
                     Edit
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-primary"
+                    onClick={switchModeWithTemplate("PREVIEWING", template)}
+                  >
+                    Preview/Bulk create
                   </button>
                 </td>
               </tr>
@@ -150,6 +176,52 @@ export const BulkGenerateView = ({ templateType, parentId, createUrl }: BulkGene
         actions={[{ label: "Delete", type: "danger", onClick: handleDelete }]}
       >
         Are you sure you want to delete the template "{currentTemplate?.name}"?
+      </Dialog>
+
+      <Dialog
+        title="Preview/bulk create from template"
+        show={currentMode === "PREVIEWING"}
+        onClose={handleClosePreviewDialog}
+        actions={[
+          {
+            label: "Preview",
+            type: "primary",
+            onClick: () => {
+              previewHandler.current();
+              setHasPreviwed(true);
+            },
+          },
+          {
+            label: "Bulk create",
+            type: "outline-primary",
+            onClick: () => createHandler.current(),
+            disabled: isBulkCreateLoading || !hasPreviewed,
+            loading: isBulkCreateLoading,
+          },
+        ]}
+      >
+        {currentTemplate && (
+          <>
+            <PreviewCreate
+              template={currentTemplate}
+              parentId={parentId}
+              createUrl={createUrl}
+              attachPreviewHandler={(handler) => {
+                previewHandler.current = handler;
+              }}
+              attachCreateHandler={(handler) => {
+                createHandler.current = handler;
+              }}
+              handleDoneCreate={(ok) => {
+                if (ok) {
+                  handleClosePreviewDialog();
+                }
+              }}
+              setIsBulkCreateLoading={setIsBulkCreateLoading}
+            />
+            {!hasPreviewed && <i>You need to preview the items first.</i>}
+          </>
+        )}
       </Dialog>
     </div>
   );
