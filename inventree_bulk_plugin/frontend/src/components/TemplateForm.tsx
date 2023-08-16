@@ -131,16 +131,19 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
         template: JSON.stringify(beautifySchema(template.template)),
       }),
     });
+    const json = await res.json();
 
     setIsBulkCreateLoading(false);
     setShowBulkCreateDialog(false);
 
     if (!res.ok) {
-      const json = await res.json();
       return showNotification({ type: "danger", message: `An error occurred, ${json.error}` });
     }
 
-    showNotification({ type: "success", message: `Successfully bulk created ${template.template_type}s.` });
+    showNotification({
+      type: "success",
+      message: `Successfully bulk created ${json.length} ${template.template_type}s.`,
+    });
   }, [parentId, showNotification, template]);
 
   return (

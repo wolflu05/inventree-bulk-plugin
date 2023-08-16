@@ -69,16 +69,16 @@ export const PreviewCreate = ({
         template: JSON.stringify(beautifySchema(final.template)),
       }),
     });
+    const json = await res.json();
 
     setIsBulkCreateLoading(false);
 
     if (!res.ok) {
       handleDoneCreate?.(false);
-      const json = await res.json();
       return showNotification({ type: "danger", message: `An error occourd, ${json.error}` });
     }
 
-    showNotification({ type: "success", message: `Successfully bulk created ${final.template_type}s.` });
+    showNotification({ type: "success", message: `Successfully bulk created ${json.length} ${final.template_type}s.` });
     handleDoneCreate?.(true);
   }, [handleDoneCreate, inputs, parentId, setIsBulkCreateLoading, showNotification, template]);
 
