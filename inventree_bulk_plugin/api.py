@@ -88,9 +88,9 @@ class BulkCreate(APIView):
         template_type = request.data.get("template_type", None)
         schema = request.data.get("template", None)
 
-        Bulkcreate_object_class = bulkcreate_objects.get(template_type, None)
+        bulkcreate_object_class = bulkcreate_objects.get(template_type, None)
 
-        if not Bulkcreate_object_class:
+        if not bulkcreate_object_class:
             return Response(
                 {"error": f"Template type '{template_type}' not found, choose one of {','.join(bulkcreate_objects.keys())}"},
                 status=status.HTTP_400_BAD_REQUEST
@@ -99,7 +99,7 @@ class BulkCreate(APIView):
         if not schema:
             return Response({"error": "BulkDefinitionSchema not provided via 'template' property."}, status=status.HTTP_400_BAD_REQUEST)
 
-        bulkcreate_object = Bulkcreate_object_class(request.query_params)
+        bulkcreate_object = bulkcreate_object_class(request.query_params)
 
         ctx = bulkcreate_object.get_context()
 
