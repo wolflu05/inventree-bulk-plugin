@@ -213,9 +213,9 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
 
     def _template_url(self, pk=None):
         if pk:
-            return reverse("plugin:inventree-bulk-plugin:api-list-templates", kwargs={"pk": pk})
+            return reverse("plugin:inventree-bulk-plugin:api-detail-templates", kwargs={"pk": pk})
         else:
-            return reverse("plugin:inventree-bulk-plugin:api-detail-templates")
+            return reverse("plugin:inventree-bulk-plugin:api-list-templates")
 
     def test_url_template_get(self):
         BulkCreationTemplate.objects.create(name="Complex Stock template", template_type="STOCK_LOCATION",
