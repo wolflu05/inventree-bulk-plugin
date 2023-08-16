@@ -36,7 +36,9 @@ class TemplateList(ListCreateAPIView):
 
     queryset = BulkCreationTemplate.objects.all()
     serializer_class = TemplateSerializer
+
     authentication_classes = authentication_classes
+    permission_classes = [permissions.IsAuthenticated]
 
     filter_backends = SEARCH_ORDER_FILTER
 
@@ -66,7 +68,9 @@ class TemplateDetail(RetrieveUpdateDestroyAPIView):
 
     queryset = BulkCreationTemplate.objects.all()
     serializer_class = TemplateSerializer
+
     authentication_classes = authentication_classes
+    permission_classes = [permissions.IsAuthenticated]
 
 
 class BulkCreate(APIView):

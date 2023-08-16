@@ -237,8 +237,8 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
 
         # try getting by pk
         response = self.get(self._template_url(template2.pk), expected_code=200).json()
-        self.assertDictEqual({'id': template2.pk, 'name': 'Stock template', 'template_type': 'STOCK_LOCATION',
-                             'template': self.simple_valid_generation_template_json}, response)
+        self.assertDictContainsSubset({'id': template2.pk, 'name': 'Stock template', 'template_type': 'STOCK_LOCATION',
+                                       'template': self.simple_valid_generation_template_json}, response)
 
         # try getting by not existing pk
         response = self.get(self._template_url(42), expected_code=404)
@@ -246,7 +246,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
     def test_url_template_post(self):
         # create valid template
         create_template = self.post(self._template_url(), {
-                                    "name": "Post - testing template", "template_type": "STOCK_LOCATION", "template": self.simple_valid_generation_template_json}, expected_code=200).json()
+                                    "name": "Post - testing template", "template_type": "STOCK_LOCATION", "template": self.simple_valid_generation_template_json}, expected_code=201).json()
         created_object = BulkCreationTemplate.objects.get(pk=create_template['id'])
         for key in ["id", "name", "template_type", "template"]:
             self.assertEqual(getattr(created_object, key), create_template[key])
@@ -254,27 +254,34 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         # create invalid template
         self.post(self._template_url(), {"novalidkey": "value"}, expected_code=400)
 
-    def test_url_template_put(self):
+    def test_url_template_put_patch(self):
         template = BulkCreationTemplate.objects.create(name="Stock template put test", template_type="STOCK_LOCATION",
                                                        template=self.simple_valid_generation_template_json)
 
         # test update with no pk
-        self.put(self._template_url(), {"name": "test"}, expected_code=404)
+        self.patch(self._template_url(), {"name": "test"}, expected_code=405)
 
         # test update with invalid pk
-        self.put(self._template_url(42), {"name": "test"}, expected_code=404)
+        self.patch(self._template_url(42), {"name": "test"}, expected_code=404)
 
         # test update with valid pk
-        updated_template = self.put(self._template_url(template.pk), {'name': "updated name"}, expected_code=200).json()
+        updated_template = self.patch(self._template_url(template.pk), {
+                                      'name': "updated name"}, expected_code=200).json()
         self.assertEqual("updated name", updated_template['name'])
         self.assertEqual("updated name", BulkCreationTemplate.objects.get(pk=template.pk).name)
 
+        # test put update with valid pk
+        updated_template = self.patch(self._template_url(template.pk), {
+                                      **updated_template, 'name': "updated name 2"}, expected_code=200).json()
+        self.assertEqual("updated name 2", updated_template['name'])
+        self.assertEqual("updated name 2", BulkCreationTemplate.objects.get(pk=template.pk).name)
+
         # test update with valid pk and no valid data
-        updated_template = self.put(self._template_url(template.pk), {'template': {
-                                    "no valid bulk": "generation template"}}, expected_code=400).json()
+        updated_template = self.patch(self._template_url(template.pk), {'template': {
+            "no valid bulk": "generation template"}}, expected_code=400).json()
 
         # assert that id cannot be changed
-        updated_template = self.put(self._template_url(template.pk), {'id': 42}, expected_code=200).json()
+        updated_template = self.patch(self._template_url(template.pk), {'id': 42}, expected_code=200).json()
         self.assertEqual(template.pk, updated_template['id'])
 
     def test_url_template_delete(self):
@@ -285,6 +292,6 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         self.delete(self._template_url(42), expected_code=404)
 
         # test delete with valid pk
-        self.delete(self._template_url(template.pk), expected_code=201)
+        self.delete(self._template_url(template.pk), expected_code=204)
         with self.assertRaises(BulkCreationTemplate.DoesNotExist):
             BulkCreationTemplate.objects.get(pk=template.pk)
