@@ -1,6 +1,6 @@
 export interface GenerateKey {
   name: string;
-  type: "text" | "boolean" | "number";
+  field_type: "text" | "boolean" | "number";
   required: boolean;
 }
 

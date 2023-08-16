@@ -4,17 +4,17 @@ import { Dialog } from "./Dialog";
 import { PreviewCreate } from "./PreviewCreate";
 import { TemplateForm } from "./TemplateForm";
 import { useNotifications } from "../contexts/Notification";
+import { fetchAPI } from "../utils";
 import { TemplateModel, TemplateType } from "../utils/types";
 
 interface BulkGenerateViewProps {
   templateType?: TemplateType;
   parentId?: string;
-  createUrl?: string; // TODO: delete afer API refactor
 }
 
 type BulkGenerateViewMode = "OVERVIEW" | "EDITING" | "DELETING" | "PREVIEWING";
 
-export const BulkGenerateView = ({ templateType, parentId, createUrl }: BulkGenerateViewProps) => {
+export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewProps) => {
   const [savedTemplates, setSavedTemplates] = useState<TemplateModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -26,7 +26,7 @@ export const BulkGenerateView = ({ templateType, parentId, createUrl }: BulkGene
   const reloadSavedTemplates = useCallback(async () => {
     setIsLoading(true);
 
-    const res = await fetch(
+    const res = await fetchAPI(
       `/plugin/inventree-bulk-plugin/templates${templateType ? `?template_type=${templateType}` : ""}`,
     );
 
@@ -67,7 +67,7 @@ export const BulkGenerateView = ({ templateType, parentId, createUrl }: BulkGene
   const handleDelete = useCallback(async () => {
     if (currentTemplate === null) return;
 
-    const res = await fetch(`/plugin/inventree-bulk-plugin/templates/${currentTemplate.id}`, {
+    const res = await fetchAPI(`/plugin/inventree-bulk-plugin/templates/${currentTemplate.id}`, {
       method: "DELETE",
     });
 
@@ -90,13 +90,13 @@ export const BulkGenerateView = ({ templateType, parentId, createUrl }: BulkGene
   });
 
   const handleClosePreviewDialog = useCallback(() => {
-    setHasPreviwed(false);
+    setHasPreviewed(false);
     setCurrentTemplate(null);
     setCurrentMode("OVERVIEW");
   }, []);
 
   const [isBulkCreateLoading, setIsBulkCreateLoading] = useState(false);
-  const [hasPreviewed, setHasPreviwed] = useState(false);
+  const [hasPreviewed, setHasPreviewed] = useState(false);
 
   if (currentMode === "EDITING") {
     return (
@@ -106,7 +106,6 @@ export const BulkGenerateView = ({ templateType, parentId, createUrl }: BulkGene
           templateId={currentTemplate?.id}
           templateType={templateType}
           parentId={parentId}
-          createUrl={createUrl}
         />
       </div>
     );
@@ -188,7 +187,7 @@ export const BulkGenerateView = ({ templateType, parentId, createUrl }: BulkGene
             type: "primary",
             onClick: () => {
               previewHandler.current();
-              setHasPreviwed(true);
+              setHasPreviewed(true);
             },
           },
           {
@@ -205,7 +204,6 @@ export const BulkGenerateView = ({ templateType, parentId, createUrl }: BulkGene
             <PreviewCreate
               template={currentTemplate}
               parentId={parentId}
-              createUrl={createUrl}
               attachPreviewHandler={(handler) => {
                 previewHandler.current = handler;
               }}

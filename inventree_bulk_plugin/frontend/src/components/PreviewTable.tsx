@@ -2,15 +2,16 @@ import { useEffect, useId, useMemo } from "preact/hooks";
 
 import { useGenerateKeysForTemplateType } from "../contexts/GenerateKeys";
 import { useNotifications } from "../contexts/Notification";
-import { beautifySchema, getCounter, getUsedGenerateKeys, toFlat } from "../utils";
+import { URLS, beautifySchema, fetchAPI, getCounter, getUsedGenerateKeys, toFlat } from "../utils";
 import { TemplateModel } from "../utils/types";
 
 interface PreviewTableProps {
   template: TemplateModel;
   height?: number;
+  parentId?: string;
 }
 
-export const PreviewTable = ({ template, height }: PreviewTableProps) => {
+export const PreviewTable = ({ template, height, parentId }: PreviewTableProps) => {
   const { showNotification } = useNotifications();
   const id = useId();
   const tableId = useMemo(() => `preview-table-${id}`, [id]);
@@ -19,9 +20,12 @@ export const PreviewTable = ({ template, height }: PreviewTableProps) => {
 
   useEffect(() => {
     (async () => {
-      const res = await fetch(`/plugin/inventree-bulk-plugin/parse?template_type=${template.template_type}`, {
+      const res = await fetchAPI(URLS.bulkcreate({ parentId, create: false }), {
         method: "POST",
-        body: JSON.stringify(beautifySchema(template.template)),
+        body: JSON.stringify({
+          ...template,
+          template: JSON.stringify(beautifySchema(template.template)),
+        }),
       });
       const json = await res.json();
 
@@ -69,7 +73,7 @@ export const PreviewTable = ({ template, height }: PreviewTableProps) => {
         }),
       });
     })();
-  }, [generateKeys, height, showNotification, tableId, template]);
+  }, [generateKeys, height, parentId, showNotification, tableId, template]);
 
   return (
     <div class="mt-3">

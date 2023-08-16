@@ -4,13 +4,12 @@ import { StateUpdater, useCallback, useEffect, useState } from "preact/hooks";
 import { Input } from "./Input";
 import { PreviewTable } from "./PreviewTable";
 import { useNotifications } from "../contexts/Notification";
-import { beautifySchema } from "../utils";
+import { URLS, beautifySchema, fetchAPI } from "../utils";
 import { TemplateModel } from "../utils/types";
 
 interface PreviewCreateProps {
   template: TemplateModel;
   parentId?: string;
-  createUrl?: string;
   attachPreviewHandler?: (previewHandler: () => void) => void;
   attachCreateHandler?: (createHandler: () => void) => void;
   handleDoneCreate?: (ok: boolean) => void;
@@ -35,7 +34,6 @@ const getTemplateWithInputs = (template: TemplateModel, inputs: InputType[]) => 
 export const PreviewCreate = ({
   template,
   parentId,
-  createUrl,
   attachPreviewHandler,
   attachCreateHandler,
   handleDoneCreate,
@@ -61,11 +59,14 @@ export const PreviewCreate = ({
   const handleBulkCreate = useCallback(async () => {
     setIsBulkCreateLoading(true);
 
-    const final = structuredClone(getTemplateWithInputs(template, inputs));
+    const final = getTemplateWithInputs(template, inputs);
 
-    const res = await fetch(`${createUrl}${parentId}`, {
+    const res = await fetchAPI(URLS.bulkcreate({ parentId, create: true }), {
       method: "POST",
-      body: JSON.stringify(beautifySchema(final.template)),
+      body: JSON.stringify({
+        ...final,
+        template: JSON.stringify(beautifySchema(final.template)),
+      }),
     });
 
     setIsBulkCreateLoading(false);
@@ -78,7 +79,7 @@ export const PreviewCreate = ({
 
     showNotification({ type: "success", message: `Successfully bulk created ${final.template_type}s.` });
     handleDoneCreate?.(true);
-  }, [createUrl, handleDoneCreate, inputs, parentId, setIsBulkCreateLoading, showNotification, template]);
+  }, [handleDoneCreate, inputs, parentId, setIsBulkCreateLoading, showNotification, template]);
 
   const previewHandler = useCallback(() => {
     const final = structuredClone(getTemplateWithInputs(template, inputs));
@@ -106,7 +107,7 @@ export const PreviewCreate = ({
         <>
           <h5>Preview</h5>
           <div class={initial ? "mb-4" : ""}>
-            <PreviewTable template={previewTemplate} height={250} />
+            <PreviewTable template={previewTemplate} height={250} parentId={parentId} />
           </div>
         </>
       )}

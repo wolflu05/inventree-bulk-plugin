@@ -7,7 +7,7 @@ import { Input } from "./Input";
 import { PreviewTable } from "./PreviewTable";
 import { useGenerateKeys } from "../contexts/GenerateKeys";
 import { useNotifications } from "../contexts/Notification";
-import { beautifySchema, isEqual } from "../utils";
+import { URLS, beautifySchema, fetchAPI, isEqual } from "../utils";
 import { defaultSchema, templateTypeOptions } from "../utils/constants";
 import { BulkDefinitionSchema, TemplateModel, TemplateType } from "../utils/types";
 
@@ -16,10 +16,9 @@ interface TemplateFormProps {
   templateType?: TemplateType;
   handleBack: () => void;
   parentId?: string;
-  createUrl?: string; // TODO: delete afer API refactor
 }
 
-export const TemplateForm = ({ templateId, handleBack, templateType, parentId, createUrl }: TemplateFormProps) => {
+export const TemplateForm = ({ templateId, handleBack, templateType, parentId }: TemplateFormProps) => {
   const [initialTemplate, setInitialTemplate] = useState<TemplateModel | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<TemplateModel | null>(null);
   const [template, setTemplate] = useState<TemplateModel | null>(null);
@@ -51,7 +50,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId, c
     let template: null | TemplateModel = null;
 
     if (templateId) {
-      const res = await fetch(`/plugin/inventree-bulk-plugin/templates/${templateId}`);
+      const res = await fetchAPI(`/plugin/inventree-bulk-plugin/templates/${templateId}`);
       if (!res.ok) {
         setIsLoading(false);
         return showNotification({ type: "danger", message: `Fetching template failed,\n${res.statusText}` });
@@ -84,7 +83,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId, c
   const saveOrUpdate = useCallback(async () => {
     if (!template) return;
 
-    const res = await fetch(`/plugin/inventree-bulk-plugin/templates/${isCreate ? "" : template.id}`, {
+    const res = await fetchAPI(`/plugin/inventree-bulk-plugin/templates/${isCreate ? "" : template.id}`, {
       method: isCreate ? "POST" : "PUT",
       body: JSON.stringify({ ...template, template: JSON.stringify(beautifySchema(template.template)) }),
     });
@@ -93,8 +92,8 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId, c
     if (!res.ok) {
       return showNotification({
         type: "danger",
-        message: `An error occurred. ${Object.entries(data as Record<string, { message: string }[]>)
-          .map(([key, v]) => `${key}: ${v.map(({ message }) => message).join(", ")}`)
+        message: `An error occurred. ${Object.entries(data as Record<string, string[]>)
+          .map(([key, v]) => `${key}: ${v.join(", ")}`)
           .join(", ")}`,
         autoHide: false,
       });
@@ -113,7 +112,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId, c
 
   const handleReset = useCallback(() => setTemplate(structuredClone(initialTemplate)), [initialTemplate]);
 
-  const handlePreviw = useCallback(() => {
+  const handlePreview = useCallback(() => {
     setPreviewTemplate(structuredClone(template));
   }, [template]);
 
@@ -124,9 +123,12 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId, c
 
     setIsBulkCreateLoading(true);
 
-    const res = await fetch(`${createUrl}${parentId}`, {
+    const res = await fetchAPI(URLS.bulkcreate({ parentId, create: true }), {
       method: "POST",
-      body: JSON.stringify(beautifySchema(template.template)),
+      body: JSON.stringify({
+        ...template,
+        template: JSON.stringify(beautifySchema(template.template)),
+      }),
     });
 
     setIsBulkCreateLoading(false);
@@ -138,7 +140,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId, c
     }
 
     showNotification({ type: "success", message: `Successfully bulk created ${template.template_type}s.` });
-  }, [createUrl, parentId, showNotification, template]);
+  }, [parentId, showNotification, template]);
 
   return (
     <div>
@@ -199,7 +201,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId, c
             Reset
           </button>
         )}
-        <button class="btn btn-outline-primary" onClick={handlePreviw}>
+        <button class="btn btn-outline-primary" onClick={handlePreview}>
           Preview
         </button>
         {parentId && (
@@ -209,7 +211,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId, c
         )}
       </div>
 
-      {previewTemplate && <PreviewTable template={previewTemplate} />}
+      {previewTemplate && <PreviewTable template={previewTemplate} parentId={parentId} />}
 
       <Dialog
         title="Bulk create"

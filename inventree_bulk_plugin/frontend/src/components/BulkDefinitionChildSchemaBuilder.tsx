@@ -206,10 +206,10 @@ export function BulkDefinitionChildSchemaBuilder({
       </div>
       {Object.entries(generateKeys)
         .filter(([key]) => childSchema.generate[key] !== undefined)
-        .map(([key, { name, required, type }]) => (
+        .map(([key, { name, required, field_type }]) => (
           <Input
             label={name}
-            tooltip={typeHelpTexts[type]}
+            tooltip={typeHelpTexts[field_type]}
             type="text"
             value={childSchema.generate[key]}
             onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) => setGenerateValue(key)(e.currentTarget.value)}

@@ -2,6 +2,7 @@ import { ComponentChildren, createContext } from "preact";
 import { useCallback, useContext, useEffect, useState } from "preact/hooks";
 
 import { useNotifications } from "./Notification";
+import { URLS, fetchAPI } from "../utils";
 import { GenerateKeys, TemplateType } from "../utils/types";
 
 interface GenerateKeysContextType {
@@ -36,15 +37,18 @@ export const GenerateKeysWrapper = ({ children }: GenerateKeysWrapperProps) => {
   const { showNotification } = useNotifications();
 
   const reload = useCallback(async () => {
-    const res = await fetch("/plugin/inventree-bulk-plugin/parse", {
-      method: "OPTIONS",
-    });
+    const res = await fetchAPI(URLS.bulkcreate());
 
     if (!res.ok) {
       return showNotification({ type: "danger", message: `Could not load generate keys, ${res.statusText}` });
     }
 
-    const generateKeys = (await res.json()) as Record<string, GenerateKeys>;
+    const generateKeys = Object.fromEntries(
+      (await res.json()).map((x: { template_type: string; fields: Array<GenerateKeys> }) => [
+        x.template_type,
+        x.fields,
+      ]),
+    ) as Record<string, GenerateKeys>;
     setGenerateKeys(generateKeys);
   }, [showNotification]);
 

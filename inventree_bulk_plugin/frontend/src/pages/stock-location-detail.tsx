@@ -7,11 +7,7 @@ import { PageRenderProps, TemplateType } from "../utils/types";
 export function render({ target, ctxId }: PageRenderProps) {
   preact_render(
     <Page>
-      <BulkGenerateView
-        templateType={TemplateType.STOCK_LOCATION}
-        parentId={ctxId}
-        createUrl="/plugin/inventree-bulk-plugin/bulkcreate/location/"
-      />
+      <BulkGenerateView templateType={TemplateType.STOCK_LOCATION} parentId={ctxId} />
     </Page>,
     target,
   );
