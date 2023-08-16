@@ -2,7 +2,8 @@ import { useEffect, useId, useMemo } from "preact/hooks";
 
 import { useGenerateKeysForTemplateType } from "../contexts/GenerateKeys";
 import { useNotifications } from "../contexts/Notification";
-import { URLS, beautifySchema, fetchAPI, getCounter, getUsedGenerateKeys, toFlat } from "../utils";
+import { beautifySchema, getCounter, getUsedGenerateKeys, toFlat } from "../utils";
+import { URLS, fetchAPI } from "../utils/api";
 import { TemplateModel } from "../utils/types";
 
 interface PreviewTableProps {

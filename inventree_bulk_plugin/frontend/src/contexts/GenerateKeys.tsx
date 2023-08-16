@@ -2,7 +2,7 @@ import { ComponentChildren, createContext } from "preact";
 import { useCallback, useContext, useEffect, useState } from "preact/hooks";
 
 import { useNotifications } from "./Notification";
-import { URLS, fetchAPI } from "../utils";
+import { URLS, fetchAPI } from "../utils/api";
 import { GenerateKeys, TemplateType } from "../utils/types";
 
 interface GenerateKeysContextType {

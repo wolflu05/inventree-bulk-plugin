@@ -7,7 +7,8 @@ import { Input } from "./Input";
 import { PreviewTable } from "./PreviewTable";
 import { useGenerateKeys } from "../contexts/GenerateKeys";
 import { useNotifications } from "../contexts/Notification";
-import { URLS, beautifySchema, fetchAPI, isEqual } from "../utils";
+import { beautifySchema, isEqual } from "../utils";
+import { URLS, fetchAPI } from "../utils/api";
 import { defaultSchema, templateTypeOptions } from "../utils/constants";
 import { BulkDefinitionSchema, TemplateModel, TemplateType } from "../utils/types";
 
@@ -50,7 +51,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
     let template: null | TemplateModel = null;
 
     if (templateId) {
-      const res = await fetchAPI(`/plugin/inventree-bulk-plugin/templates/${templateId}`);
+      const res = await fetchAPI(URLS.templates({ id: templateId }));
       if (!res.ok) {
         setIsLoading(false);
         return showNotification({ type: "danger", message: `Fetching template failed,\n${res.statusText}` });
@@ -83,7 +84,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
   const saveOrUpdate = useCallback(async () => {
     if (!template) return;
 
-    const res = await fetchAPI(`/plugin/inventree-bulk-plugin/templates/${isCreate ? "" : template.id}`, {
+    const res = await fetchAPI(URLS.templates({ id: isCreate ? null : template.id }), {
       method: isCreate ? "POST" : "PUT",
       body: JSON.stringify({ ...template, template: JSON.stringify(beautifySchema(template.template)) }),
     });
@@ -136,7 +137,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
 
     if (!res.ok) {
       const json = await res.json();
-      return showNotification({ type: "danger", message: `An error occourd, ${json.error}` });
+      return showNotification({ type: "danger", message: `An error occurred, ${json.error}` });
     }
 
     showNotification({ type: "success", message: `Successfully bulk created ${template.template_type}s.` });

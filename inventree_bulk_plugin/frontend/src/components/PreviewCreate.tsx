@@ -4,7 +4,8 @@ import { StateUpdater, useCallback, useEffect, useState } from "preact/hooks";
 import { Input } from "./Input";
 import { PreviewTable } from "./PreviewTable";
 import { useNotifications } from "../contexts/Notification";
-import { URLS, beautifySchema, fetchAPI } from "../utils";
+import { beautifySchema } from "../utils";
+import { URLS, fetchAPI } from "../utils/api";
 import { TemplateModel } from "../utils/types";
 
 interface PreviewCreateProps {

@@ -84,24 +84,3 @@ export const toFlat = (data: BulkGenerateAPIResult, counter: () => number, pid =
     const path = `${pa}/${parent.name}`;
     return [{ ...parent, id, pid, path }, ...toFlat(childs, counter, id, path)];
   });
-
-export const fetchAPI = (input: RequestInfo | URL, init?: RequestInit) => {
-  return fetch(input, {
-    headers: {
-      "Content-Type": "application/json",
-      ...init?.headers,
-    },
-    ...init,
-  });
-};
-
-export const URLS = {
-  bulkcreate: ({ parentId, create }: { parentId?: string; create?: boolean } = {}) => {
-    const params = new URLSearchParams();
-    if (parentId) params.set("parent_id", parentId);
-    if (create) params.set("create", create ? "true" : "false");
-    const paramsString = params.toString();
-
-    return `/plugin/inventree-bulk-plugin/bulkcreate${paramsString ? `?${paramsString}` : ""}`;
-  },
-};

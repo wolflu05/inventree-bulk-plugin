@@ -4,7 +4,7 @@ import { Dialog } from "./Dialog";
 import { PreviewCreate } from "./PreviewCreate";
 import { TemplateForm } from "./TemplateForm";
 import { useNotifications } from "../contexts/Notification";
-import { fetchAPI } from "../utils";
+import { URLS, fetchAPI } from "../utils/api";
 import { TemplateModel, TemplateType } from "../utils/types";
 
 interface BulkGenerateViewProps {
@@ -26,9 +26,7 @@ export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewPro
   const reloadSavedTemplates = useCallback(async () => {
     setIsLoading(true);
 
-    const res = await fetchAPI(
-      `/plugin/inventree-bulk-plugin/templates${templateType ? `?template_type=${templateType}` : ""}`,
-    );
+    const res = await fetchAPI(URLS.templates({ templateType }));
 
     if (!res.ok) {
       setIsLoading(false);
@@ -67,7 +65,7 @@ export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewPro
   const handleDelete = useCallback(async () => {
     if (currentTemplate === null) return;
 
-    const res = await fetchAPI(`/plugin/inventree-bulk-plugin/templates/${currentTemplate.id}`, {
+    const res = await fetchAPI(URLS.templates({ id: currentTemplate.id }), {
       method: "DELETE",
     });
 
@@ -79,7 +77,7 @@ export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewPro
     setCurrentMode("OVERVIEW");
     setSavedTemplates((s) => [...s.filter((t) => t.id !== currentTemplate.id)]);
 
-    showNotification({ type: "success", message: "Template successfuly deleted." });
+    showNotification({ type: "success", message: "Template successfully deleted." });
   }, [currentTemplate, showNotification]);
 
   const previewHandler = useRef(() => {
