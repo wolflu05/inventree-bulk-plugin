@@ -188,6 +188,8 @@ class BulkGenerator:
                     raise ValueError(f"'{k}' is missing in generated keys")
 
         def get_wrapper(key):
+            cast_func, field_required = None, None
+
             if self.fields and (field := self.fields.get(key, None)):
                 cast_func = field.cast_func
                 field_required = field.required
