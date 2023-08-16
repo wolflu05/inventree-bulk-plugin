@@ -1,7 +1,10 @@
+from dataclasses import dataclass
 import itertools
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable, Literal
 
 from jinja2.exceptions import TemplateError
+
+from InvenTree.helpers import str2bool, str2int
 
 from ..version import BULK_PLUGIN_VERSION
 from .validations import BulkDefinitionChild, BulkDefinitionChildCount, BulkDefinitionChildDimensions, BulkDefinitionChildTemplate, BulkDefinitionSchema
@@ -55,8 +58,29 @@ class DimStr(str):
         self.len = length
 
 
+@dataclass
+class FieldDefinition:
+    name: str
+    field_type: Literal["text", "boolean", "number"] = "text"
+    cast_func: Callable[[str], Any] = None
+    required: bool = False
+
+    type_casts = {
+        "text": str,
+        "boolean": str2bool,
+        "number": str2int,
+    }
+
+    def __post_init__(self):
+        if self.cast_func is None and (cast_func := self.type_casts.get(self.field_type, None)):
+            self.cast_func = cast_func
+
+
+ParseChildReturnType = list[tuple[dict[str, str], list["ParseChildReturnType"]]]
+
+
 class BulkGenerator:
-    def __init__(self, inp, fields=None):
+    def __init__(self, inp, fields: dict[str, FieldDefinition] = None):
         self.inp = inp
         self.schema: BulkDefinitionSchema = None
         self.fields = fields
@@ -77,8 +101,6 @@ class BulkGenerator:
 
     def get_default_context(self):
         return {"inp": self.schema.input}
-
-    ParseChildReturnType = list[tuple[dict[str, str], list["ParseChildReturnType"]]]
 
     def parse_child(self, child: BulkDefinitionChild, parent_ctx: dict[str, Any] = {}) -> ParseChildReturnType:
         res = []
@@ -164,17 +186,13 @@ class BulkGenerator:
         # check required fields
         if self.fields:
             for k, v in self.fields.items():
-                if v.get("required", False) and k not in child.generate:
+                if getattr(v, "required", False) and k not in child.generate:
                     raise ValueError(f"'{k}' is missing in generated keys")
 
         def get_wrapper(key):
-            cast_func = None
-            field_required = False
             if self.fields and (field := self.fields.get(key, None)):
-                if func := field.get("cast_func", None):
-                    cast_func = func
-                if required := field.get("required", None):
-                    field_required = required
+                cast_func = field.cast_func
+                field_required = field.required
 
             def wrapper(v):
                 if field_required and v == "":
