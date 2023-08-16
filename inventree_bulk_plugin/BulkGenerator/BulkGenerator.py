@@ -4,12 +4,10 @@ from typing import Any, Callable, Iterable, Literal
 
 from jinja2.exceptions import TemplateError
 
-from InvenTree.helpers import str2bool, str2int
-
 from ..version import BULK_PLUGIN_VERSION
 from .validations import BulkDefinitionChild, BulkDefinitionChildCount, BulkDefinitionChildDimensions, BulkDefinitionChildTemplate, BulkDefinitionSchema
 from .dimensions import get_dimension_values
-from .utils import version_tuple
+from .utils import version_tuple, str2bool, str2int
 from .template import Template
 
 

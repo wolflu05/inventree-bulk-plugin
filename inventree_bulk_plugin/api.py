@@ -9,11 +9,11 @@ from rest_framework.response import Response
 from pydantic import ValidationError
 
 from InvenTree.filters import SEARCH_ORDER_FILTER
-from InvenTree.helpers import str2bool
 
 from .bulkcreate_objects import bulkcreate_objects
 from .serializers import TemplateSerializer, BulkCreateObjectSerializer
 from .models import BulkCreationTemplate
+from .BulkGenerator.utils import str2bool
 from .BulkGenerator.BulkGenerator import BulkGenerator
 
 
