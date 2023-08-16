@@ -1,6 +1,6 @@
 import { ComponentChildren } from "preact";
 
-import { GenerateKeysWrapper } from "../contexts/GenerateKeys";
+import { BulkGenerateInfoWrapper } from "../contexts/BulkCreateInfo";
 import { NotificationWrapper } from "../contexts/Notification";
 
 interface PageProps {
@@ -10,7 +10,7 @@ interface PageProps {
 export const Page = ({ children }: PageProps) => {
   return (
     <NotificationWrapper>
-      <GenerateKeysWrapper>{children}</GenerateKeysWrapper>
+      <BulkGenerateInfoWrapper>{children}</BulkGenerateInfoWrapper>
     </NotificationWrapper>
   );
 };

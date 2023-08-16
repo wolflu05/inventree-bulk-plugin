@@ -1,6 +1,6 @@
 import { useEffect, useId, useMemo } from "preact/hooks";
 
-import { useGenerateKeysForTemplateType } from "../contexts/GenerateKeys";
+import { useBulkGenerateInfo } from "../contexts/BulkCreateInfo";
 import { useNotifications } from "../contexts/Notification";
 import { beautifySchema, getCounter, getUsedGenerateKeys, toFlat } from "../utils";
 import { URLS, fetchAPI } from "../utils/api";
@@ -17,7 +17,7 @@ export const PreviewTable = ({ template, height, parentId }: PreviewTableProps) 
   const id = useId();
   const tableId = useMemo(() => `preview-table-${id}`, [id]);
 
-  const generateKeys = useGenerateKeysForTemplateType(template.template_type);
+  const { bulkGenerateInfoDict } = useBulkGenerateInfo();
 
   useEffect(() => {
     (async () => {
@@ -48,7 +48,7 @@ export const PreviewTable = ({ template, height, parentId }: PreviewTableProps) 
         idField: "id",
         height,
         columns: [
-          ...Object.entries(generateKeys)
+          ...Object.entries(bulkGenerateInfoDict[template.template_type].fields)
             .filter(([key]) => usedGenerateKeys.includes(key))
             .map(([key, { name }]) => ({ field: key, title: name })),
           { field: "path", title: "Path" },
@@ -74,7 +74,7 @@ export const PreviewTable = ({ template, height, parentId }: PreviewTableProps) 
         }),
       });
     })();
-  }, [generateKeys, height, parentId, showNotification, tableId, template]);
+  }, [bulkGenerateInfoDict, height, parentId, showNotification, tableId, template]);
 
   return (
     <div class="mt-3">

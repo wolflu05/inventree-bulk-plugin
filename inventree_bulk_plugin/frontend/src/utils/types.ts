@@ -6,6 +6,12 @@ export interface GenerateKey {
 
 export type GenerateKeys = Record<string, GenerateKey>;
 
+export interface BulkGenerateInfo {
+  template_type: string;
+  generate_type: string;
+  fields: GenerateKeys;
+}
+
 export enum TemplateType {
   STOCK_LOCATION = "STOCK_LOCATION",
   PART_CATEGORY = "PART_CATEGORY",

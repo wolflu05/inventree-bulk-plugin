@@ -4,15 +4,20 @@ import { useState, useCallback, useEffect, useMemo, useId, useRef, StateUpdater 
 import { BulkDefinitionChildSchemaBuilder } from "./BulkDefinitionChildSchemaBuilder";
 import { Input } from "./Input";
 import { defaultSchema } from "../utils/constants";
-import { BulkDefinitionChild, BulkDefinitionChildTemplate, BulkDefinitionSchema, GenerateKeys } from "../utils/types";
+import {
+  BulkDefinitionChild,
+  BulkDefinitionChildTemplate,
+  BulkDefinitionSchema,
+  BulkGenerateInfo,
+} from "../utils/types";
 
-interface BulkDefinitionSchemaBuildeProps {
+interface BulkDefinitionSchemaBuilderProps {
   schema: BulkDefinitionSchema;
   setSchema: StateUpdater<BulkDefinitionSchema>;
-  generateKeys: GenerateKeys;
+  bulkGenerateInfo: BulkGenerateInfo;
 }
 
-export function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = {} }: BulkDefinitionSchemaBuildeProps) {
+export function BulkDefinitionSchemaBuilder({ schema, setSchema, bulkGenerateInfo }: BulkDefinitionSchemaBuilderProps) {
   const firstUpdate = useRef(true);
 
   const setChildSchema: StateUpdater<BulkDefinitionChild> = useCallback(
@@ -147,7 +152,7 @@ export function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = 
                     <BulkDefinitionChildSchemaBuilder
                       childSchema={template}
                       setChildSchema={setTemplate(i) as unknown as StateUpdater<BulkDefinitionChild>}
-                      generateKeys={generateKeys}
+                      bulkGenerateInfo={bulkGenerateInfo}
                       extendsKeys={extendsKeys}
                     />
                   </div>
@@ -183,7 +188,7 @@ export function BulkDefinitionSchemaBuilder({ schema, setSchema, generateKeys = 
             <BulkDefinitionChildSchemaBuilder
               childSchema={schema.output}
               setChildSchema={setChildSchema}
-              generateKeys={generateKeys}
+              bulkGenerateInfo={bulkGenerateInfo}
               extendsKeys={extendsKeys}
             />
           </div>

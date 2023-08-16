@@ -4,7 +4,7 @@ import { useState, useCallback, useEffect, useMemo, useId, StateUpdater } from "
 import { Input } from "./Input";
 import { Tooltip } from "./Tooltip";
 import { defaultSchema } from "../utils/constants";
-import { BulkDefinitionChild, GenerateKeys } from "../utils/types";
+import { BulkDefinitionChild, BulkGenerateInfo } from "../utils/types";
 
 import "./BulkDefinitionChildSchemaBuilder.css";
 
@@ -17,29 +17,29 @@ export const typeHelpTexts = {
 interface BulkDefinitionChildSchemaBuilderProps {
   childSchema: BulkDefinitionChild;
   setChildSchema: StateUpdater<BulkDefinitionChild>;
-  generateKeys: GenerateKeys;
+  bulkGenerateInfo: BulkGenerateInfo;
   extendsKeys: Record<string, string>;
 }
 
 export function BulkDefinitionChildSchemaBuilder({
   childSchema,
   setChildSchema,
-  generateKeys,
+  bulkGenerateInfo,
   extendsKeys,
 }: BulkDefinitionChildSchemaBuilderProps) {
   // initially populate childSchema with values
   useEffect(() => {
-    if (Object.keys(childSchema.generate).length === 0 && Object.keys(generateKeys).length > 0) {
+    if (Object.keys(childSchema.generate).length === 0 && Object.keys(bulkGenerateInfo.fields).length > 0) {
       setChildSchema((s) => ({
         ...s,
         generate: Object.fromEntries(
-          Object.entries(generateKeys)
+          Object.entries(bulkGenerateInfo.fields)
             .filter(([, { required }]) => !!required)
             .map(([k]) => [k, ""]),
         ),
       }));
     }
-  }, [childSchema, generateKeys, setChildSchema]);
+  }, [bulkGenerateInfo.fields, childSchema, setChildSchema]);
 
   // setValue callback for inputs, accepts key and event
   const setValue = useCallback(
@@ -56,8 +56,8 @@ export function BulkDefinitionChildSchemaBuilder({
 
   const remainingGenerateKeys = useMemo(() => {
     const currentKeys = Object.keys(childSchema?.generate || {});
-    return Object.entries(generateKeys).filter(([k]) => !currentKeys.includes(k));
-  }, [generateKeys, childSchema?.generate]);
+    return Object.entries(bulkGenerateInfo.fields).filter(([k]) => !currentKeys.includes(k));
+  }, [childSchema?.generate, bulkGenerateInfo.fields]);
 
   const [remainingGenerateKeysValue, setRemainingGenerateKeysValue] = useState("");
 
@@ -180,7 +180,7 @@ export function BulkDefinitionChildSchemaBuilder({
       <div class="collapse" id={outputAdvancedId}>
         <Input
           label="Parent name match"
-          tooltip="First child that matches the parent name matcher will be chosen for generating the childs for a specific parent. Must evalueate to something that can be casted to a boolean."
+          tooltip="First child that matches the parent name matcher will be chosen for generating the childs for a specific parent. Must evaluate to something that can be casted to a boolean."
           type="text"
           value={childSchema.parent_name_match || ""}
           onInput={setValue("parent_name_match")}
@@ -204,7 +204,7 @@ export function BulkDefinitionChildSchemaBuilder({
           <h5>Generate</h5>
         </Tooltip>
       </div>
-      {Object.entries(generateKeys)
+      {Object.entries(bulkGenerateInfo.fields)
         .filter(([key]) => childSchema.generate[key] !== undefined)
         .map(([key, { name, required, field_type }]) => (
           <Input
@@ -242,7 +242,7 @@ export function BulkDefinitionChildSchemaBuilder({
                 <BulkDefinitionChildSchemaBuilder
                   childSchema={child}
                   setChildSchema={setChildChildSchema(i)}
-                  generateKeys={generateKeys}
+                  bulkGenerateInfo={bulkGenerateInfo}
                   extendsKeys={extendsKeys}
                 />
               </div>

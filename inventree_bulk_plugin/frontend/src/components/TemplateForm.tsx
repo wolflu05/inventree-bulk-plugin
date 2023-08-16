@@ -5,7 +5,7 @@ import { BulkDefinitionSchemaBuilder } from "./BulkDefinitionSchemaBuilder";
 import { Dialog } from "./Dialog";
 import { Input } from "./Input";
 import { PreviewTable } from "./PreviewTable";
-import { useGenerateKeys } from "../contexts/GenerateKeys";
+import { useBulkGenerateInfo } from "../contexts/BulkCreateInfo";
 import { useNotifications } from "../contexts/Notification";
 import { beautifySchema, isEqual } from "../utils";
 import { URLS, fetchAPI } from "../utils/api";
@@ -42,7 +42,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
 
   const [isLoading, setIsLoading] = useState(true);
   const { showNotification } = useNotifications();
-  const { generateKeys } = useGenerateKeys();
+  const { bulkGenerateInfoDict } = useBulkGenerateInfo();
 
   const isCreate = useMemo(() => !templateId && !template?.id, [template?.id, templateId]);
 
@@ -176,7 +176,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
           <BulkDefinitionSchemaBuilder
             schema={template.template}
             setSchema={updateTemplate}
-            generateKeys={generateKeys[template.template_type]}
+            bulkGenerateInfo={bulkGenerateInfoDict[template.template_type]}
           />
         </div>
       )}
