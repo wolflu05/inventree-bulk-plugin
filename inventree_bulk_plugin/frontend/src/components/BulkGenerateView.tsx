@@ -1,41 +1,40 @@
-import { useCallback, useEffect, useId, useMemo, useState } from "preact/hooks";
+import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import { BulkDefinitionSchemaBuilder } from "./BulkDefinitionSchemaBuilder";
-import { beautifySchema, getCounter, getUsedGenerateKeys, toFlat } from "../utils";
-import { defaultSchema, getGenerateKeysForTemplateType } from "../utils/constants";
-import { BulkDefinitionSchema, GenerateKeys, TemplateModel, TemplateType } from "../utils/types";
+import { Dialog } from "./Dialog";
+import { PreviewCreate } from "./PreviewCreate";
+import { TemplateForm } from "./TemplateForm";
+import { useNotifications } from "../contexts/Notification";
+import { TemplateModel, TemplateType } from "../utils/types";
 
 interface BulkGenerateViewProps {
-  createURL: string;
-  name: string;
-  defaultSchema: null | BulkDefinitionSchema;
-  templateType: TemplateType;
+  templateType?: TemplateType;
+  parentId?: string;
+  createUrl?: string; // TODO: delete afer API refactor
 }
 
-export function BulkGenerateView({
-  createURL,
-  name,
-  defaultSchema: propsDefaultSchema = null,
-  templateType,
-}: BulkGenerateViewProps) {
+type BulkGenerateViewMode = "OVERVIEW" | "EDITING" | "DELETING" | "PREVIEWING";
+
+export const BulkGenerateView = ({ templateType, parentId, createUrl }: BulkGenerateViewProps) => {
   const [savedTemplates, setSavedTemplates] = useState<TemplateModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [schema, setSchema] = useState(() => propsDefaultSchema || structuredClone(defaultSchema));
-  const [error, setError] = useState("");
-  const [success, setSuccess] = useState("");
-  const [btnPreviewLoading, setBtnPreviewLoading] = useState(false);
-  const [btnCreateLoading, setBtnCreateLoading] = useState(false);
-  const [generateKeys, setGenerateKeys] = useState<GenerateKeys | null>(null);
-  const id = useId();
-  const tableId = useMemo(() => `preview-table-${id}`, [id]);
 
-  // fetch generate keys on initial render
-  useEffect(() => {
-    getGenerateKeysForTemplateType(templateType).then((keys) => setGenerateKeys(keys));
-  }, [templateType]);
+  const [currentTemplate, setCurrentTemplate] = useState<TemplateModel | null>(null);
+  const [currentMode, setCurrentMode] = useState<BulkGenerateViewMode>("OVERVIEW");
+
+  const { showNotification } = useNotifications();
 
   const reloadSavedTemplates = useCallback(async () => {
-    const res = await fetch(`/plugin/inventree-bulk-plugin/templates?template_type=${templateType}`);
+    setIsLoading(true);
+
+    const res = await fetch(
+      `/plugin/inventree-bulk-plugin/templates${templateType ? `?template_type=${templateType}` : ""}`,
+    );
+
+    if (!res.ok) {
+      setIsLoading(false);
+      return showNotification({ type: "danger", message: `Fetching templates failed,\n${res.statusText}` });
+    }
+
     const data = await res.json();
 
     setSavedTemplates(
@@ -45,210 +44,185 @@ export function BulkGenerateView({
       })) as TemplateModel[],
     );
     setIsLoading(false);
-  }, [templateType]);
+  }, [showNotification, templateType]);
 
   useEffect(() => {
     reloadSavedTemplates();
   }, [reloadSavedTemplates]);
 
-  const onPreview = useCallback(async () => {
-    setError("");
-    setSuccess("");
-    setBtnPreviewLoading(true);
-
-    const res = await fetch(`/plugin/inventree-bulk-plugin/parse?template_type=${templateType}`, {
-      method: "POST",
-      body: JSON.stringify(beautifySchema(schema)),
-    });
-    const json = await res.json();
-
-    if (res.status !== 200) {
-      setError(`An error occourd, ${json.error}`);
-      setBtnPreviewLoading(false);
-      return;
-    }
-
-    const data = toFlat(json, getCounter());
-
-    setSuccess(`Successfully parsed. This will generate ${data.length} ${name}.`);
-
-    const usedGenerateKeys = getUsedGenerateKeys(schema);
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const $table = $(`#${tableId}`) as any;
-    $table.bootstrapTable("destroy");
-    $table.bootstrapTable({
-      data,
-      idField: "id",
-      columns: [
-        ...Object.entries(generateKeys || {})
-          .filter(([key]) => usedGenerateKeys.includes(key))
-          .map(([key, { name }]) => ({ field: key, title: name })),
-        { field: "path", title: "Path" },
-      ],
-      treeShowField: "name",
-      parentIdField: "pid",
-      onPostBody() {
-        const columns = $table.bootstrapTable("getOptions").columns;
-
-        if (columns && columns[0][1].visible) {
-          $table.treegrid({
-            treeColumn: 0,
-            onChange() {
-              $table.bootstrapTable("resetView");
-            },
-          });
-        }
-      },
-      rowStyle: () => ({
-        css: {
-          padding: "2px 0.5rem",
-        },
-      }),
-    });
-
-    setBtnPreviewLoading(false);
-  }, [templateType, schema, name, tableId, generateKeys]);
-
-  const onCreate = useCallback(async () => {
-    setError("");
-    setSuccess("");
-    setBtnCreateLoading(true);
-
-    const res = await fetch(createURL, {
-      method: "POST",
-      body: JSON.stringify(beautifySchema(schema)),
-    });
-
-    if (res.status !== 201) {
-      const json = await res.json();
-      setError(`An error occourd, ${json.error}`);
-    } else {
-      setSuccess(`Successfully created ${name}.`);
-    }
-
-    setBtnCreateLoading(false);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore: correct types for bootstrap modal are not available
-    bootstrap.Modal.getInstance("#bulkCreateModal").hide();
-  }, [createURL, name, schema]);
-
-  const loadTemplate = useCallback(
-    (template: TemplateModel) => () => {
-      setSchema(template.template);
+  const switchModeWithTemplate = useCallback(
+    (mode: BulkGenerateViewMode, template: TemplateModel | null) => () => {
+      setCurrentMode(mode);
+      setCurrentTemplate(template);
     },
     [],
   );
 
+  const handleBack = useCallback(() => {
+    setCurrentTemplate(null);
+    setCurrentMode("OVERVIEW");
+    reloadSavedTemplates();
+  }, [reloadSavedTemplates]);
+
+  const handleDelete = useCallback(async () => {
+    if (currentTemplate === null) return;
+
+    const res = await fetch(`/plugin/inventree-bulk-plugin/templates/${currentTemplate.id}`, {
+      method: "DELETE",
+    });
+
+    if (!res.ok) {
+      return showNotification({ type: "danger", message: `Deleting template failed,\n${res.statusText}` });
+    }
+
+    setCurrentTemplate(null);
+    setCurrentMode("OVERVIEW");
+    setSavedTemplates((s) => [...s.filter((t) => t.id !== currentTemplate.id)]);
+
+    showNotification({ type: "success", message: "Template successfuly deleted." });
+  }, [currentTemplate, showNotification]);
+
+  const previewHandler = useRef(() => {
+    //
+  });
+  const createHandler = useRef(() => {
+    //
+  });
+
+  const handleClosePreviewDialog = useCallback(() => {
+    setHasPreviwed(false);
+    setCurrentTemplate(null);
+    setCurrentMode("OVERVIEW");
+  }, []);
+
+  const [isBulkCreateLoading, setIsBulkCreateLoading] = useState(false);
+  const [hasPreviewed, setHasPreviwed] = useState(false);
+
+  if (currentMode === "EDITING") {
+    return (
+      <div>
+        <TemplateForm
+          handleBack={handleBack}
+          templateId={currentTemplate?.id}
+          templateType={templateType}
+          parentId={parentId}
+          createUrl={createUrl}
+        />
+      </div>
+    );
+  }
+
   return (
     <div>
-      <div class="card mb-2">
-        <div class="card-header">
-          <h5
-            class="mb-0 user-select-none"
-            role="button"
-            data-bs-toggle="collapse"
-            data-bs-target="#accordion-saved-templates"
-          >
-            Saved templates
-          </h5>
-        </div>
+      <table class="table table-bordered" style="max-width: 500px">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {isLoading ? (
+            <tr>
+              <td colSpan={2}>
+                <div class="d-flex justify-content-center">
+                  <div class="spinner-border" role="status">
+                    <span class="visually-hidden">Loading...</span>
+                  </div>
+                </div>
+              </td>
+            </tr>
+          ) : (
+            savedTemplates.map((template) => (
+              <tr>
+                <td>{template.name}</td>
+                <td>
+                  <button
+                    class="btn btn-sm btn-outline-danger me-1"
+                    onClick={switchModeWithTemplate("DELETING", template)}
+                  >
+                    Delete
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-success me-1"
+                    onClick={switchModeWithTemplate("EDITING", template)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    class="btn btn-sm btn-outline-primary"
+                    onClick={switchModeWithTemplate("PREVIEWING", template)}
+                  >
+                    Preview/Bulk create
+                  </button>
+                </td>
+              </tr>
+            ))
+          )}
+        </tbody>
+      </table>
 
-        <div id="accordion-saved-templates" class="collapse show">
-          <div class="card-body">
-            <table class="table table-bordered" style="max-width: 500px">
-              <thead>
-                <tr>
-                  <th>Name</th>
-                  <th>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {isLoading ? (
-                  <tr>
-                    <td colSpan={2}>
-                      <div class="d-flex justify-content-center">
-                        <div class="spinner-border" role="status">
-                          <span class="visually-hidden">Loading...</span>
-                        </div>
-                      </div>
-                    </td>
-                  </tr>
-                ) : (
-                  savedTemplates.map((template) => (
-                    <tr>
-                      <td>{template.name}</td>
-                      <td>
-                        <button class="btn btn-sm btn-outline-success" onClick={loadTemplate(template)}>
-                          Load
-                        </button>
-                      </td>
-                    </tr>
-                  ))
-                )}
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
+      <button type="button" class="btn btn-outline-primary" onClick={switchModeWithTemplate("EDITING", null)}>
+        New untitled schema
+      </button>
 
-      {generateKeys !== null && (
-        <BulkDefinitionSchemaBuilder schema={schema} setSchema={setSchema} generateKeys={generateKeys} />
-      )}
+      <Dialog
+        title="Delete template"
+        show={currentMode === "DELETING"}
+        onClose={() => {
+          setCurrentTemplate(null);
+          setCurrentMode("OVERVIEW");
+        }}
+        actions={[{ label: "Delete", type: "danger", onClick: handleDelete }]}
+      >
+        Are you sure you want to delete the template "{currentTemplate?.name}"?
+      </Dialog>
 
-      <div class="mt-3">
-        {success && <div class="alert alert-success">{success}</div>}
-        {error && <div class="alert alert-danger">{error}</div>}
-
-        <button type="button" class="btn btn-primary" onClick={onPreview} disabled={btnPreviewLoading}>
-          <span
-            class="spinner-border spinner-border-sm me-1"
-            style={`display: ${btnPreviewLoading ? "inline-block" : "none"};`}
-            role="status"
-            aria-hidden="true"
-            id="loadingindicator-preview"
-          ></span>
-          Preview
-        </button>
-        <button
-          type="button"
-          class="btn btn-outline-primary ms-2"
-          data-bs-toggle="modal"
-          data-bs-target="#bulkCreateModal"
-        >
-          Create
-        </button>
-      </div>
-
-      <div class="modal fade" id="bulkCreateModal" tabIndex={-1} aria-hidden="true">
-        <div class="modal-dialog">
-          <div class="modal-content">
-            <div class="modal-header">
-              <h1 class="modal-title fs-5" id="exampleModalLabel">
-                Bulk create ${name}
-              </h1>
-              <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body">Are you sure you want to bulk generate sub-{name} here?</div>
-            <div class="modal-footer">
-              <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" disabled={btnCreateLoading}>
-                Close
-              </button>
-              <button type="button" class="btn btn-primary" onClick={onCreate} disabled={btnCreateLoading}>
-                <span
-                  class="spinner-border spinner-border-sm me-1"
-                  style={`display: ${btnCreateLoading ? "inline-block" : "none"};`}
-                  role="status"
-                  aria-hidden="true"
-                  id="loadingindicator-create"
-                ></span>
-                Bulk generate
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-      <table id={tableId} class="mt-3"></table>
+      <Dialog
+        title="Preview/bulk create from template"
+        show={currentMode === "PREVIEWING"}
+        onClose={handleClosePreviewDialog}
+        actions={[
+          {
+            label: "Preview",
+            type: "primary",
+            onClick: () => {
+              previewHandler.current();
+              setHasPreviwed(true);
+            },
+          },
+          {
+            label: "Bulk create",
+            type: "outline-primary",
+            onClick: () => createHandler.current(),
+            disabled: isBulkCreateLoading || !hasPreviewed,
+            loading: isBulkCreateLoading,
+          },
+        ]}
+      >
+        {currentTemplate && (
+          <>
+            <PreviewCreate
+              template={currentTemplate}
+              parentId={parentId}
+              createUrl={createUrl}
+              attachPreviewHandler={(handler) => {
+                previewHandler.current = handler;
+              }}
+              attachCreateHandler={(handler) => {
+                createHandler.current = handler;
+              }}
+              handleDoneCreate={(ok) => {
+                if (ok) {
+                  handleClosePreviewDialog();
+                }
+              }}
+              setIsBulkCreateLoading={setIsBulkCreateLoading}
+            />
+            {!hasPreviewed && <i>You need to preview the items first.</i>}
+          </>
+        )}
+      </Dialog>
     </div>
   );
-}
+};
