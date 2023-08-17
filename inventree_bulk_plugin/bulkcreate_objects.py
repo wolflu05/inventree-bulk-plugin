@@ -12,6 +12,7 @@ ModelType = TypeVar("ModelType")
 
 
 class BulkCreateObject(Generic[ModelType]):
+    name: str
     template_type: str
     generate_type: Literal["tree"] = "tree"
     model: ModelType
@@ -65,6 +66,7 @@ class BulkCreateObject(Generic[ModelType]):
 
 
 class StockLocationBulkCreateObject(BulkCreateObject[StockLocation]):
+    name = "Stock Location"
     template_type = "STOCK_LOCATION"
     generate_type = "tree"
     model = StockLocation
@@ -79,6 +81,7 @@ class StockLocationBulkCreateObject(BulkCreateObject[StockLocation]):
 
 
 class PartCategoryBulkCreateObject(BulkCreateObject[PartCategory]):
+    name = "Part Category"
     template_type = "PART_CATEGORY"
     generate_type = "tree"
     model = PartCategory

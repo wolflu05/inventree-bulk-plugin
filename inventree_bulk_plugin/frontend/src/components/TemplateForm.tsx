@@ -9,7 +9,7 @@ import { useBulkGenerateInfo } from "../contexts/BulkCreateInfo";
 import { useNotifications } from "../contexts/Notification";
 import { beautifySchema, isEqual } from "../utils";
 import { URLS, fetchAPI } from "../utils/api";
-import { defaultSchema, templateTypeOptions } from "../utils/constants";
+import { defaultSchema } from "../utils/constants";
 import { BulkDefinitionSchema, TemplateModel, TemplateType } from "../utils/types";
 
 interface TemplateFormProps {
@@ -43,6 +43,10 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
   const [isLoading, setIsLoading] = useState(true);
   const { showNotification } = useNotifications();
   const { bulkGenerateInfoDict } = useBulkGenerateInfo();
+  const templateTypeOptions = useMemo(
+    () => Object.fromEntries(Object.values(bulkGenerateInfoDict).map((v) => [v.template_type, v.name])),
+    [bulkGenerateInfoDict],
+  );
 
   const isCreate = useMemo(() => !templateId && !template?.id, [template?.id, templateId]);
 

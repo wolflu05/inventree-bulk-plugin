@@ -7,6 +7,7 @@ export interface GenerateKey {
 export type GenerateKeys = Record<string, GenerateKey>;
 
 export interface BulkGenerateInfo {
+  name: string;
   template_type: string;
   generate_type: string;
   fields: GenerateKeys;

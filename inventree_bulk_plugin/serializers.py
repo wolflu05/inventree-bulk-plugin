@@ -44,6 +44,7 @@ class BulkCreateObjectSerializer(serializers.Serializer):
 
     class Meta:
         fields = [
+            "name",
             "template_type",
             "generate_type",
             "fields",
@@ -51,6 +52,7 @@ class BulkCreateObjectSerializer(serializers.Serializer):
 
         read_only_fields = fields
 
+    name = serializers.CharField()
     template_type = serializers.CharField()
     generate_type = serializers.CharField()
     fields = serializers.DictField(child=FieldDefinitionSerializer(read_only=True))
