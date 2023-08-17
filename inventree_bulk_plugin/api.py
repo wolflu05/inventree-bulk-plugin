@@ -112,8 +112,9 @@ class BulkCreate(APIView):
             return ctx
 
         try:
-            parsed = json.loads(schema)
-            bg = BulkGenerator(parsed, fields=bulkcreate_object.fields).generate(ctx)
+            if not isinstance(schema, dict):
+                schema = json.loads(schema)
+            bg = BulkGenerator(schema, fields=bulkcreate_object.fields).generate(ctx)
         except (ValueError, ValidationError) as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except Exception:

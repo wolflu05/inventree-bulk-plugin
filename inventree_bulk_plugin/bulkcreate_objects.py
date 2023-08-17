@@ -1,6 +1,7 @@
 from typing import Generic, Literal, TypeVar, Union
 from rest_framework.response import Response
 from rest_framework import status
+from inventree_bulk_plugin.BulkGenerator.utils import str2bool
 
 from stock.models import StockLocation
 from part.models import PartCategory
@@ -51,8 +52,13 @@ class BulkCreateObject(Generic[ModelType]):
     def get_context(self) -> Union[dict, Response]:
         if self.generate_type == "tree":
             parent_id = self.query_params.get("parent_id", None)
+            is_create = str2bool(self.query_params.get("create", "false"))
             if not parent_id:
-                return Response({"error": "parent_id query parameter missing"}, status=status.HTTP_400_BAD_REQUEST)
+                if is_create:
+                    return Response({"error": "parent_id query parameter missing"}, status=status.HTTP_400_BAD_REQUEST)
+                else:
+                    # add default placeholders if parent_id is not set
+                    return {"gen": {k: f"<parent '{f.name}'>" for k, f in self.fields.items()}}
 
             try:
                 parent = self.model.objects.get(pk=parent_id)
