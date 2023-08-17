@@ -31,11 +31,13 @@ class FieldDefinitionSerializer(serializers.Serializer):
         fields = [
             "name",
             "field_type",
+            "description",
             "required",
         ]
 
     name = serializers.CharField()
     field_type = serializers.CharField()
+    description = serializers.CharField()
     required = serializers.BooleanField()
 
 

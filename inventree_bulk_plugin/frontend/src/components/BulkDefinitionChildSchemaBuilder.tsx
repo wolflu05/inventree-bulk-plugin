@@ -8,12 +8,6 @@ import { BulkDefinitionChild, BulkGenerateInfo } from "../utils/types";
 
 import "./BulkDefinitionChildSchemaBuilder.css";
 
-export const typeHelpTexts = {
-  boolean: "This must evaluate to something that can be casted to a boolean (e.g. 'true' or 'false').",
-  number: "This must evaluate to something that can be casted as number.",
-  text: "",
-};
-
 interface BulkDefinitionChildSchemaBuilderProps {
   childSchema: BulkDefinitionChild;
   setChildSchema: StateUpdater<BulkDefinitionChild>;
@@ -206,10 +200,10 @@ export function BulkDefinitionChildSchemaBuilder({
       </div>
       {Object.entries(bulkGenerateInfo.fields)
         .filter(([key]) => childSchema.generate[key] !== undefined)
-        .map(([key, { name, required, field_type }]) => (
+        .map(([key, { name, required, description }]) => (
           <Input
             label={name}
-            tooltip={typeHelpTexts[field_type]}
+            tooltip={description || undefined}
             type="text"
             value={childSchema.generate[key]}
             onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) => setGenerateValue(key)(e.currentTarget.value)}

@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import itertools
-from typing import Any, Callable, Iterable, Literal
+from typing import Any, Callable, Iterable, Literal, Optional
 
 from jinja2.exceptions import TemplateError
 
@@ -61,6 +61,7 @@ class FieldDefinition:
     name: str
     field_type: Literal["text", "boolean", "number"] = "text"
     cast_func: Callable[[str], Any] = None
+    description: Optional[str] = None
     required: bool = False
 
     type_casts = {
@@ -69,9 +70,17 @@ class FieldDefinition:
         "number": str2int,
     }
 
+    default_descriptions = {
+        "boolean": "This must evaluate to something that can be casted to a boolean (e.g. 'true' or 'false').",
+        "number": "This must evaluate to something that can be casted as number.",
+    }
+
     def __post_init__(self):
         if self.cast_func is None and (cast_func := self.type_casts.get(self.field_type, None)):
             self.cast_func = cast_func
+
+        if not self.description and self.field_type in self.default_descriptions:
+            self.description = self.default_descriptions.get(self.field_type, None)
 
 
 ParseChildReturnType = list[tuple[dict[str, str], list["ParseChildReturnType"]]]

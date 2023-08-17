@@ -2,6 +2,7 @@ export interface GenerateKey {
   name: string;
   field_type: "text" | "boolean" | "number";
   required: boolean;
+  description: null | string;
 }
 
 export type GenerateKeys = Record<string, GenerateKey>;
