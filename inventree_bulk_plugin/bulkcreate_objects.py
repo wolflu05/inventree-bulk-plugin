@@ -1,5 +1,7 @@
-from typing import Generic, Literal, TypeVar, Union
+from dataclasses import dataclass
+from typing import Any, Callable, Generic, Literal, Optional, TypeVar, Union
 from django.db import transaction
+from django.db.models import Model
 from django.apps import apps
 from rest_framework.response import Response
 from rest_framework import status
@@ -7,8 +9,8 @@ from rest_framework import status
 from stock.models import StockLocation
 from part.models import PartCategory, Part
 
-from .BulkGenerator.utils import str2bool
-from .BulkGenerator.BulkGenerator import FieldDefinition, ParseChildReturnElement, ParseChildReturnType
+from .BulkGenerator.utils import str2bool, str2int
+from .BulkGenerator.BulkGenerator import BaseFieldDefinition, ParseChildReturnElement, ParseChildReturnType
 
 
 def get_model(model_name: str):
@@ -27,6 +29,44 @@ def get_model(model_name: str):
     return model
 
 
+@dataclass
+class FieldDefinition(BaseFieldDefinition):
+    name: str
+    field_type: Literal["text", "boolean", "number", "model"] = "text"
+    cast_func: Callable[[str], Any] = None
+    description: Optional[str] = None
+    required: bool = False
+    model: Union[str, tuple[str, dict], tuple[str, dict, Model], None] = None
+
+    type_casts = {
+        "text": str,
+        "boolean": str2bool,
+        "number": str2int,
+        "model": str2int,
+    }
+
+    default_descriptions = {
+        "boolean": "This must evaluate to something that can be casted to a boolean (e.g. 'true' or 'false').",
+        "number": "This must evaluate to something that can be casted as number.",
+    }
+
+    def __post_init__(self):
+        if self.cast_func is None and (cast_func := self.type_casts.get(self.field_type, None)):
+            self.cast_func = cast_func
+
+        if not self.description and self.field_type in self.default_descriptions:
+            self.description = self.default_descriptions.get(self.field_type, None)
+
+        if isinstance(self.model, str):
+            self.model = (self.model, {})
+
+        if self.model and len(self.model) == 2:
+            model_class = get_model(self.model[0])
+            if not model_class:
+                raise ValueError(f"Model '{self.model[0]}' not found.")
+            self.model = (self.model[0], self.model[1], model_class)
+
+
 ModelType = TypeVar("ModelType")
 
 
@@ -40,22 +80,13 @@ class BulkCreateObject(Generic[ModelType]):
     def __init__(self, query_params: dict[str, str]) -> None:
         self.query_params = query_params
 
-        for field in self.fields.values():
-            if field.model and not hasattr(field, "model_class"):
-                model = get_model(field.model[0])
-                if not model:
-                    raise ValueError(f"Model '{field.model[0]}' not found.")
-
-                setattr(field, "model_class", model)
-
     def create_object(self, data: ParseChildReturnElement, **kwargs):
         properties = {}
         for k, v in data[0].items():
             if field := self.fields.get(k, None):
                 if field.model:
-                    model = getattr(field, "model_class")
-                    obj = model.objects.get(pk=v)
-                    v = obj
+                    _, limit_choices, model = field.model
+                    v = model.objects.get(pk=v, **limit_choices)
                 properties[k] = v
 
         return self.model.objects.create(**{**kwargs, **properties})

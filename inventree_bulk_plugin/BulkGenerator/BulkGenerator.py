@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 import itertools
-from typing import Any, Callable, Iterable, Literal, Optional, Union
+from typing import Any, Callable, Iterable
 
 from jinja2.exceptions import TemplateError
 
 from ..version import BULK_PLUGIN_VERSION
 from .validations import BulkDefinitionChild, BulkDefinitionChildCount, BulkDefinitionChildDimensions, BulkDefinitionChildTemplate, BulkDefinitionSchema
 from .dimensions import get_dimension_values
-from .utils import version_tuple, str2bool, str2int
+from .utils import version_tuple
 from .template import Template
 
 
@@ -57,35 +57,10 @@ class DimStr(str):
 
 
 @dataclass
-class FieldDefinition:
+class BaseFieldDefinition:
     name: str
-    field_type: Literal["text", "boolean", "number", "model"] = "text"
     cast_func: Callable[[str], Any] = None
-    description: Optional[str] = None
     required: bool = False
-    model: Union[str, tuple[str, Union[dict, None]], None] = None
-
-    type_casts = {
-        "text": str,
-        "boolean": str2bool,
-        "number": str2int,
-        "model": str2int,
-    }
-
-    default_descriptions = {
-        "boolean": "This must evaluate to something that can be casted to a boolean (e.g. 'true' or 'false').",
-        "number": "This must evaluate to something that can be casted as number.",
-    }
-
-    def __post_init__(self):
-        if self.cast_func is None and (cast_func := self.type_casts.get(self.field_type, None)):
-            self.cast_func = cast_func
-
-        if not self.description and self.field_type in self.default_descriptions:
-            self.description = self.default_descriptions.get(self.field_type, None)
-
-        if isinstance(self.model, str):
-            self.model = (self.model, None)
 
 
 ParseChildReturnElement = tuple[dict[str, str], list["ParseChildReturnType"]]
@@ -93,7 +68,7 @@ ParseChildReturnType = list[ParseChildReturnElement]
 
 
 class BulkGenerator:
-    def __init__(self, inp, fields: dict[str, FieldDefinition] = None):
+    def __init__(self, inp, fields: dict[str, BaseFieldDefinition] = None):
         self.inp = inp
         self.schema: BulkDefinitionSchema = None
         self.fields = fields
@@ -199,7 +174,7 @@ class BulkGenerator:
         # check required fields
         if self.fields:
             for k, v in self.fields.items():
-                if getattr(v, "required", False) and k not in child.generate:
+                if v.required and k not in child.generate:
                     raise ValueError(f"'{k}' is missing in generated keys")
 
         def get_wrapper(key):
