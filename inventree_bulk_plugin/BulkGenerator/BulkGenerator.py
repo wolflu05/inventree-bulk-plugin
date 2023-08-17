@@ -1,12 +1,13 @@
+from dataclasses import dataclass
 import itertools
-from typing import Any, Iterable
+from typing import Any, Callable, Iterable, Literal, Optional
 
 from jinja2.exceptions import TemplateError
 
 from ..version import BULK_PLUGIN_VERSION
 from .validations import BulkDefinitionChild, BulkDefinitionChildCount, BulkDefinitionChildDimensions, BulkDefinitionChildTemplate, BulkDefinitionSchema
 from .dimensions import get_dimension_values
-from .utils import version_tuple
+from .utils import version_tuple, str2bool, str2int
 from .template import Template
 
 
@@ -55,8 +56,38 @@ class DimStr(str):
         self.len = length
 
 
+@dataclass
+class FieldDefinition:
+    name: str
+    field_type: Literal["text", "boolean", "number"] = "text"
+    cast_func: Callable[[str], Any] = None
+    description: Optional[str] = None
+    required: bool = False
+
+    type_casts = {
+        "text": str,
+        "boolean": str2bool,
+        "number": str2int,
+    }
+
+    default_descriptions = {
+        "boolean": "This must evaluate to something that can be casted to a boolean (e.g. 'true' or 'false').",
+        "number": "This must evaluate to something that can be casted as number.",
+    }
+
+    def __post_init__(self):
+        if self.cast_func is None and (cast_func := self.type_casts.get(self.field_type, None)):
+            self.cast_func = cast_func
+
+        if not self.description and self.field_type in self.default_descriptions:
+            self.description = self.default_descriptions.get(self.field_type, None)
+
+
+ParseChildReturnType = list[tuple[dict[str, str], list["ParseChildReturnType"]]]
+
+
 class BulkGenerator:
-    def __init__(self, inp, fields=None):
+    def __init__(self, inp, fields: dict[str, FieldDefinition] = None):
         self.inp = inp
         self.schema: BulkDefinitionSchema = None
         self.fields = fields
@@ -77,8 +108,6 @@ class BulkGenerator:
 
     def get_default_context(self):
         return {"inp": self.schema.input}
-
-    ParseChildReturnType = list[tuple[dict[str, str], list["ParseChildReturnType"]]]
 
     def parse_child(self, child: BulkDefinitionChild, parent_ctx: dict[str, Any] = {}) -> ParseChildReturnType:
         res = []
@@ -164,17 +193,15 @@ class BulkGenerator:
         # check required fields
         if self.fields:
             for k, v in self.fields.items():
-                if v.get("required", False) and k not in child.generate:
+                if getattr(v, "required", False) and k not in child.generate:
                     raise ValueError(f"'{k}' is missing in generated keys")
 
         def get_wrapper(key):
-            cast_func = None
-            field_required = False
+            cast_func, field_required = None, None
+
             if self.fields and (field := self.fields.get(key, None)):
-                if func := field.get("cast_func", None):
-                    cast_func = func
-                if required := field.get("required", None):
-                    field_required = required
+                cast_func = field.cast_func
+                field_required = field.required
 
             def wrapper(v):
                 if field_required and v == "":

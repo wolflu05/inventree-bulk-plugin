@@ -1,6 +1,6 @@
 import unittest
 
-from ...BulkGenerator.BulkGenerator import BulkGenerator, apply_template
+from ...BulkGenerator.BulkGenerator import BulkGenerator, FieldDefinition, apply_template
 from ...BulkGenerator.validations import BulkDefinitionChild, BulkDefinitionChildTemplate
 
 
@@ -344,7 +344,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 "input": {},
                 "templates": [],
                 "output": {"generate": {"NOT_ALLOWED_KEY": "1"}, }
-            }, {"BBBB": {}}).generate()
+            }, {"BBBB": FieldDefinition("BBBB")}).generate()
 
     def test_cast_field(self):
         res = BulkGenerator({
@@ -352,7 +352,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
             "input": {},
             "templates": [],
             "output": {"generate": {"number_field": "42"}, }
-        }, {"number_field": {"cast_func": int}}).generate()
+        }, {"number_field": FieldDefinition("number_field", cast_func=int)}).generate()
 
         self.assertEqual(res[0][0]["number_field"], 42)
 
@@ -363,7 +363,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 "input": {},
                 "templates": [],
                 "output": {"generate": {"required_field": ""}, }
-            }, {"required_field": {"required": True}}).generate()
+            }, {"required_field": FieldDefinition("required_field", required=True)}).generate()
 
         with self.assertRaisesRegex(ValueError, "'name' is missing in generated keys"):
             BulkGenerator({
@@ -371,7 +371,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 "input": {},
                 "templates": [],
                 "output": {"generate": {"description": ""}, }
-            }, {"name": {"required": True}}).generate()
+            }, {"name": FieldDefinition("name", required=True)}).generate()
 
         with self.assertRaisesRegex(ValueError, "'name' is a required field, but template returned empty string"):
             BulkGenerator({
@@ -379,4 +379,4 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 "input": {},
                 "templates": [],
                 "output": {"generate": {"name": "", "description": "AA"}, }
-            }, {"name": {"required": True}, "description": {}}).generate()
+            }, {"name": FieldDefinition("name", required=True), "description": FieldDefinition("description")}).generate()

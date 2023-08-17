@@ -1,27 +1,32 @@
 import { useEffect, useId, useMemo } from "preact/hooks";
 
-import { useGenerateKeysForTemplateType } from "../contexts/GenerateKeys";
+import { useBulkGenerateInfo } from "../contexts/BulkCreateInfo";
 import { useNotifications } from "../contexts/Notification";
 import { beautifySchema, getCounter, getUsedGenerateKeys, toFlat } from "../utils";
+import { URLS, fetchAPI } from "../utils/api";
 import { TemplateModel } from "../utils/types";
 
 interface PreviewTableProps {
   template: TemplateModel;
   height?: number;
+  parentId?: string;
 }
 
-export const PreviewTable = ({ template, height }: PreviewTableProps) => {
+export const PreviewTable = ({ template, height, parentId }: PreviewTableProps) => {
   const { showNotification } = useNotifications();
   const id = useId();
   const tableId = useMemo(() => `preview-table-${id}`, [id]);
 
-  const generateKeys = useGenerateKeysForTemplateType(template.template_type);
+  const { bulkGenerateInfoDict } = useBulkGenerateInfo();
 
   useEffect(() => {
     (async () => {
-      const res = await fetch(`/plugin/inventree-bulk-plugin/parse?template_type=${template.template_type}`, {
+      const res = await fetchAPI(URLS.bulkcreate({ parentId, create: false }), {
         method: "POST",
-        body: JSON.stringify(beautifySchema(template.template)),
+        body: JSON.stringify({
+          ...template,
+          template: JSON.stringify(beautifySchema(template.template)),
+        }),
       });
       const json = await res.json();
 
@@ -43,7 +48,7 @@ export const PreviewTable = ({ template, height }: PreviewTableProps) => {
         idField: "id",
         height,
         columns: [
-          ...Object.entries(generateKeys)
+          ...Object.entries(bulkGenerateInfoDict[template.template_type].fields)
             .filter(([key]) => usedGenerateKeys.includes(key))
             .map(([key, { name }]) => ({ field: key, title: name })),
           { field: "path", title: "Path" },
@@ -69,7 +74,7 @@ export const PreviewTable = ({ template, height }: PreviewTableProps) => {
         }),
       });
     })();
-  }, [generateKeys, height, showNotification, tableId, template]);
+  }, [bulkGenerateInfoDict, height, parentId, showNotification, tableId, template]);
 
   return (
     <div class="mt-3">

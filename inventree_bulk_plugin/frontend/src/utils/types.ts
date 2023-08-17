@@ -1,20 +1,23 @@
 export interface GenerateKey {
   name: string;
-  type: "text" | "boolean" | "number";
+  field_type: "text" | "boolean" | "number";
   required: boolean;
+  description: null | string;
 }
 
 export type GenerateKeys = Record<string, GenerateKey>;
 
-export enum TemplateType {
-  STOCK_LOCATION = "STOCK_LOCATION",
-  PART_CATEGORY = "PART_CATEGORY",
+export interface BulkGenerateInfo {
+  name: string;
+  template_type: string;
+  generate_type: string;
+  fields: GenerateKeys;
 }
 
 export interface TemplateModel {
   id: number | null;
   name: string;
-  template_type: TemplateType;
+  template_type: string;
   template: BulkDefinitionSchema;
 }
 
@@ -43,5 +46,6 @@ export type BulkGenerateAPIResult = Array<[Record<string, string | number | bool
 
 export interface PageRenderProps {
   target: HTMLElement;
-  ctxId: string;
+  objectId: string;
+  objectType: string;
 }
