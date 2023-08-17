@@ -164,32 +164,36 @@ export function BulkDefinitionChildSchemaBuilder({
         onInput={setDimension("count")}
       />
 
-      <h6
-        class={`user-select-none collapsable-heading ${outputAdvancedState ? "active" : ""}`}
-        role="button"
-        onClick={onOutputAdvanceToggle}
-      >
-        Advanced
-      </h6>
-      <div class="collapse" id={outputAdvancedId}>
-        <Input
-          label="Parent name match"
-          tooltip="First child that matches the parent name matcher will be chosen for generating the childs for a specific parent. Must evaluate to something that can be casted to a boolean."
-          type="text"
-          value={childSchema.parent_name_match || ""}
-          onInput={setValue("parent_name_match")}
-        />
-        {extendsKeys && (
-          <Input
-            label="Extends"
-            tooltip="Choose to extend from a template"
-            type="select"
-            options={extendsKeys}
-            value={childSchema.extends || ""}
-            onInput={setValue("extends")}
-          />
-        )}
-      </div>
+      {bulkGenerateInfo.generate_type === "tree" && (
+        <>
+          <h6
+            class={`user-select-none collapsable-heading ${outputAdvancedState ? "active" : ""}`}
+            role="button"
+            onClick={onOutputAdvanceToggle}
+          >
+            Advanced
+          </h6>
+          <div class="collapse" id={outputAdvancedId}>
+            <Input
+              label="Parent name match"
+              tooltip="First child that matches the parent name matcher will be chosen for generating the childs for a specific parent. Must evaluate to something that can be casted to a boolean."
+              type="text"
+              value={childSchema.parent_name_match || ""}
+              onInput={setValue("parent_name_match")}
+            />
+            {extendsKeys && (
+              <Input
+                label="Extends"
+                tooltip="Choose to extend from a template"
+                type="select"
+                options={extendsKeys}
+                value={childSchema.extends || ""}
+                onInput={setValue("extends")}
+              />
+            )}
+          </div>
+        </>
+      )}
 
       <div class="mt-3">
         <Tooltip
@@ -227,31 +231,35 @@ export function BulkDefinitionChildSchemaBuilder({
         </div>
       )}
 
-      <h5 class="mt-3">Childs</h5>
-      <div class="ms-3">
-        {childSchema.childs?.map((child, i) => (
-          <div class="card mb-2">
-            <div class="d-flex justify-content-between">
-              <div class="col p-3">
-                <BulkDefinitionChildSchemaBuilder
-                  childSchema={child}
-                  setChildSchema={setChildChildSchema(i)}
-                  bulkGenerateInfo={bulkGenerateInfo}
-                  extendsKeys={extendsKeys}
-                />
+      {bulkGenerateInfo.generate_type === "tree" && (
+        <>
+          <h5 class="mt-3">Childs</h5>
+          <div class="ms-3">
+            {childSchema.childs?.map((child, i) => (
+              <div class="card mb-2">
+                <div class="d-flex justify-content-between">
+                  <div class="col p-3">
+                    <BulkDefinitionChildSchemaBuilder
+                      childSchema={child}
+                      setChildSchema={setChildChildSchema(i)}
+                      bulkGenerateInfo={bulkGenerateInfo}
+                      extendsKeys={extendsKeys}
+                    />
+                  </div>
+                  <div class="p-1">
+                    <button onClick={removeChild(i)} class="btn btn-outline-danger">
+                      X
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div class="p-1">
-                <button onClick={removeChild(i)} class="btn btn-outline-danger">
-                  X
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <button onClick={addChild} class="btn btn-outline-primary btn-sm">
-        Add child
-      </button>
+          <button onClick={addChild} class="btn btn-outline-primary btn-sm">
+            Add child
+          </button>
+        </>
+      )}
     </div>
   );
 }

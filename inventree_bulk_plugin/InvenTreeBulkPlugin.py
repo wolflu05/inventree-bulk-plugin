@@ -27,15 +27,21 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
             panels.append({
                 'title': 'Bulk creation',
                 'icon': 'fas fa-tools',
-                'content': '{% include "preact-page.html" with page="bulk-creation-panel" objectId=object.id objectType="STOCK_LOCATION" %}',
+                'content': '{% include "preact-page.html" with page="bulk-creation-panel" id="1" objectId=object.id objectType="STOCK_LOCATION" %}',
                 'description': 'Bulk creation tools',
             })
 
         if isinstance(view, CategoryDetail):
             panels.append({
-                'title': 'Bulk creation',
+                'title': 'Category bulk creation',
                 'icon': 'fas fa-tools',
-                'content': '{% include "preact-page.html" with page="bulk-creation-panel" objectId=object.id objectType="PART_CATEGORY" %}',
+                'content': '{% include "preact-page.html" with page="bulk-creation-panel" id="2" objectId=object.id objectType="PART_CATEGORY" %}',
+                'description': 'Bulk creation tools',
+            })
+            panels.append({
+                'title': 'Part bulk creation',
+                'icon': 'fas fa-tools',
+                'content': '{% include "preact-page.html" with page="bulk-creation-panel" id="3" objectId=object.id objectType="PART" %}',
                 'description': 'Bulk creation tools',
             })
 

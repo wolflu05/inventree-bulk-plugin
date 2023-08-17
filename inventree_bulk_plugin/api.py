@@ -103,15 +103,15 @@ class BulkCreate(APIView):
         if not schema:
             return Response({"error": "BulkDefinitionSchema not provided via 'template' property."}, status=status.HTTP_400_BAD_REQUEST)
 
-        bulkcreate_object = bulkcreate_object_class(request.query_params)
-
-        ctx = bulkcreate_object.get_context()
-
-        # catch error responses
-        if isinstance(ctx, Response):
-            return ctx
-
         try:
+            bulkcreate_object = bulkcreate_object_class(request.query_params)
+
+            ctx = bulkcreate_object.get_context()
+
+            # catch error responses
+            if isinstance(ctx, Response):
+                return ctx
+
             if not isinstance(schema, dict):
                 schema = json.loads(schema)
             bg = BulkGenerator(schema, fields=bulkcreate_object.fields).generate(ctx)

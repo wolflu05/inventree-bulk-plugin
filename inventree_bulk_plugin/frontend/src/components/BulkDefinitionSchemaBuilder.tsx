@@ -121,55 +121,59 @@ export function BulkDefinitionSchemaBuilder({ schema, setSchema, bulkGenerateInf
         </div>
       </div>
 
-      <div class="card mt-2">
-        <div class="card-header">
-          <h5
-            class="mb-0 user-select-none"
-            role="button"
-            data-bs-toggle="collapse"
-            data-bs-target={`#accordion-${accordionId}-templates`}
-          >
-            Templates
-          </h5>
-        </div>
+      {bulkGenerateInfo.generate_type === "tree" && (
+        <>
+          <div class="card mt-2">
+            <div class="card-header">
+              <h5
+                class="mb-0 user-select-none"
+                role="button"
+                data-bs-toggle="collapse"
+                data-bs-target={`#accordion-${accordionId}-templates`}
+              >
+                Templates
+              </h5>
+            </div>
 
-        <div id={`accordion-${accordionId}-templates`} class="collapse">
-          <div class="card-body">
-            {schema.templates.map((template, i) => (
-              <div class="card mb-2">
-                <div class="d-flex justify-content-between">
-                  <div class="col p-3">
-                    {template !== null && (
-                      <Input
-                        label="Template name"
-                        type="text"
-                        value={template.name}
-                        onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) =>
-                          setTemplate(i)((t) => ({ ...t, name: e.currentTarget.value }))
-                        }
-                      />
-                    )}
-                    <BulkDefinitionChildSchemaBuilder
-                      childSchema={template}
-                      setChildSchema={setTemplate(i) as unknown as StateUpdater<BulkDefinitionChild>}
-                      bulkGenerateInfo={bulkGenerateInfo}
-                      extendsKeys={extendsKeys}
-                    />
+            <div id={`accordion-${accordionId}-templates`} class="collapse">
+              <div class="card-body">
+                {schema.templates.map((template, i) => (
+                  <div class="card mb-2">
+                    <div class="d-flex justify-content-between">
+                      <div class="col p-3">
+                        {template !== null && (
+                          <Input
+                            label="Template name"
+                            type="text"
+                            value={template.name}
+                            onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) =>
+                              setTemplate(i)((t) => ({ ...t, name: e.currentTarget.value }))
+                            }
+                          />
+                        )}
+                        <BulkDefinitionChildSchemaBuilder
+                          childSchema={template}
+                          setChildSchema={setTemplate(i) as unknown as StateUpdater<BulkDefinitionChild>}
+                          bulkGenerateInfo={bulkGenerateInfo}
+                          extendsKeys={extendsKeys}
+                        />
+                      </div>
+                      <div class="p-1">
+                        <button onClick={removeTemplate(i)} class="btn btn-outline-danger">
+                          X
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div class="p-1">
-                    <button onClick={removeTemplate(i)} class="btn btn-outline-danger">
-                      X
-                    </button>
-                  </div>
-                </div>
+                ))}
+                <button onClick={addTemplate} class="btn btn-outline-primary btn-sm">
+                  Add template
+                </button>
               </div>
-            ))}
-            <button onClick={addTemplate} class="btn btn-outline-primary btn-sm">
-              Add template
-            </button>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
       <div class="card mt-2">
         <div class="card-header">

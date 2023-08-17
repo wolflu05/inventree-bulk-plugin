@@ -59,4 +59,5 @@ class InvenTreeBulkPluginTestCase(TestCase):
         assert_contains_by_title("Bulk creation", panels)
 
         panels = bulk_plugin.get_custom_panels(CategoryDetail(), None)
-        assert_contains_by_title("Bulk creation", panels)
+        assert_contains_by_title("Category bulk creation", panels)
+        assert_contains_by_title("Part bulk creation", panels)

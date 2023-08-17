@@ -1,7 +1,7 @@
 {% load static %}
 {% load inventree_extras %}
 
-{% define "bulk-create-preact-root__"|add:page as dom_root %}
+{% define "bulk-create-preact-root__"|add:page|add:id as dom_root %}
 
 <div id="{{ dom_root }}"></div>
 

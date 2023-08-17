@@ -3,6 +3,7 @@ import { StateUpdater, useCallback, useEffect, useState } from "preact/hooks";
 
 import { Input } from "./Input";
 import { PreviewTable } from "./PreviewTable";
+import { useBulkGenerateInfo } from "../contexts/BulkCreateInfo";
 import { useNotifications } from "../contexts/Notification";
 import { beautifySchema } from "../utils";
 import { URLS, fetchAPI } from "../utils/api";
@@ -42,9 +43,10 @@ export const PreviewCreate = ({
 }: PreviewCreateProps) => {
   const [previewTemplate, setPreviewTemplate] = useState<TemplateModel>();
   const [inputs, setInputs] = useState<InputType[]>([]);
-  const [initial, setIntial] = useState(true);
+  const [initial, setInitial] = useState(true);
 
   const { showNotification } = useNotifications();
+  const { bulkGenerateInfoDict } = useBulkGenerateInfo();
 
   useEffect(() => {
     setInputs(Object.entries(template.template.input).map(([k, v]) => ({ key: k, value: v })));
@@ -75,17 +77,20 @@ export const PreviewCreate = ({
 
     if (!res.ok) {
       handleDoneCreate?.(false);
-      return showNotification({ type: "danger", message: `An error occourd, ${json.error}` });
+      return showNotification({ type: "danger", message: `An error occurred, ${json.error}` });
     }
 
-    showNotification({ type: "success", message: `Successfully bulk created ${json.length} ${final.template_type}s.` });
+    showNotification({
+      type: "success",
+      message: `Successfully bulk created ${json.length} ${bulkGenerateInfoDict[final.template_type]?.name}s.`,
+    });
     handleDoneCreate?.(true);
-  }, [handleDoneCreate, inputs, parentId, setIsBulkCreateLoading, showNotification, template]);
+  }, [bulkGenerateInfoDict, handleDoneCreate, inputs, parentId, setIsBulkCreateLoading, showNotification, template]);
 
   const previewHandler = useCallback(() => {
     const final = structuredClone(getTemplateWithInputs(template, inputs));
     setPreviewTemplate(final);
-    setIntial(false);
+    setInitial(false);
   }, [inputs, template]);
 
   const createHandler = useCallback(() => {

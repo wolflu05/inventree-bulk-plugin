@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 import itertools
-from typing import Any, Callable, Iterable, Literal, Optional
+from typing import Any, Callable, Iterable, Literal, Optional, Union
 
 from jinja2.exceptions import TemplateError
 
@@ -59,15 +59,17 @@ class DimStr(str):
 @dataclass
 class FieldDefinition:
     name: str
-    field_type: Literal["text", "boolean", "number"] = "text"
+    field_type: Literal["text", "boolean", "number", "model"] = "text"
     cast_func: Callable[[str], Any] = None
     description: Optional[str] = None
     required: bool = False
+    model: Union[str, tuple[str, Union[dict, None]], None] = None
 
     type_casts = {
         "text": str,
         "boolean": str2bool,
         "number": str2int,
+        "model": str2int,
     }
 
     default_descriptions = {
@@ -82,8 +84,12 @@ class FieldDefinition:
         if not self.description and self.field_type in self.default_descriptions:
             self.description = self.default_descriptions.get(self.field_type, None)
 
+        if isinstance(self.model, str):
+            self.model = (self.model, None)
 
-ParseChildReturnType = list[tuple[dict[str, str], list["ParseChildReturnType"]]]
+
+ParseChildReturnElement = tuple[dict[str, str], list["ParseChildReturnType"]]
+ParseChildReturnType = list[ParseChildReturnElement]
 
 
 class BulkGenerator:

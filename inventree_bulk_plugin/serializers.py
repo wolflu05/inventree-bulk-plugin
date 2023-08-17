@@ -33,12 +33,21 @@ class FieldDefinitionSerializer(serializers.Serializer):
             "field_type",
             "description",
             "required",
+            "model",
         ]
 
     name = serializers.CharField()
     field_type = serializers.CharField()
     description = serializers.CharField()
     required = serializers.BooleanField()
+    model = serializers.SerializerMethodField()
+
+    def get_model(self, obj):
+        model = getattr(obj, "model", None)
+        if model is None:
+            return None
+
+        return {"model": model[0], "limit_choices_to": model[1]}
 
 
 class BulkCreateObjectSerializer(serializers.Serializer):

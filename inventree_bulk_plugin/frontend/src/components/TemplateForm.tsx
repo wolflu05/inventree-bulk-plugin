@@ -146,9 +146,9 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
 
     showNotification({
       type: "success",
-      message: `Successfully bulk created ${json.length} ${template.template_type}s.`,
+      message: `Successfully bulk created ${json.length} ${bulkGenerateInfoDict[template.template_type]?.name}s.`,
     });
-  }, [parentId, showNotification, template]);
+  }, [bulkGenerateInfoDict, parentId, showNotification, template]);
 
   return (
     <div>
@@ -237,7 +237,8 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
           },
         ]}
       >
-        Are you sure you want to bulk generate sub-{template?.template_type}s here?
+        Are you sure you want to bulk generate{" "}
+        {bulkGenerateInfoDict[template?.template_type || ""]?.name || template?.template_type}s here?
       </Dialog>
     </div>
   );
