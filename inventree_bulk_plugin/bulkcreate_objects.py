@@ -3,8 +3,6 @@ from typing import Any, Callable, Generic, Literal, Optional, TypeVar, Union
 from django.db import transaction
 from django.db.models import Model
 from django.apps import apps
-from rest_framework.response import Response
-from rest_framework import status
 
 from stock.models import StockLocation
 from part.models import PartCategory, Part
@@ -102,33 +100,27 @@ class BulkCreateObject(Generic[ModelType]):
 
                     recursive_bulk_create(obj, c[1])
 
-            try:
-                with transaction.atomic():
-                    recursive_bulk_create(self.parent, objects)
-                return created_objects
-            except Exception as e:  # pragma: no cover
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            with transaction.atomic():
+                recursive_bulk_create(self.parent, objects)
+            return created_objects
 
         if self.generate_type == "single":
             created_objects = []
 
-            try:
-                with transaction.atomic():
-                    for o in objects:
-                        created_objects.append(self.create_object(o))
-                return created_objects
-            except Exception as e:  # pragma: no cover
-                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+            with transaction.atomic():
+                for o in objects:
+                    created_objects.append(self.create_object(o))
+            return created_objects
 
         return []  # pragma: no cover
 
-    def get_context(self) -> Union[dict, Response]:
+    def get_context(self) -> dict:
         if self.generate_type == "tree":
             parent_id = self.query_params.get("parent_id", None)
             is_create = str2bool(self.query_params.get("create", "false"))
             if not parent_id:
                 if is_create:
-                    return Response({"error": "parent_id query parameter missing"}, status=status.HTTP_400_BAD_REQUEST)
+                    raise ValueError("parent_id query parameter missing")
                 else:
                     # add default placeholders if parent_id is not set
                     return {"gen": {k: f"<parent '{f.name}'>" for k, f in self.fields.items()}}
@@ -139,7 +131,7 @@ class BulkCreateObject(Generic[ModelType]):
                 parent_dict = {key: getattr(parent, key) for key in self.fields.keys() if hasattr(parent, key)}
                 return {"gen": parent_dict}
             except self.model.DoesNotExist:
-                return Response({"error": f"object with id '{parent_id}' cannot be found"}, status=status.HTTP_404_NOT_FOUND)
+                raise ValueError(f"object with id '{parent_id}' cannot be found")
 
         return {}  # pragma: no cover
 
@@ -218,7 +210,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
     def create_object(self, data: ParseChildReturnElement):
         return super().create_object(data, category=self.category)
 
-    def get_context(self) -> dict | Response:
+    def get_context(self) -> dict:
         parent_id = self.query_params.get("parent_id", None)
         ctx = super().get_context()
 
@@ -229,7 +221,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                 category_dict = {key: getattr(category, key) for key in self.fields.keys() if hasattr(category, key)}
                 return {**ctx, "category": category_dict}
             except self.model.DoesNotExist:
-                return Response({"error": f"category with id '{parent_id}' cannot be found"}, status=status.HTTP_404_NOT_FOUND)
+                raise ValueError(f"category with id '{parent_id}' cannot be found")
 
 
 bulkcreate_objects: dict[str, type[BulkCreateObject]] = {

@@ -108,10 +108,6 @@ class BulkCreate(APIView):
 
             ctx = bulkcreate_object.get_context()
 
-            # catch error responses
-            if isinstance(ctx, Response):
-                return ctx
-
             if not isinstance(schema, dict):
                 schema = json.loads(schema)
             bg = BulkGenerator(schema, fields=bulkcreate_object.fields).generate(ctx)
@@ -122,13 +118,11 @@ class BulkCreate(APIView):
 
         # only create if create query param is set
         if create_objects:
-            objects = bulkcreate_object.create_objects(bg)
-
-            # catch error responses
-            if isinstance(objects, Response):  # pragma: no cover
-                return objects
-
-            return Response([obj.pk for obj in objects], status=status.HTTP_201_CREATED)
+            try:
+                objects = bulkcreate_object.create_objects(bg)
+                return Response([obj.pk for obj in objects], status=status.HTTP_201_CREATED)
+            except Exception as e:  # pragma: no cover
+                return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
         return Response(bg)
 

@@ -172,7 +172,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
                 },
             },
         }
-        response = self.post(url + "?parent_id=99999", data, expected_code=404)
+        response = self.post(url + "?parent_id=99999", data, expected_code=400)
 
         # If template_type is provided and parent_id, everything should work and parent context should be used
         parent = StockLocation.objects.create(name="Parent 13", description="Parent description", parent=None)
