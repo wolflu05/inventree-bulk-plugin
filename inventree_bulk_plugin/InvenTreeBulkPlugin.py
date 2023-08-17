@@ -11,7 +11,10 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
     AUTHOR = "wolflu05"
     DESCRIPTION = "InvenTree Bulk plugin"
     VERSION = BULK_PLUGIN_VERSION
-    MIN_VERSION = "0.9.1"  # due to "invoke update" doesn't run collectstatic (see inventree/InvenTree#4077)
+
+    # 0.9.1 - due to "invoke update" doesn't run collectstatic (see inventree/InvenTree#4077)
+    # 0.12.6 - Settings do not work in combination with api views (see inventree/InvenTree#5408)
+    MIN_VERSION = "0.12.6"
 
     TITLE = "InvenTree Bulk Plugin"
     SLUG = "inventree-bulk-plugin"
