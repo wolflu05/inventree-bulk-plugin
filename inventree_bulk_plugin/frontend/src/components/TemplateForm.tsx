@@ -10,11 +10,11 @@ import { useNotifications } from "../contexts/Notification";
 import { beautifySchema, isEqual } from "../utils";
 import { URLS, fetchAPI } from "../utils/api";
 import { defaultSchema } from "../utils/constants";
-import { BulkDefinitionSchema, TemplateModel, TemplateType } from "../utils/types";
+import { BulkDefinitionSchema, TemplateModel } from "../utils/types";
 
 interface TemplateFormProps {
   templateId?: null | number;
-  templateType?: TemplateType;
+  templateType?: string;
   handleBack: () => void;
   parentId?: string;
 }
@@ -72,7 +72,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
         id: null,
         name: "",
         template: structuredClone(defaultSchema),
-        template_type: templateType || TemplateType.STOCK_LOCATION,
+        template_type: templateType || "STOCK_LOCATION",
       };
     }
 

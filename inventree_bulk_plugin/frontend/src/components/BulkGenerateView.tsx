@@ -5,10 +5,10 @@ import { PreviewCreate } from "./PreviewCreate";
 import { TemplateForm } from "./TemplateForm";
 import { useNotifications } from "../contexts/Notification";
 import { URLS, fetchAPI } from "../utils/api";
-import { TemplateModel, TemplateType } from "../utils/types";
+import { TemplateModel } from "../utils/types";
 
 interface BulkGenerateViewProps {
-  templateType?: TemplateType;
+  templateType?: string;
   parentId?: string;
 }
 

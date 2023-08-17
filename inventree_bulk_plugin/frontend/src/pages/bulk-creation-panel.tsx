@@ -2,12 +2,12 @@ import { render as preact_render } from "preact";
 
 import { BulkGenerateView } from "../components/BulkGenerateView";
 import { Page } from "../components/Page";
-import { PageRenderProps, TemplateType } from "../utils/types";
+import { PageRenderProps } from "../utils/types";
 
-export function render({ target, ctxId }: PageRenderProps) {
+export function render({ target, objectId, objectType }: PageRenderProps) {
   preact_render(
     <Page>
-      <BulkGenerateView templateType={TemplateType.PART_CATEGORY} parentId={ctxId} />
+      <BulkGenerateView templateType={objectType} parentId={objectId} />
     </Page>,
     target,
   );

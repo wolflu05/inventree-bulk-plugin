@@ -24,7 +24,7 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
             panels.append({
                 'title': 'Bulk creation',
                 'icon': 'fas fa-tools',
-                'content': '{% include "setup-preact.html" with page="stock-location-detail" ctxId=location.id %}',
+                'content': '{% include "preact-page.html" with page="bulk-creation-panel" objectId=object.id objectType="STOCK_LOCATION" %}',
                 'description': 'Bulk creation tools',
             })
 
@@ -32,7 +32,7 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
             panels.append({
                 'title': 'Bulk creation',
                 'icon': 'fas fa-tools',
-                'content': '{% include "setup-preact.html" with page="category-detail" ctxId=category.id %}',
+                'content': '{% include "preact-page.html" with page="bulk-creation-panel" objectId=object.id objectType="PART_CATEGORY" %}',
                 'description': 'Bulk creation tools',
             })
 
