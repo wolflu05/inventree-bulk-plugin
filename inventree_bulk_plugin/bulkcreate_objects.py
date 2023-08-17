@@ -212,17 +212,21 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
 
     def get_context(self) -> dict:
         parent_id = self.query_params.get("parent_id", None)
+        self.category = None
+
         ctx = super().get_context()
 
-        if parent_id:
-            try:
-                category = PartCategory.objects.get(pk=parent_id)
-                self.category = category
-                category_dict = {key: getattr(category, key)
-                                 for key in PartCategoryBulkCreateObject.fields.keys() if hasattr(category, key)}
-                return {**ctx, "category": category_dict}
-            except PartCategory.DoesNotExist:
-                raise ValueError(f"category with id '{parent_id}' cannot be found")
+        if not parent_id:
+            return ctx
+
+        try:
+            category = PartCategory.objects.get(pk=parent_id)
+            self.category = category
+            category_dict = {key: getattr(category, key)
+                             for key in PartCategoryBulkCreateObject.fields.keys() if hasattr(category, key)}
+            return {**ctx, "category": category_dict}
+        except PartCategory.DoesNotExist:
+            raise ValueError(f"category with id '{parent_id}' cannot be found")
 
 
 bulkcreate_objects: dict[str, type[BulkCreateObject]] = {
