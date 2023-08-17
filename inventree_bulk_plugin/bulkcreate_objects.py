@@ -218,9 +218,10 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             try:
                 category = PartCategory.objects.get(pk=parent_id)
                 self.category = category
-                category_dict = {key: getattr(category, key) for key in self.fields.keys() if hasattr(category, key)}
+                category_dict = {key: getattr(category, key)
+                                 for key in PartCategoryBulkCreateObject.fields.keys() if hasattr(category, key)}
                 return {**ctx, "category": category_dict}
-            except self.model.DoesNotExist:
+            except PartCategory.DoesNotExist:
                 raise ValueError(f"category with id '{parent_id}' cannot be found")
 
 
