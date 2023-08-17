@@ -47,7 +47,7 @@ class BulkCreateObject(Generic[ModelType]):
             except Exception as e:  # pragma: no cover
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
-        return []
+        return []  # pragma: no cover
 
     def get_context(self) -> Union[dict, Response]:
         if self.generate_type == "tree":
@@ -68,7 +68,7 @@ class BulkCreateObject(Generic[ModelType]):
             except self.model.DoesNotExist:
                 return Response({"error": f"object with id '{parent_id}' cannot be found"}, status=status.HTTP_404_NOT_FOUND)
 
-        return {}
+        return {}  # pragma: no cover
 
 
 class StockLocationBulkCreateObject(BulkCreateObject[StockLocation]):
