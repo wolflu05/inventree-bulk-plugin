@@ -2,6 +2,7 @@ import { JSX } from "preact";
 import { StateUpdater, useCallback, useMemo, useState } from "preact/hooks";
 
 import { Input } from "./Input";
+import { Tooltip } from "./Tooltip";
 import { FieldDefinition, FieldDefinitionList, FieldDefinitionObject, FieldType } from "../utils/types";
 
 const getDefaultValue = (fieldDefinition: FieldDefinition): FieldType => {
@@ -94,7 +95,11 @@ export const GenerateKeysList = ({ fieldsDefinition, fields, setFields, onDelete
 
   return (
     <div class="mb-2">
-      {fieldsDefinition.name && <h6>{fieldsDefinition.name}</h6>}
+      {fieldsDefinition.name && (
+        <Tooltip text={fieldsDefinition.description || ""}>
+          <h6>{fieldsDefinition.name}</h6>
+        </Tooltip>
+      )}
       <div class="card p-2 ms-3">
         {fields.map((field, i) => (
           <GenerateKeys
@@ -174,7 +179,11 @@ export const GenerateKeysObject = ({
     <div class={`${showCard ? "card mb-1" : ""}`}>
       <div class="d-flex justify-content-between">
         <div class={`col ${showCard ? "p-2" : ""}`} style={{ marginBottom: "-15px" }}>
-          {fieldsDefinition.name && <h6>{fieldsDefinition.name}</h6>}
+          {fieldsDefinition.name && (
+            <Tooltip text={fieldsDefinition.description || ""}>
+              <h6>{fieldsDefinition.name}</h6>
+            </Tooltip>
+          )}
           {Object.entries(subFieldsDefinition)
             .filter(([key]) => fields[key] !== undefined)
             .map(([key, fieldDefinition]) => {

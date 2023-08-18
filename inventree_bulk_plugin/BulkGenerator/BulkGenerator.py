@@ -181,8 +181,12 @@ class BulkGenerator:
 
         def compile_templates(field: FieldType, generate, path: list[str] = []):
             if field.field_type == "object" and field.fields:
+                if not isinstance(generate, dict):
+                    return None
                 return {k: v for k, f in field.fields.items() if (v := compile_templates(f, generate.get(k, None), [*path, k])) is not None}
             elif field.field_type == "list" and field.items_type:
+                if not isinstance(generate, list):
+                    return None
                 return [v for i, f in enumerate(generate) if (v := compile_templates(field.items_type, f, [*path, i])) is not None]
             else:
                 path_str = ".".join(map(str, path))
@@ -213,7 +217,7 @@ class BulkGenerator:
                 return render
 
         compiled_templates = compile_templates(BaseFieldDefinition(
-            "", field_type="object", fields=self.fields), generate)
+            "", field_type="object", fields=fields), generate)
 
         if len(missing_fields) > 0:
             raise ValueError(f"'{','.join(missing_fields)}' are missing in generated keys.")
