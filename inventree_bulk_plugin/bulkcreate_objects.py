@@ -5,7 +5,7 @@ from django.db.models import Model
 from django.apps import apps
 
 from stock.models import StockLocation
-from part.models import PartCategory, Part
+from part.models import PartCategory, Part, PartParameter, PartParameterTemplate
 
 from .BulkGenerator.utils import str2bool, str2int
 from .BulkGenerator.BulkGenerator import BaseFieldDefinition, ParseChildReturnElement, ParseChildReturnType
@@ -30,11 +30,13 @@ def get_model(model_name: str):
 @dataclass
 class FieldDefinition(BaseFieldDefinition):
     name: str
-    field_type: Literal["text", "boolean", "number", "model"] = "text"
+    field_type: Literal["text", "boolean", "number", "model", "list", "object"] = "text"
     cast_func: Callable[[str], Any] = None
     description: Optional[str] = None
     required: bool = False
     model: Union[str, tuple[str, dict], tuple[str, dict, Model], None] = None
+    items_type: Optional["FieldDefinition"] = None
+    fields: Optional[dict[str, "FieldDefinition"]] = None
 
     type_casts = {
         "text": str,
@@ -83,8 +85,11 @@ class BulkCreateObject(Generic[ModelType]):
         for k, v in data[0].items():
             if field := self.fields.get(k, None):
                 if field.model:
-                    _, limit_choices, model = field.model
-                    v = model.objects.get(pk=v, **limit_choices)
+                    model_name, limit_choices, model = field.model
+                    try:
+                        v = model.objects.get(pk=v, **limit_choices)
+                    except model.DoesNotExist:
+                        raise ValueError(f"Model '{model_name}' where {({'pk': v,**limit_choices})} not found")
                 properties[k] = v
 
         return self.model.objects.create(**{**kwargs, **properties})
@@ -198,17 +203,44 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
         "notes": FieldDefinition("Notes"),
         "responsible": FieldDefinition("Responsible", field_type="model", model="auth.user"),
         "image": FieldDefinition("Image"),
+        "parameters": FieldDefinition(
+            "Parameters",
+            field_type="list",
+            items_type=FieldDefinition(
+                "",
+                field_type="object",
+                fields={
+                    "template": FieldDefinition("Template", field_type="model", model="part.PartParameterTemplate", required=True),
+                    "value": FieldDefinition("Value", required=True)
+                },
+                required=True,
+            )),
 
         # TODO
         # "creation_user"
-        # "parameters"
         # "initial_stock"
         # "initial_supplier"
         # "attachments"
     }
 
     def create_object(self, data: ParseChildReturnElement):
-        return super().create_object(data, category=self.category)
+        # remove relations from data to create them separately
+        parameters = data[0].pop("parameters", [])
+
+        # create part
+        part = super().create_object(data, category=self.category)
+
+        # create parameters
+        for parameter in parameters:
+            try:
+                template = PartParameterTemplate.objects.get(pk=parameter["template"])
+            except PartParameterTemplate.DoesNotExist:
+                raise ValueError(
+                    f"Part parameter template with pk={parameter['template']} for {part.name} does not exist.")
+
+            PartParameter.objects.create(part=part, template=template, data=parameter['value'])
+
+        return part
 
     def get_context(self) -> dict:
         parent_id = self.query_params.get("parent_id", None)

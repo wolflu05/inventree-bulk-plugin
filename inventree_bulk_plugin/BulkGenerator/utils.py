@@ -3,7 +3,13 @@ def version_tuple(v: str):
 
 
 def str2bool(text):
-    return str(text).lower() in ['1', 'y', 'yes', 't', 'true', 'ok', 'on', ]
+    string = str(text).lower()
+    if string in ['1', 'y', 'yes', 't', 'true', 'ok', 'on', ]:
+        return True
+    elif string in ['0', 'n', 'no', 'f', 'false', 'off', ]:
+        return False
+
+    raise ValueError(f"'{text}' cannot be casted to a boolean, either use 'true' or 'false'.")
 
 
 def str2int(text, default=None):

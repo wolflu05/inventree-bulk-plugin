@@ -15,7 +15,7 @@ class BulkDefinitionChild(BaseModel):
     parent_name_match: Optional[str] = "true"
     extends: Optional[str] = None
     dimensions: BulkDefinitionChildDimensions = []
-    generate: Optional[Dict[str, str]] = {}
+    generate: Optional[dict] = {}
     count: BulkDefinitionChildCount = []
     child: Optional["BulkDefinitionChild"] = None
     childs: Optional[List["BulkDefinitionChild"]] = []

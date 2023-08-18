@@ -34,6 +34,8 @@ class FieldDefinitionSerializer(serializers.Serializer):
             "description",
             "required",
             "model",
+            "items_type",
+            "fields",
         ]
 
     name = serializers.CharField()
@@ -41,6 +43,12 @@ class FieldDefinitionSerializer(serializers.Serializer):
     description = serializers.CharField()
     required = serializers.BooleanField()
     model = serializers.SerializerMethodField()
+
+    def get_fields(self):
+        fields = super().get_fields()
+        fields["items_type"] = FieldDefinitionSerializer()
+        fields["fields"] = serializers.DictField(child=FieldDefinitionSerializer(read_only=True))
+        return fields
 
     def get_model(self, obj):
         model = getattr(obj, "model", None)
