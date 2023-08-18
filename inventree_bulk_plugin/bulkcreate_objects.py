@@ -280,7 +280,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                 if len(parameters) == 0:
                     return [{"template": "", "value": ""}]
 
-                return [{"template": c.parameter_template.id, "value": c.default_value} for c in parameters]
+                return [{"template": str(c.parameter_template.id), "value": c.default_value} for c in parameters]
             except Exception:
                 pass
 
