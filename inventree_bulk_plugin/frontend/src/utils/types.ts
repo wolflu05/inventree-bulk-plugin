@@ -3,6 +3,8 @@ export interface FieldDefinitionBase {
   description: null | string;
   required: boolean;
   model: null | { model: string; limit_choices_to: Record<string, string> };
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  default?: any;
 }
 
 export interface FieldDefinitionText extends FieldDefinitionBase {

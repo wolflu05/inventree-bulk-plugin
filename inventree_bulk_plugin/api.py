@@ -84,7 +84,24 @@ class BulkCreate(APIView):
     permission_classes = [permissions.IsAuthenticated]
 
     def get(self, request):
-        results = BulkCreateObjectSerializer(bulkcreate_objects.values(), many=True).data
+        template_type = request.query_params.get("template_type", None)
+
+        # return all bulk create objects
+        if template_type is None:
+            results = BulkCreateObjectSerializer(bulkcreate_objects.values(), many=True).data
+            return Response(results)
+
+        # return for specific object, also evaluate get default values
+        bulkcreate_object_class = bulkcreate_objects.get(template_type, None)
+
+        if not bulkcreate_object_class:
+            return Response(
+                {"error": f"Template type '{template_type}' not found, choose one of {','.join(bulkcreate_objects.keys())}"},
+                status=status.HTTP_400_BAD_REQUEST
+            )
+
+        bulkcreate_object = bulkcreate_object_class(request.query_params)
+        results = BulkCreateObjectSerializer(bulkcreate_object).data
         return Response(results)
 
     def post(self, request, *args, **kwargs):

@@ -9,10 +9,15 @@ export const fetchAPI = (input: RequestInfo | URL, init?: RequestInit) => {
 };
 
 export const URLS = {
-  bulkcreate: ({ parentId, create }: { parentId?: string; create?: boolean } = {}) => {
+  bulkcreate: ({
+    parentId,
+    create,
+    templateType,
+  }: { parentId?: string; create?: boolean; templateType?: string } = {}) => {
     const params = new URLSearchParams();
     if (parentId) params.set("parent_id", parentId);
     if (create) params.set("create", create ? "true" : "false");
+    if (templateType) params.set("template_type", templateType);
     const paramsString = params.toString();
 
     return `/plugin/inventree-bulk-plugin/bulkcreate${paramsString ? `?${paramsString}` : ""}`;

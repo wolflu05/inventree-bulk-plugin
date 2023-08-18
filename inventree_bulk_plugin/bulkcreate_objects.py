@@ -5,7 +5,7 @@ from django.db.models import Model
 from django.apps import apps
 
 from stock.models import StockLocation
-from part.models import PartCategory, Part, PartParameter, PartParameterTemplate
+from part.models import PartCategory, Part, PartParameter, PartParameterTemplate, PartCategoryParameterTemplate
 
 from .BulkGenerator.utils import str2bool, str2int
 from .BulkGenerator.BulkGenerator import BaseFieldDefinition, ParseChildReturnElement, ParseChildReturnType
@@ -37,6 +37,8 @@ class FieldDefinition(BaseFieldDefinition):
     model: Union[str, tuple[str, dict], tuple[str, dict, Model], None] = None
     items_type: Optional["FieldDefinition"] = None
     fields: Optional[dict[str, "FieldDefinition"]] = None
+    default: Optional[Any] = None
+    get_default: Optional[Any] = None
 
     type_casts = {
         "text": str,
@@ -206,6 +208,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
         "parameters": FieldDefinition(
             "Parameters",
             field_type="list",
+            get_default="get_parameters_default",
             items_type=FieldDefinition(
                 "",
                 field_type="object",
@@ -259,6 +262,25 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             return {**ctx, "category": category_dict}
         except PartCategory.DoesNotExist:
             raise ValueError(f"category with id '{parent_id}' cannot be found")
+
+    def get_parameters_default(self):
+        parent_id = self.query_params.get("parent_id", None)
+
+        # if parent_id (category_id) is set, try to get the category default parameters
+        if parent_id:
+            try:
+                categories = PartCategory.objects.get(pk=parent_id).get_ancestors(include_self=True)
+                parameters = PartCategoryParameterTemplate.objects.filter(category__in=categories)
+
+                # if no parameter is found for this category, add one default empty parameter
+                if len(parameters) == 0:
+                    return [{"template": "", "value": ""}]
+
+                return [{"template": c.parameter_template.id, "value": c.default_value} for c in parameters]
+            except Exception:
+                pass
+
+        return None
 
 
 bulkcreate_objects: dict[str, type[BulkCreateObject]] = {

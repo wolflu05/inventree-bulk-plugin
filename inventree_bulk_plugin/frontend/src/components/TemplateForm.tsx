@@ -10,7 +10,7 @@ import { useNotifications } from "../contexts/Notification";
 import { beautifySchema, isEqual } from "../utils";
 import { URLS, fetchAPI } from "../utils/api";
 import { defaultSchema } from "../utils/constants";
-import { BulkDefinitionSchema, TemplateModel } from "../utils/types";
+import { BulkDefinitionSchema, BulkGenerateInfo, TemplateModel } from "../utils/types";
 
 interface TemplateFormProps {
   templateId?: null | number;
@@ -41,12 +41,32 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
   }, []);
 
   const [isLoading, setIsLoading] = useState(true);
+  const [isBulkGenerateInfoLoading, setIsBulkGenerateInfoLoading] = useState(true);
+  const [bulkGenerateInfo, setBulkGenerateInfo] = useState<BulkGenerateInfo>();
   const { showNotification } = useNotifications();
   const { bulkGenerateInfoDict } = useBulkGenerateInfo();
   const templateTypeOptions = useMemo(
     () => Object.fromEntries(Object.values(bulkGenerateInfoDict).map((v) => [v.template_type, v.name])),
     [bulkGenerateInfoDict],
   );
+
+  useEffect(() => {
+    if (!template?.template_type || !parentId) return;
+
+    setIsBulkGenerateInfoLoading(true);
+
+    (async () => {
+      const res = await fetchAPI(URLS.bulkcreate({ parentId, templateType: template.template_type }));
+      if (!res.ok) {
+        setIsBulkGenerateInfoLoading(false);
+        return showNotification({ type: "danger", message: `Failed to load bulk generate info,\n${res.statusText}` });
+      }
+
+      const data = await res.json();
+      setBulkGenerateInfo(data);
+      setIsBulkGenerateInfoLoading(false);
+    })();
+  }, [parentId, showNotification, template?.template_type]);
 
   const isCreate = useMemo(() => !templateId && !template?.id, [template?.id, templateId]);
 
@@ -164,7 +184,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
         </div>
       )}
 
-      {!isLoading && template && (
+      {!isLoading && !isBulkGenerateInfoLoading && template && (
         <div>
           <Input label="Name" type="text" value={template.name} onInput={updateField("name")} />
           {!templateType && (
@@ -180,7 +200,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
           <BulkDefinitionSchemaBuilder
             schema={template.template}
             setSchema={updateTemplate}
-            bulkGenerateInfo={bulkGenerateInfoDict[template.template_type]}
+            bulkGenerateInfo={bulkGenerateInfo || bulkGenerateInfoDict[template.template_type]}
           />
         </div>
       )}

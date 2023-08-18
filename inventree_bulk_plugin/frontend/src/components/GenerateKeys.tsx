@@ -5,6 +5,9 @@ import { Input } from "./Input";
 import { FieldDefinition, FieldDefinitionList, FieldDefinitionObject, FieldType } from "../utils/types";
 
 const getDefaultValue = (fieldDefinition: FieldDefinition): FieldType => {
+  // use potential default value that is available via API
+  if (fieldDefinition.default) return fieldDefinition.default;
+
   if (fieldDefinition.field_type === "list") {
     return [getDefaultValue(fieldDefinition.items_type)];
   } else if (fieldDefinition.field_type == "object") {
