@@ -6,6 +6,7 @@ from rest_framework.authentication import SessionAuthentication, BasicAuthentica
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
+from rest_framework.request import Request
 from pydantic import ValidationError
 
 from InvenTree.filters import SEARCH_ORDER_FILTER
@@ -83,7 +84,7 @@ class BulkCreate(APIView):
     authentication_classes = authentication_classes
     permission_classes = [permissions.IsAuthenticated]
 
-    def get(self, request):
+    def get(self, request: Request):
         template_type = request.query_params.get("template_type", None)
 
         # return all bulk create objects
@@ -100,11 +101,11 @@ class BulkCreate(APIView):
                 status=status.HTTP_400_BAD_REQUEST
             )
 
-        bulkcreate_object = bulkcreate_object_class(request.query_params)
+        bulkcreate_object = bulkcreate_object_class(request)
         results = BulkCreateObjectSerializer(bulkcreate_object).data
         return Response(results)
 
-    def post(self, request, *args, **kwargs):
+    def post(self, request: Request):
         create_objects = str2bool(request.query_params.get("create", "false"))
         template_type = request.data.get("template_type", None)
         schema = request.data.get("template", None)
@@ -121,7 +122,7 @@ class BulkCreate(APIView):
             return Response({"error": "BulkDefinitionSchema not provided via 'template' property."}, status=status.HTTP_400_BAD_REQUEST)
 
         try:
-            bulkcreate_object = bulkcreate_object_class(request.query_params)
+            bulkcreate_object = bulkcreate_object_class(request)
 
             ctx = bulkcreate_object.get_context()
 

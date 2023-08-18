@@ -3,6 +3,7 @@ from typing import Any, Callable, Generic, Literal, Optional, TypeVar, Union
 from django.db import transaction
 from django.db.models import Model
 from django.apps import apps
+from rest_framework.request import Request
 
 from stock.models import StockLocation
 from part.models import PartCategory, Part, PartParameter, PartParameterTemplate, PartCategoryParameterTemplate
@@ -79,8 +80,8 @@ class BulkCreateObject(Generic[ModelType]):
     model: ModelType
     fields: dict[str, FieldDefinition]
 
-    def __init__(self, query_params: dict[str, str]) -> None:
-        self.query_params = query_params
+    def __init__(self, request: Request) -> None:
+        self.request = request
 
     def create_object(self, data: ParseChildReturnElement, **kwargs):
         properties = {}
@@ -123,8 +124,8 @@ class BulkCreateObject(Generic[ModelType]):
 
     def get_context(self) -> dict:
         if self.generate_type == "tree":
-            parent_id = self.query_params.get("parent_id", None)
-            is_create = str2bool(self.query_params.get("create", "false"))
+            parent_id = self.request.query_params.get("parent_id", None)
+            is_create = str2bool(self.request.query_params.get("create", "false"))
             if not parent_id:
                 if is_create:
                     raise ValueError("parent_id query parameter missing")
@@ -220,7 +221,6 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             )),
 
         # TODO
-        # "creation_user"
         # "initial_stock"
         # "initial_supplier"
         # "attachments"
@@ -231,7 +231,11 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
         parameters = data[0].pop("parameters", [])
 
         # create part
-        part = super().create_object(data, category=self.category)
+        part = super().create_object(
+            data,
+            category=self.category,
+            creation_user=self.request.user,
+        )
 
         # create parameters
         for parameter in parameters:
@@ -246,7 +250,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
         return part
 
     def get_context(self) -> dict:
-        parent_id = self.query_params.get("parent_id", None)
+        parent_id = self.request.query_params.get("parent_id", None)
         self.category = None
 
         ctx = super().get_context()
@@ -264,7 +268,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             raise ValueError(f"category with id '{parent_id}' cannot be found")
 
     def get_parameters_default(self):
-        parent_id = self.query_params.get("parent_id", None)
+        parent_id = self.request.query_params.get("parent_id", None)
 
         # if parent_id (category_id) is set, try to get the category default parameters
         if parent_id:
