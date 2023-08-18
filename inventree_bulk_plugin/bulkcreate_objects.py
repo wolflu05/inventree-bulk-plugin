@@ -6,7 +6,7 @@ from django.apps import apps
 from rest_framework.request import Request
 
 from stock.models import StockLocation
-from part.models import PartCategory, Part, PartParameter, PartParameterTemplate, PartCategoryParameterTemplate
+from part.models import PartCategory, Part, PartParameter, PartParameterTemplate, PartCategoryParameterTemplate, PartAttachment
 
 from .BulkGenerator.utils import str2bool, str2int
 from .BulkGenerator.BulkGenerator import BaseFieldDefinition, ParseChildReturnElement, ParseChildReturnType
@@ -219,16 +219,30 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                 },
                 required=True,
             )),
+        "attachments": FieldDefinition(
+            "Attachments",
+            description="Either provide a link or a url to a file that should be downloaded on create.",
+            field_type="list",
+            items_type=FieldDefinition(
+                "",
+                field_type="object",
+                fields={
+                    "comment": FieldDefinition("Comment", required=True),
+                    "link": FieldDefinition("Link"),
+                    "file_url": FieldDefinition("File Url"),
+                },
+                required=True,
+            )),
 
         # TODO
         # "initial_stock"
         # "initial_supplier"
-        # "attachments"
     }
 
     def create_object(self, data: ParseChildReturnElement):
         # remove relations from data to create them separately
         parameters = data[0].pop("parameters", [])
+        attachments = data[0].pop("attachments", [])
 
         # create part
         part = super().create_object(
@@ -246,6 +260,16 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                     f"Part parameter template with pk={parameter['template']} for {part.name} does not exist.")
 
             PartParameter.objects.create(part=part, template=template, data=parameter['value'])
+
+        # create attachments
+        for attachment in attachments:
+            # TODO: download attachment if link available
+            PartAttachment.objects.create(
+                part=part,
+                link=attachment.get("link", None),
+                comment=attachment["comment"],
+                user=self.request.user
+            )
 
         return part
 
