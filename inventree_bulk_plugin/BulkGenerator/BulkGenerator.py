@@ -74,7 +74,7 @@ ParseChildReturnType = list[ParseChildReturnElement]
 
 
 class BulkGenerator:
-    def __init__(self, inp, fields: dict[str, BaseFieldDefinition] = None):
+    def __init__(self, inp, fields: dict[str, BaseFieldDefinition]):
         self.inp = inp
         self.schema: BulkDefinitionSchema = None
         self.fields = fields
@@ -216,7 +216,7 @@ class BulkGenerator:
             "", field_type="object", fields=self.fields), generate)
 
         if len(missing_fields) > 0:
-            raise ValueError(f"{','.join(missing_fields)} are missing in generated keys.")
+            raise ValueError(f"'{','.join(missing_fields)}' are missing in generated keys.")
 
         def recursive_map(func: Callable[[Any, list[str]], Any], d: Any, path: list[str] = []):
             if isinstance(d, dict):

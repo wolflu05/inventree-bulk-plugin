@@ -258,7 +258,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
             }
         }
         response = self.post(url + f"?parent_id={parent.pk}&create=true", schema, expected_code=400)
-        self.assertEqual({"error": "'name' is missing in generated keys"}, response.json())
+        self.assertEqual({"error": "'name' are missing in generated keys."}, response.json())
 
     def _template_url(self, pk=None):
         if pk:
