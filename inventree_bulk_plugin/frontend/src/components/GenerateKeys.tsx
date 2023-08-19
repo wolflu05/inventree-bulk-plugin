@@ -178,7 +178,7 @@ export const GenerateKeysObject = ({
   return (
     <div class={`${showCard ? "card mb-1" : ""}`}>
       <div class="d-flex justify-content-between">
-        <div class={`col ${showCard ? "p-2" : ""}`} style={{ marginBottom: "-15px" }}>
+        <div class={`col ${showCard ? "p-2" : ""}`}>
           {fieldsDefinition.name && (
             <Tooltip text={fieldsDefinition.description || ""}>
               <h6>{fieldsDefinition.name}</h6>
@@ -199,7 +199,7 @@ export const GenerateKeysObject = ({
               );
             })}
           {remainingGenerateKeys.length > 0 && (
-            <div style="display: flex; max-width: 200px; margin-bottom: 15px;">
+            <div style="display: flex; max-width: 200px;">
               <select
                 class="form-select form-select-sm"
                 value={remainingGenerateKeysValue}

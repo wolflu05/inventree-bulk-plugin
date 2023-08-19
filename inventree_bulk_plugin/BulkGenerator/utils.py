@@ -17,3 +17,10 @@ def str2int(text, default=None):
         return int(text)
     except Exception:
         return default
+
+
+def str2float(text, default=None):
+    try:
+        return float(text)
+    except Exception:
+        return default
