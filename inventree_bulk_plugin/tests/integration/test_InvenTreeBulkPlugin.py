@@ -56,7 +56,7 @@ class InvenTreeBulkPluginTestCase(TestCase):
             self.assertListEqual(["title", "icon", "content", "description"], list(found.keys()))
 
         panels = bulk_plugin.get_custom_panels(StockLocationDetail(), None)
-        assert_contains_by_title("Bulk creation", panels)
+        assert_contains_by_title("Stock bulk creation", panels)
 
         panels = bulk_plugin.get_custom_panels(CategoryDetail(), None)
         assert_contains_by_title("Category bulk creation", panels)
