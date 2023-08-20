@@ -1,9 +1,16 @@
 import { JSX } from "preact";
-import { StateUpdater, useCallback, useMemo, useState } from "preact/hooks";
+import { StateUpdater, useCallback, useId, useMemo, useState } from "preact/hooks";
 
 import { Input } from "./Input";
 import { Tooltip } from "./Tooltip";
-import { FieldDefinition, FieldDefinitionList, FieldDefinitionObject, FieldType } from "../utils/types";
+import {
+  FieldDefinition,
+  FieldDefinitionList,
+  FieldDefinitionModel,
+  FieldDefinitionObject,
+  FieldDefinitionText,
+  FieldType,
+} from "../utils/types";
 
 const getDefaultValue = (fieldDefinition: FieldDefinition): FieldType => {
   // use potential default value that is available via API
@@ -50,16 +57,7 @@ export const GenerateKeys = ({ fieldDefinition, field, setField, onDelete }: Gen
     );
   }
 
-  return (
-    <Input
-      label={fieldDefinition.name}
-      tooltip={fieldDefinition.description || undefined}
-      type="text"
-      value={field as string}
-      onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) => setField(e.currentTarget.value)}
-      onDelete={onDelete}
-    />
-  );
+  return <GenerateKeysSingle fieldDefinition={fieldDefinition} field={field} setField={setField} onDelete={onDelete} />;
 };
 
 interface GenerateKeysListProps {
@@ -94,31 +92,37 @@ export const GenerateKeysList = ({ fieldsDefinition, fields, setFields, onDelete
   );
 
   return (
-    <div class="mb-2">
-      {fieldsDefinition.name && (
-        <Tooltip text={fieldsDefinition.description || ""}>
-          <h6>{fieldsDefinition.name}</h6>
-        </Tooltip>
-      )}
-      <div class="card p-2 ms-3">
-        {fields.map((field, i) => (
-          <GenerateKeys
-            fieldDefinition={itemsFieldsDefinition}
-            field={field}
-            setField={setField(i)}
-            onDelete={handleDeleteGenerateKey(i)}
-          />
-        ))}
-        <div style={{ display: "flex", justifyContent: "space-between" }}>
-          <button class="btn btn-small btn-outline-primary" onClick={handleAddGenerateKey}>
-            Add {fieldsDefinition.name}
-          </button>
-          {onDelete && (
-            <button class="btn btn-small btn-outline-danger pe-2 ps-2" onClick={onDelete}>
-              X
-            </button>
+    <div class="mb-1 card">
+      <div class="d-flex justify-content-between">
+        <div className="col p-2">
+          {fieldsDefinition.name && (
+            <Tooltip text={fieldsDefinition.description || ""}>
+              <h6>{fieldsDefinition.name}</h6>
+            </Tooltip>
           )}
+          <div class="ms-3">
+            {fields.map((field, i) => (
+              <GenerateKeys
+                fieldDefinition={itemsFieldsDefinition}
+                field={field}
+                setField={setField(i)}
+                onDelete={handleDeleteGenerateKey(i)}
+              />
+            ))}
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <button class="btn btn-sm btn-outline-primary" onClick={handleAddGenerateKey}>
+                Add {fieldsDefinition.name}
+              </button>
+            </div>
+          </div>
         </div>
+        {onDelete && (
+          <div class="p-1">
+            <button onClick={onDelete} class="btn btn-sm btn-outline-danger">
+              <i class="fa fa-trash"></i>
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );
@@ -217,12 +221,78 @@ export const GenerateKeysObject = ({
         </div>
         {onDelete && (
           <div class="p-1">
-            <button onClick={onDelete} class="btn btn-outline-danger">
-              X
+            <button onClick={onDelete} class="btn btn-sm btn-outline-danger">
+              <i class="fa fa-trash"></i>
             </button>
           </div>
         )}
       </div>
     </div>
+  );
+};
+
+const templateHelpTexts: Record<string, string> = {
+  boolean: "Use a template that evaluates to something boolean like (e.g. 'true' or 'false').",
+  number: "Use a template that evaluates to something number like (e.g. '10').",
+  float: "Use a template that evaluates to something float like (e.g. '3.1415').",
+  model: "Use a template that evaluates to a valid id for this model (e.g. '42').",
+};
+
+interface GenerateKeysSingleProps {
+  fieldDefinition: FieldDefinitionText | FieldDefinitionModel;
+  field: FieldType;
+  setField: StateUpdater<FieldType>;
+  onDelete?: () => void;
+}
+const GenerateKeysSingle = ({ fieldDefinition, field, setField, onDelete }: GenerateKeysSingleProps) => {
+  const [useTemplate, setTemplate] = useState(false);
+  const showUseTemplate = useMemo(() => fieldDefinition.field_type !== "text", [fieldDefinition.field_type]);
+  const id = useId();
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const fieldType = useMemo<any>(() => {
+    if (useTemplate) {
+      return "text";
+    }
+    return fieldDefinition.field_type;
+  }, [fieldDefinition.field_type, useTemplate]);
+
+  return (
+    <>
+      <Input
+        label={fieldDefinition.name}
+        tooltip={fieldDefinition.description || undefined}
+        type={fieldType}
+        {...(fieldDefinition.field_type === "model" ? { model: fieldDefinition.model } : {})}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        value={field as any}
+        onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) => setField(e.currentTarget.value)}
+        onDelete={onDelete}
+        extraButtons={
+          showUseTemplate && (
+            <>
+              <input
+                type="checkbox"
+                class="btn-check"
+                id={`btn-check-${id}`}
+                checked={useTemplate}
+                onInput={() => setTemplate((v) => !v)}
+                autoComplete={"off"}
+              />
+              {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
+              <label
+                class="btn btn-sm btn-outline-primary"
+                for={`btn-check-${id}`}
+                style="display: flex; align-items: center;"
+              >
+                <Tooltip text={templateHelpTexts[fieldDefinition.field_type]}>
+                  <i class="fas fa-code"></i>
+                </Tooltip>
+              </label>
+            </>
+          )
+        }
+      />
+    </>
   );
 };

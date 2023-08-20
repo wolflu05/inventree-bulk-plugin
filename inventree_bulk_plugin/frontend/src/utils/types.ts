@@ -2,13 +2,17 @@ export interface FieldDefinitionBase {
   name: string;
   description: null | string;
   required: boolean;
-  model: null | { model: string; limit_choices_to: Record<string, string> };
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   default?: any;
 }
 
 export interface FieldDefinitionText extends FieldDefinitionBase {
-  field_type: "text" | "boolean" | "number" | "model";
+  field_type: "text" | "boolean" | "number" | "float";
+}
+
+export interface FieldDefinitionModel extends FieldDefinitionBase {
+  field_type: "model";
+  model: { model: string; limit_choices_to: Record<string, string>; api_url: string };
 }
 
 export interface FieldDefinitionObject extends FieldDefinitionBase {
@@ -21,7 +25,7 @@ export interface FieldDefinitionList extends FieldDefinitionBase {
   items_type: FieldDefinition;
 }
 
-export type FieldDefinition = FieldDefinitionText | FieldDefinitionObject | FieldDefinitionList;
+export type FieldDefinition = FieldDefinitionText | FieldDefinitionModel | FieldDefinitionObject | FieldDefinitionList;
 
 export interface BulkGenerateInfo {
   name: string;

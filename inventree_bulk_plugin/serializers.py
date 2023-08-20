@@ -57,7 +57,11 @@ class FieldDefinitionSerializer(serializers.Serializer):
         if model is None:
             return None
 
-        return {"model": model[0], "limit_choices_to": model[1]}
+        return {
+            "model": model[0],
+            "limit_choices_to": model[1],
+            "api_url": obj.get_api_url(),
+        }
 
     def get_default_method(self, obj):
         default = getattr(obj, "default", None)

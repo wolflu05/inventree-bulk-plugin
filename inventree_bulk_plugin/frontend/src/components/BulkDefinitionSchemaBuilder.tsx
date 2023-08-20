@@ -104,12 +104,13 @@ export function BulkDefinitionSchemaBuilder({ schema, setSchema, bulkGenerateInf
         <div id={`accordion-${accordionId}-input`} class="collapse">
           <div class="card-body">
             {input.map((inp, i) => (
-              <div class="input-group mb-2">
-                <span class="input-group-text">Key/Value</span>
+              <div class="input-group input-group-sm mb-2">
+                <span class="input-group-text">Key</span>
                 <input type="text" value={inp.key} onInput={setInputKey(i, "key")} />
-                <input type="text" value={inp.value} onInput={setInputKey(i, "value")} />
+                <span class="input-group-text">Value</span>
+                <input type="text" style="flex: 1;" value={inp.value} onInput={setInputKey(i, "value")} />
                 <button class="btn btn-outline-danger btn-sm" onClick={removeInput(i)}>
-                  X
+                  <i class="fa fa-trash"></i>
                 </button>
               </div>
             ))}
@@ -159,8 +160,8 @@ export function BulkDefinitionSchemaBuilder({ schema, setSchema, bulkGenerateInf
                         />
                       </div>
                       <div class="p-1">
-                        <button onClick={removeTemplate(i)} class="btn btn-outline-danger">
-                          X
+                        <button onClick={removeTemplate(i)} class="btn btn-sm btn-outline-danger">
+                          <i class="fa fa-trash"></i>
                         </button>
                       </div>
                     </div>

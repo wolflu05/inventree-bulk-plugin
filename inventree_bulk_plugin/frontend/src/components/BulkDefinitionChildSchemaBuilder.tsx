@@ -181,7 +181,6 @@ export function BulkDefinitionChildSchemaBuilder({
           name: "",
           description: null,
           required: true,
-          model: null,
           field_type: "object",
           fields: bulkGenerateInfo.fields,
         }}
@@ -206,8 +205,8 @@ export function BulkDefinitionChildSchemaBuilder({
                     />
                   </div>
                   <div class="p-1">
-                    <button onClick={removeChild(i)} class="btn btn-outline-danger">
-                      X
+                    <button onClick={removeChild(i)} class="btn btn-sm btn-outline-danger">
+                      <i class="fa fa-trash"></i>
                     </button>
                   </div>
                 </div>

@@ -3,6 +3,7 @@ from typing import Any, Callable, Generic, Literal, Optional, TypeVar, Union
 from django.db import transaction
 from django.db.models import Model
 from django.apps import apps
+from django.urls import reverse
 from rest_framework.request import Request
 
 from stock.models import StockLocation
@@ -52,18 +53,9 @@ class FieldDefinition(BaseFieldDefinition):
         "model": str2int,
     }
 
-    default_descriptions = {
-        "boolean": "This must evaluate to something that can be casted to a boolean (e.g. 'true' or 'false').",
-        "number": "This must evaluate to something that can be casted as number.",
-        "float": "This must evaluate to something that can be casted as float (e.g. '3.1415').",
-    }
-
     def __post_init__(self):
         if self.cast_func is None and (cast_func := self.type_casts.get(self.field_type, None)):
             self.cast_func = cast_func
-
-        if not self.description and self.field_type in self.default_descriptions:
-            self.description = self.default_descriptions.get(self.field_type, None)
 
         if isinstance(self.model, str):
             self.model = (self.model, {})
@@ -73,6 +65,29 @@ class FieldDefinition(BaseFieldDefinition):
             if not model_class:
                 raise ValueError(f"Model '{self.model[0]}' not found.")
             self.model = (self.model[0], self.model[1], model_class)
+
+    def get_api_url(self):
+        if not self.model:
+            return None
+
+        try:
+            model_class = self.model[2]
+            return model_class.get_api_url()
+        except Exception:
+            pass
+
+        # Some other model types are hard-coded
+        hardcoded_models = {
+            'auth.user': 'api-user-list',
+            'auth.group': 'api-group-list',
+        }
+
+        model_table = f'{model_class._meta.app_label}.{model_class._meta.model_name}'
+
+        if url := hardcoded_models[model_table]:
+            return reverse(url)
+
+        return None
 
 
 def get_model_instance(model: Model, pk, limit_choices={}, error_msg=""):
@@ -277,7 +292,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                 "status": FieldDefinition("Status", description="Either define the numeric status code or the name in all uppercase, like OK, DAMAGED, ..."),
                 "notes": FieldDefinition("Note"),
                 "packaging": FieldDefinition("Packaging"),
-                "purchase_price": FieldDefinition("Purchase price"),
+                "purchase_price": FieldDefinition("Purchase price", field_type="float"),
                 "purchase_price_currency": FieldDefinition("Currency"),
             }
         ),
