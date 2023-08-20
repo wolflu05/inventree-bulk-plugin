@@ -109,7 +109,7 @@ export function Input(props: InputProps) {
           );
         } else if (props.type === "select") {
           return (
-            <div class="col-sm-10 input-group">
+            <div class="col-sm-10 input-group" style="flex: 1;">
               <select class="form-select form-select-sm" id={`input-${id}`} {...props}>
                 {Object.entries(props.options).map(([k, v]) => (
                   <option value={k}>{v}</option>

@@ -15,6 +15,11 @@ export interface FieldDefinitionModel extends FieldDefinitionBase {
   model: { model: string; limit_choices_to: Record<string, string>; api_url: string };
 }
 
+export interface FieldDefinitionSelect extends FieldDefinitionBase {
+  field_type: "select";
+  options: Record<string, string>;
+}
+
 export interface FieldDefinitionObject extends FieldDefinitionBase {
   field_type: "object";
   fields: Record<string, FieldDefinition>;
@@ -25,7 +30,12 @@ export interface FieldDefinitionList extends FieldDefinitionBase {
   items_type: FieldDefinition;
 }
 
-export type FieldDefinition = FieldDefinitionText | FieldDefinitionModel | FieldDefinitionObject | FieldDefinitionList;
+export type FieldDefinition =
+  | FieldDefinitionText
+  | FieldDefinitionModel
+  | FieldDefinitionSelect
+  | FieldDefinitionObject
+  | FieldDefinitionList;
 
 export interface BulkGenerateInfo {
   name: string;

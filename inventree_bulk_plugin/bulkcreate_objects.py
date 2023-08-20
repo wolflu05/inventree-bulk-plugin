@@ -5,11 +5,13 @@ from django.db.models import Model
 from django.apps import apps
 from django.urls import reverse
 from rest_framework.request import Request
+from djmoney.contrib.exchange.models import Rate
 
 from stock.models import StockLocation
 from part.models import PartCategory, Part, PartParameter, PartParameterTemplate, PartCategoryParameterTemplate, PartAttachment
 from company.models import Company, ManufacturerPart, SupplierPart
 from stock.models import StockItem
+from common.models import InvenTreeSetting
 from InvenTree.status_codes import StockStatus
 
 from .BulkGenerator.utils import str2bool, str2int, str2float
@@ -35,7 +37,7 @@ def get_model(model_name: str):
 @dataclass
 class FieldDefinition(BaseFieldDefinition):
     name: str
-    field_type: Literal["text", "boolean", "number", "float", "model", "list", "object"] = "text"
+    field_type: Literal["text", "boolean", "number", "float", "model", "select", "list", "object"] = "text"
     cast_func: Callable[[str], Any] = None
     description: Optional[str] = None
     required: bool = False
@@ -44,6 +46,8 @@ class FieldDefinition(BaseFieldDefinition):
     fields: Optional[dict[str, "FieldDefinition"]] = None
     default: Optional[Any] = None
     get_default: Optional[Any] = None
+    options: Optional[list[dict[str, str]]] = None
+    get_options: Optional[Callable[[], list[dict[str, str]]]] = None
 
     type_casts = {
         "text": str,
@@ -293,7 +297,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                 "notes": FieldDefinition("Note"),
                 "packaging": FieldDefinition("Packaging"),
                 "purchase_price": FieldDefinition("Purchase price", field_type="float"),
-                "purchase_price_currency": FieldDefinition("Currency"),
+                "purchase_price_currency": FieldDefinition("Currency", field_type="select", get_options="get_currencies_options", get_default="get_currency_default"),
             }
         ),
     }
@@ -424,6 +428,12 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                 pass
 
         return None
+
+    def get_currencies_options(self):
+        return {r.currency: r.currency for r in Rate.objects.all()}
+
+    def get_currency_default(self):
+        return InvenTreeSetting.get_setting('INVENTREE_DEFAULT_CURRENCY', 'USD')
 
 
 bulkcreate_objects: dict[str, type[BulkCreateObject]] = {

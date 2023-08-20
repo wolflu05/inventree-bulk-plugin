@@ -8,6 +8,7 @@ import {
   FieldDefinitionList,
   FieldDefinitionModel,
   FieldDefinitionObject,
+  FieldDefinitionSelect,
   FieldDefinitionText,
   FieldType,
 } from "../utils/types";
@@ -231,15 +232,30 @@ export const GenerateKeysObject = ({
   );
 };
 
-const templateHelpTexts: Record<string, string> = {
-  boolean: "Use a template that evaluates to something boolean like (e.g. 'true' or 'false').",
-  number: "Use a template that evaluates to something number like (e.g. '10').",
-  float: "Use a template that evaluates to something float like (e.g. '3.1415').",
-  model: "Use a template that evaluates to a valid id for this model (e.g. '42').",
+const getTemplateHelpTexts = (fieldDefinition: FieldDefinition): string => {
+  if (fieldDefinition.field_type === "boolean") {
+    return "Use a template that evaluates to something boolean like (e.g. 'true' or 'false').";
+  }
+  if (fieldDefinition.field_type === "number") {
+    return "Use a template that evaluates to something number like (e.g. '10').";
+  }
+  if (fieldDefinition.field_type === "float") {
+    return "Use a template that evaluates to something float like (e.g. '3.1415').";
+  }
+  if (fieldDefinition.field_type === "model") {
+    return "Use a template that evaluates to a valid id for this model (e.g. '42').";
+  }
+  if (fieldDefinition.field_type === "select") {
+    return `Use a template that evaluates to a valid option from the select field. Available options: ${Object.keys(
+      fieldDefinition.options,
+    ).join(", ")}`;
+  }
+
+  return "";
 };
 
 interface GenerateKeysSingleProps {
-  fieldDefinition: FieldDefinitionText | FieldDefinitionModel;
+  fieldDefinition: FieldDefinitionText | FieldDefinitionModel | FieldDefinitionSelect;
   field: FieldType;
   setField: StateUpdater<FieldType>;
   onDelete?: () => void;
@@ -264,6 +280,7 @@ const GenerateKeysSingle = ({ fieldDefinition, field, setField, onDelete }: Gene
         tooltip={fieldDefinition.description || undefined}
         type={fieldType}
         {...(fieldDefinition.field_type === "model" ? { model: fieldDefinition.model } : {})}
+        {...(fieldDefinition.field_type === "select" ? { options: fieldDefinition.options } : {})}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         value={field as any}
         onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) => setField(e.currentTarget.value)}
@@ -285,7 +302,7 @@ const GenerateKeysSingle = ({ fieldDefinition, field, setField, onDelete }: Gene
                 for={`btn-check-${id}`}
                 style="display: flex; align-items: center;"
               >
-                <Tooltip text={templateHelpTexts[fieldDefinition.field_type]}>
+                <Tooltip text={getTemplateHelpTexts(fieldDefinition)}>
                   <i class="fas fa-code"></i>
                 </Tooltip>
               </label>

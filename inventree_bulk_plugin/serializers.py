@@ -37,6 +37,7 @@ class FieldDefinitionSerializer(serializers.Serializer):
             "items_type",
             "fields",
             "default",
+            "options",
         ]
 
     name = serializers.CharField()
@@ -45,6 +46,7 @@ class FieldDefinitionSerializer(serializers.Serializer):
     required = serializers.BooleanField()
     model = serializers.SerializerMethodField()
     default = serializers.SerializerMethodField("get_default_method")
+    options = serializers.SerializerMethodField("get_options_method")
 
     def get_fields(self):
         fields = super().get_fields()
@@ -72,6 +74,17 @@ class FieldDefinitionSerializer(serializers.Serializer):
             return func()
         if default is not None:
             return default
+        return None
+
+    def get_options_method(self, obj):
+        options = getattr(obj, "options", None)
+        get_options = getattr(obj, "get_options", None)
+
+        # try to get options value from associated BulkCreateObject class
+        if get_options is not None and (func := getattr(self.root.instance, get_options, None)):
+            return func()
+        if options is not None:
+            return options
         return None
 
 
