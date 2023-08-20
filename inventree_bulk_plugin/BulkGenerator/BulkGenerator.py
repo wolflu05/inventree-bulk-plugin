@@ -180,17 +180,21 @@ class BulkGenerator:
         missing_fields = []
 
         def compile_templates(field: FieldType, generate, path: list[str] = []):
+            path_str = ".".join(map(str, path))
+
             if field.field_type == "object" and field.fields:
                 if not isinstance(generate, dict):
+                    if field.required:
+                        missing_fields.append(path_str)
                     return None
                 return {k: v for k, f in field.fields.items() if (v := compile_templates(f, generate.get(k, None), [*path, k])) is not None}
             elif field.field_type == "list" and field.items_type:
                 if not isinstance(generate, list):
+                    if field.required:
+                        missing_fields.append(path_str)
                     return None
                 return [v for i, f in enumerate(generate) if (v := compile_templates(field.items_type, f, [*path, i])) is not None]
             else:
-                path_str = ".".join(map(str, path))
-
                 # check required fields
                 if generate is None:
                     if field.required:
