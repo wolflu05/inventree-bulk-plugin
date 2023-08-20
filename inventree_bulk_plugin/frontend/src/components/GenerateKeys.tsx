@@ -254,6 +254,18 @@ const getTemplateHelpTexts = (fieldDefinition: FieldDefinition): string => {
   return "";
 };
 
+const detectUseTemplate = (
+  fieldDefinition: FieldDefinitionText | FieldDefinitionModel | FieldDefinitionSelect,
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  value: any,
+) => {
+  const valueStr = `${value}`;
+  if (fieldDefinition.field_type === "number") return !/^\d*$/.test(valueStr);
+  if (fieldDefinition.field_type === "float") return !/^[\d\\.,]*$/.test(valueStr);
+  if (fieldDefinition.field_type === "boolean") return !(valueStr in ["true", "false"]);
+  return valueStr.includes("{") || valueStr.includes("}");
+};
+
 interface GenerateKeysSingleProps {
   fieldDefinition: FieldDefinitionText | FieldDefinitionModel | FieldDefinitionSelect;
   field: FieldType;
@@ -261,7 +273,7 @@ interface GenerateKeysSingleProps {
   onDelete?: () => void;
 }
 const GenerateKeysSingle = ({ fieldDefinition, field, setField, onDelete }: GenerateKeysSingleProps) => {
-  const [useTemplate, setTemplate] = useState(false);
+  const [useTemplate, setTemplate] = useState(() => detectUseTemplate(fieldDefinition, field));
   const showUseTemplate = useMemo(() => fieldDefinition.field_type !== "text", [fieldDefinition.field_type]);
   const id = useId();
 

@@ -42,6 +42,7 @@ class FieldDefinition(BaseFieldDefinition):
     description: Optional[str] = None
     required: bool = False
     model: Union[str, tuple[str, dict], tuple[str, dict, Model], None] = None
+    api_url: Optional[str] = None
     items_type: Optional["FieldDefinition"] = None
     fields: Optional[dict[str, "FieldDefinition"]] = None
     default: Optional[Any] = None
@@ -54,7 +55,6 @@ class FieldDefinition(BaseFieldDefinition):
         "boolean": str2bool,
         "number": str2int,
         "float": str2float,
-        "model": str2int,
     }
 
     def __post_init__(self):
@@ -73,6 +73,9 @@ class FieldDefinition(BaseFieldDefinition):
     def get_api_url(self):
         if not self.model:
             return None
+
+        if self.api_url:
+            return self.api_url
 
         try:
             model_class = self.model[2]
@@ -118,7 +121,7 @@ class BulkCreateObject(Generic[ModelType]):
         properties = {}
         for k, v in data[0].items():
             if field := self.fields.get(k, None):
-                if field.model:
+                if field.model and field.model[2]:
                     _, limit_choices, model = field.model
                     v = get_model_instance(model, v, limit_choices)
                 properties[k] = v
@@ -232,7 +235,8 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
         "virtual": FieldDefinition("Virtual", field_type="boolean"),
         "notes": FieldDefinition("Notes"),
         "responsible": FieldDefinition("Responsible", field_type="model", model="auth.user"),
-        "image": FieldDefinition("Image"),
+        # model does not exist, so a custom processor will be used in the frontend
+        "image": FieldDefinition("Image", field_type="model", api_url="/api/part/thumbs/", model=("_part.part_image", {}, None), description="You can use any already uploaded part picture here"),
         "parameters": FieldDefinition(
             "Parameters",
             field_type="list",
@@ -319,7 +323,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
 
         # create parameters
         for parameter in parameters:
-            template = get_model_instance(PartParameterTemplate, parameter["template"], f"for {part.name}")
+            template = get_model_instance(PartParameterTemplate, parameter["template"], {}, f"for {part.name}")
             PartParameter.objects.create(part=part, template=template, data=parameter['value'])
 
         # create attachments

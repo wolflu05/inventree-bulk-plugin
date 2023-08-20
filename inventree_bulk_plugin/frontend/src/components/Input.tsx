@@ -157,13 +157,49 @@ export function Input(props: InputProps) {
   );
 }
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
+
+// define custom processors for models that does not really exist or have no model renderer
+interface CustomProcessor {
+  render: (item: any) => string;
+  mapFunction: (item: any) => any;
+  getSingle?: (id: any, success: (data: any) => void) => void;
+}
+
+const customProcessors: Record<string, CustomProcessor> = {
+  "_part.part_image": {
+    // @ts-ignore
+    render: (item) => {
+      if (!item.pk && !item.id) return "";
+      // @ts-ignore
+      return renderModel({
+        // @ts-ignore
+        image: item.image ? `/media/${item.image}` : blankImage(),
+        text: item.image || "- Not found -",
+      });
+    },
+    mapFunction: (item) => ({ ...item, id: item.image }),
+    getSingle: (id, success) => {
+      // @ts-ignore
+      inventreeGet(
+        `/api/part/thumbs/`,
+        {},
+        {
+          success: (data: any) => {
+            success(data.find((x: any) => x.image === id) || { image: "", id });
+          },
+        },
+      );
+    },
+  },
+};
+
 interface ModelInputComponentProps extends ModelInputProps {
   extraFormGroup: ComponentChildren;
   id: string;
 }
 
 const ModelInput = ({ model, extraFormGroup, id, onInput, value }: ModelInputComponentProps) => {
-  /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
   useEffect(() => {
     // @ts-ignore
     $(`#${id}`).select2({
@@ -196,8 +232,13 @@ const ModelInput = ({ model, extraFormGroup, id, onInput, value }: ModelInputCom
             data = response;
           }
 
+          let results = data.map((x: any) => ({ id: x.pk, ...x }));
+          if (customProcessors[model.model]) {
+            results = results.map(customProcessors[model.model].mapFunction);
+          }
+
           return {
-            results: data.map((x: any) => ({ id: x.pk, ...x })),
+            results,
             pagination: {
               more,
             },
@@ -208,6 +249,10 @@ const ModelInput = ({ model, extraFormGroup, id, onInput, value }: ModelInputCom
         let data = item;
         if (item.element?.instance) {
           data = item.element.instance;
+        }
+
+        if (customProcessors[model.model]) {
+          return $(customProcessors[model.model].render(data));
         }
 
         if (!data.pk) {
@@ -222,6 +267,10 @@ const ModelInput = ({ model, extraFormGroup, id, onInput, value }: ModelInputCom
         let data = item;
         if (item.element?.instance) {
           data = item.element.instance;
+        }
+
+        if (customProcessors[model.model]) {
+          return $(customProcessors[model.model].render(data));
         }
 
         if (!data.pk) {
@@ -259,29 +308,32 @@ const ModelInput = ({ model, extraFormGroup, id, onInput, value }: ModelInputCom
       // current selected value and value from state are different
       const url = `${model.api_url}/${value}/`.replace("//", "/");
 
-      // @ts-ignore
-      inventreeGet(
-        url,
-        { ...model.limit_choices_to },
-        {
-          success: (data: any) => {
-            const option = new Option("", data.pk, true, true);
-            // @ts-ignore
-            option.instance = data;
-            $(`#${id}`).append(option).trigger("change");
-            $(`#${id}`).trigger({
-              type: "select2:select",
-              // @ts-ignore
-              params: {
-                data,
-              },
-            });
+      const handleSuccess = (data: any) => {
+        if (customProcessors[model.model]) {
+          data = customProcessors[model.model].mapFunction(data);
+        }
+        const option = new Option("", data.id ?? data.pk, true, true);
+        // @ts-ignore
+        option.instance = data;
+        $(`#${id}`).append(option).trigger("change");
+        $(`#${id}`).trigger({
+          type: "select2:select",
+          // @ts-ignore
+          params: {
+            data,
           },
-        },
-      );
+        });
+      };
+
+      const customProcessor = customProcessors[model.model];
+      if (customProcessor?.getSingle) {
+        return customProcessor.getSingle(value, handleSuccess);
+      }
+
+      // @ts-ignore
+      inventreeGet(url, { ...model.limit_choices_to }, { success: handleSuccess });
     }
-  }, [id, model.api_url, model.limit_choices_to, value]);
-  /* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
+  }, [id, model.api_url, model.limit_choices_to, model.model, value]);
 
   return (
     <div class="col-sm-10 input-group" style="flex: 1;">
@@ -290,3 +342,4 @@ const ModelInput = ({ model, extraFormGroup, id, onInput, value }: ModelInputCom
     </div>
   );
 };
+/* eslint-enable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
