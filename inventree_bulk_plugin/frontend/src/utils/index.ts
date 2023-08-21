@@ -84,3 +84,11 @@ export const toFlat = (data: BulkGenerateAPIResult, counter: () => number, pid =
     const path = `${pa}/${parent.name}`;
     return [{ ...parent, id, pid, path }, ...toFlat(childs, counter, id, path)];
   });
+
+export const escapeHtml = (unsafe: string) =>
+  unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");

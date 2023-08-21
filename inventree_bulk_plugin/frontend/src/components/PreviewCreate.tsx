@@ -113,7 +113,7 @@ export const PreviewCreate = ({
         <>
           <h5>Preview</h5>
           <div class={initial ? "mb-4" : ""}>
-            <PreviewTable template={previewTemplate} height={250} parentId={parentId} />
+            <PreviewTable template={previewTemplate} height={350} parentId={parentId} />
           </div>
         </>
       )}

@@ -2,6 +2,7 @@ import { ComponentChildren, JSX } from "preact";
 import { useEffect, useId } from "preact/hooks";
 
 import { Tooltip } from "./Tooltip";
+import { customModelProcessors } from "../utils/customModelProcessors";
 
 interface DefaultInputProps {
   label: string;
@@ -158,42 +159,6 @@ export function Input(props: InputProps) {
 }
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/ban-ts-comment */
-
-// define custom processors for models that does not really exist or have no model renderer
-interface CustomProcessor {
-  render: (item: any) => string;
-  mapFunction: (item: any) => any;
-  getSingle?: (id: any, success: (data: any) => void) => void;
-}
-
-const customProcessors: Record<string, CustomProcessor> = {
-  "_part.part_image": {
-    // @ts-ignore
-    render: (item) => {
-      if (!item.pk && !item.id) return "";
-      // @ts-ignore
-      return renderModel({
-        // @ts-ignore
-        image: item.image ? `/media/${item.image}` : blankImage(),
-        text: item.image || "- Not found -",
-      });
-    },
-    mapFunction: (item) => ({ ...item, id: item.image }),
-    getSingle: (id, success) => {
-      // @ts-ignore
-      inventreeGet(
-        `/api/part/thumbs/`,
-        {},
-        {
-          success: (data: any) => {
-            success(data.find((x: any) => x.image === id) || { image: "", id });
-          },
-        },
-      );
-    },
-  },
-};
-
 interface ModelInputComponentProps extends ModelInputProps {
   extraFormGroup: ComponentChildren;
   id: string;
@@ -233,8 +198,8 @@ const ModelInput = ({ model, extraFormGroup, id, onInput, value }: ModelInputCom
           }
 
           let results = data.map((x: any) => ({ id: x.pk, ...x }));
-          if (customProcessors[model.model]) {
-            results = results.map(customProcessors[model.model].mapFunction);
+          if (customModelProcessors[model.model]) {
+            results = results.map(customModelProcessors[model.model].mapFunction);
           }
 
           return {
@@ -251,8 +216,8 @@ const ModelInput = ({ model, extraFormGroup, id, onInput, value }: ModelInputCom
           data = item.element.instance;
         }
 
-        if (customProcessors[model.model]) {
-          return $(customProcessors[model.model].render(data));
+        if (customModelProcessors[model.model]) {
+          return $(customModelProcessors[model.model].render(data));
         }
 
         if (!data.pk) {
@@ -269,8 +234,8 @@ const ModelInput = ({ model, extraFormGroup, id, onInput, value }: ModelInputCom
           data = item.element.instance;
         }
 
-        if (customProcessors[model.model]) {
-          return $(customProcessors[model.model].render(data));
+        if (customModelProcessors[model.model]) {
+          return $(customModelProcessors[model.model].render(data));
         }
 
         if (!data.pk) {
@@ -309,8 +274,8 @@ const ModelInput = ({ model, extraFormGroup, id, onInput, value }: ModelInputCom
       const url = `${model.api_url}/${value}/`.replace("//", "/");
 
       const handleSuccess = (data: any) => {
-        if (customProcessors[model.model]) {
-          data = customProcessors[model.model].mapFunction(data);
+        if (customModelProcessors[model.model]) {
+          data = customModelProcessors[model.model].mapFunction(data);
         }
         const option = new Option("", data.id ?? data.pk, true, true);
         // @ts-ignore
@@ -325,7 +290,7 @@ const ModelInput = ({ model, extraFormGroup, id, onInput, value }: ModelInputCom
         });
       };
 
-      const customProcessor = customProcessors[model.model];
+      const customProcessor = customModelProcessors[model.model];
       if (customProcessor?.getSingle) {
         return customProcessor.getSingle(value, handleSuccess);
       }
