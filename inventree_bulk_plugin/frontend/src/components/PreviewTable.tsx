@@ -77,6 +77,7 @@ export const PreviewTable = ({ template, height, parentId }: PreviewTableProps) 
             if (cell) {
               cell.innerHTML = fetchedValue;
               cell.classList.remove("placeholder", "placeholder-glow", "col-4");
+              $table.bootstrapTable("resetView");
             }
           };
 
@@ -162,7 +163,7 @@ export const PreviewTable = ({ template, height, parentId }: PreviewTableProps) 
 
   return (
     <div class="mt-3">
-      <table id={tableId}></table>
+      <table id={tableId} style={{ whiteSpace: "nowrap" }}></table>
     </div>
   );
 };
