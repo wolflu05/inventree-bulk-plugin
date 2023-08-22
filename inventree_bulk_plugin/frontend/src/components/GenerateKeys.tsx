@@ -196,6 +196,7 @@ export const GenerateKeysObject = ({
 
               return (
                 <GenerateKeys
+                  key={key}
                   fieldDefinition={fieldDefinition}
                   field={value}
                   setField={setGenerateValue(key)}
@@ -262,7 +263,7 @@ const detectUseTemplate = (
   const valueStr = `${value}`;
   if (fieldDefinition.field_type === "number") return !/^\d*$/.test(valueStr);
   if (fieldDefinition.field_type === "float") return !/^[\d\\.,]*$/.test(valueStr);
-  if (fieldDefinition.field_type === "boolean") return !(valueStr in ["true", "false"]);
+  if (fieldDefinition.field_type === "boolean") return !["true", "false", ""].includes(valueStr);
   return valueStr.includes("{") || valueStr.includes("}");
 };
 
@@ -273,7 +274,7 @@ interface GenerateKeysSingleProps {
   onDelete?: () => void;
 }
 const GenerateKeysSingle = ({ fieldDefinition, field, setField, onDelete }: GenerateKeysSingleProps) => {
-  const [useTemplate, setTemplate] = useState(() => detectUseTemplate(fieldDefinition, field));
+  const [useTemplate, setUseTemplate] = useState(() => detectUseTemplate(fieldDefinition, field));
   const showUseTemplate = useMemo(() => fieldDefinition.field_type !== "text", [fieldDefinition.field_type]);
   const id = useId();
 
@@ -305,7 +306,7 @@ const GenerateKeysSingle = ({ fieldDefinition, field, setField, onDelete }: Gene
                 class="btn-check"
                 id={`btn-check-${id}`}
                 checked={useTemplate}
-                onInput={() => setTemplate((v) => !v)}
+                onInput={() => setUseTemplate((v) => !v)}
                 autoComplete={"off"}
               />
               {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
