@@ -32,7 +32,7 @@ export const PreviewTable = ({ template, height, parentId }: PreviewTableProps) 
       const json = await res.json();
 
       if (!res.ok) {
-        return showNotification({ type: "danger", message: `An error occourd, ${json.error}` });
+        return showNotification({ type: "danger", message: `An error occurred, ${json.error}` });
       }
 
       const data = toFlat(json, getCounter());
@@ -48,6 +48,8 @@ export const PreviewTable = ({ template, height, parentId }: PreviewTableProps) 
       const cache: Record<string, ((field: any) => void)[]> = {};
 
       const format = (fieldDefinition: FieldDefinition, value: FieldType, cellId: string): string => {
+        if (value === undefined) return "";
+
         if (fieldDefinition.field_type === "model") {
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           const handleSuccess = (field: any) => {
