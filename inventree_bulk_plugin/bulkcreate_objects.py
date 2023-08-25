@@ -1,9 +1,12 @@
+import io
+import re
 from dataclasses import dataclass
 from typing import Any, Callable, Generic, Literal, Optional, TypeVar, Union
 from django.db import transaction
 from django.db.models import Model
 from django.apps import apps
 from django.urls import reverse
+from django.core.files.base import ContentFile
 from rest_framework.request import Request
 from djmoney.contrib.exchange.models import Rate
 
@@ -13,6 +16,7 @@ from company.models import Company, ManufacturerPart, SupplierPart
 from stock.models import StockItem
 from common.models import InvenTreeSetting
 from InvenTree.status_codes import StockStatus
+from InvenTree.helpers_model import download_image_from_url
 
 from .BulkGenerator.utils import str2bool, str2int, str2float
 from .BulkGenerator.BulkGenerator import BaseFieldDefinition, ParseChildReturnElement, ParseChildReturnType
@@ -263,7 +267,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             "notes": FieldDefinition("Notes"),
             "responsible": FieldDefinition("Responsible", field_type="model", model="auth.user"),
             # model does not exist, so a custom processor will be used in the frontend
-            "image": FieldDefinition("Image", field_type="model", api_url="/api/part/thumbs/", model=("_part.part_image", {}, None), description="You can use any already uploaded part picture here"),
+            "image": FieldDefinition("Image", field_type="model", api_url="/api/part/thumbs/", model=("_part.part_image", {}, None), description="You can use any already uploaded part picture here, or reference an external URL."),
             "parameters": FieldDefinition(
                 "Parameters",
                 field_type="list",
@@ -333,6 +337,32 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             ),
         }
 
+    def create_objects(self, objects: ParseChildReturnType) -> list[Part]:
+        self.part_images = {}
+
+        for part_data in objects:
+            if url := part_data[0].get("image", None):
+                # check if image is relative
+                if not re.match(r"^(?:[a-z+]+:)?//", url):
+                    continue
+
+                # check if image has already been downloaded
+                if url in self.part_images:
+                    continue
+
+                self.part_images[url] = None
+
+                # check if image download is enabled
+                if not InvenTreeSetting.get_setting('INVENTREE_DOWNLOAD_FROM_URL'):
+                    raise ValueError("Downloading images from remote URL is not enabled")
+
+                try:
+                    self.part_images[url] = download_image_from_url(part_data[0]["image"])
+                except Exception as exc:
+                    raise ValueError(str(exc))
+
+        return super().create_objects(objects)
+
     def create_object(self, data: ParseChildReturnElement):
         # remove relations from data to create them separately
         parameters = data[0].pop("parameters", [])
@@ -340,6 +370,14 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
         supplier_data = data[0].pop("supplier", None)
         manufacturer_data = data[0].pop("manufacturer", None)
         stock_data = data[0].pop("stock", None)
+        image = data[0].pop("image", None)
+
+        # use local image if available
+        if image:
+            # maybe use already saved image with same url
+            if image in self.part_images and isinstance(self.part_images[image], str):
+                image = self.part_images[image]
+            data[0]["image"] = image
 
         # create part
         part = super().create_object(
@@ -347,6 +385,25 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             category=self.category,
             creation_user=self.request.user,
         )
+
+        # use remote image if available
+        if image and image in self.part_images:
+            remote_img = self.part_images[image]
+
+            fmt = remote_img.format or 'PNG'
+            buffer = io.BytesIO()
+            remote_img.save(buffer, format=fmt)
+
+            # Construct a simplified name for the image
+            filename = f"part_{part.pk}_image.{fmt.lower()}"
+
+            part.image.save(
+                filename,
+                ContentFile(buffer.getvalue()),
+            )
+
+            # image has now been saved, update it to not save it again for the next part using the same url
+            self.part_images[image] = part.image.name
 
         # create parameters
         for parameter in parameters:

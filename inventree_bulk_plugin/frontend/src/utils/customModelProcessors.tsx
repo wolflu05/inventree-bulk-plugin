@@ -11,10 +11,20 @@ export const customModelProcessors: Record<string, CustomModelProcessor> = {
     // @ts-ignore
     render: (item) => {
       if (!item.pk && !item.id) return "";
+      if (!item.image) item.image = item.pk || item.id;
+      let imageUrl = "";
+
+      if (item.image) {
+        // check if absolute url, then use it directly
+        imageUrl = /^(?:[a-z+]+:)?\/\//.test(item.image) ? item.image : `/media/${item.image}`;
+      } else {
+        // @ts-ignore
+        imageUrl = blankImage();
+      }
+
       // @ts-ignore
       return renderModel({
-        // @ts-ignore
-        image: item.image ? `/media/${item.image}` : blankImage(),
+        image: imageUrl,
         text: item.image || `Not found: ${item.id}`,
       });
     },
