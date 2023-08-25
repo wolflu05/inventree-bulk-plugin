@@ -1,24 +1,22 @@
 import { useEffect, useId, useMemo } from "preact/hooks";
 
-import { useBulkGenerateInfo } from "../contexts/BulkCreateInfo";
 import { useNotifications } from "../contexts/Notification";
 import { beautifySchema, escapeHtml, getCounter, getUsedGenerateKeys, toFlat } from "../utils";
 import { URLS, fetchAPI } from "../utils/api";
 import { customModelProcessors } from "../utils/customModelProcessors";
-import { FieldDefinition, FieldType, TemplateModel } from "../utils/types";
+import { BulkGenerateInfo, FieldDefinition, FieldType, TemplateModel } from "../utils/types";
 
 interface PreviewTableProps {
   template: TemplateModel;
   height?: number;
   parentId?: string;
+  bulkGenerateInfo: BulkGenerateInfo;
 }
 
-export const PreviewTable = ({ template, height, parentId }: PreviewTableProps) => {
+export const PreviewTable = ({ template, height, parentId, bulkGenerateInfo }: PreviewTableProps) => {
   const { showNotification } = useNotifications();
   const id = useId();
   const tableId = useMemo(() => `preview-table-${id}`, [id]);
-
-  const { bulkGenerateInfoDict } = useBulkGenerateInfo();
 
   useEffect(() => {
     (async () => {
@@ -111,6 +109,9 @@ export const PreviewTable = ({ template, height, parentId }: PreviewTableProps) 
 
           return `<span id=${cellId} class="placeholder placeholder-glow col-4">${value}</span>`;
         }
+        if (fieldDefinition.field_type === "select") {
+          return escapeHtml(fieldDefinition.options[value as string] ?? `${value}`);
+        }
         if (fieldDefinition.field_type === "list" && Array.isArray(value)) {
           return `<ul>${value
             .map((r, i) => `<li>${format(fieldDefinition.items_type, r, `${cellId}-${i}`)}</li>`)
@@ -118,7 +119,14 @@ export const PreviewTable = ({ template, height, parentId }: PreviewTableProps) 
         }
         if (fieldDefinition.field_type === "object" && typeof value === "object") {
           return `<ul>${Object.entries(value)
-            .map(([k, r], i) => `<li>${escapeHtml(k)}: ${format(fieldDefinition.fields[k], r, `${cellId}-${i}`)}</li>`)
+            .map(
+              ([k, r], i) =>
+                `<li>${escapeHtml(fieldDefinition.fields[k].name ?? k)}: ${format(
+                  fieldDefinition.fields[k],
+                  r,
+                  `${cellId}-${i}`,
+                )}</li>`,
+            )
             .join("")}</ul>`;
         }
         return escapeHtml(`${value}`);
@@ -130,7 +138,7 @@ export const PreviewTable = ({ template, height, parentId }: PreviewTableProps) 
         idField: "id",
         height,
         columns: [
-          ...Object.entries(bulkGenerateInfoDict[template.template_type].fields)
+          ...Object.entries(bulkGenerateInfo.fields)
             .filter(([key]) => usedGenerateKeys.includes(key))
             .map(([key, f]) => ({
               field: key,
@@ -161,7 +169,7 @@ export const PreviewTable = ({ template, height, parentId }: PreviewTableProps) 
         }),
       });
     })();
-  }, [bulkGenerateInfoDict, height, id, parentId, showNotification, tableId, template]);
+  }, [bulkGenerateInfo.fields, height, id, parentId, showNotification, tableId, template]);
 
   return (
     <div class="mt-3">

@@ -184,7 +184,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
         </div>
       )}
 
-      {!isLoading && !isBulkGenerateInfoLoading && template && (
+      {!isLoading && !isBulkGenerateInfoLoading && bulkGenerateInfo && template && (
         <div>
           <Input label="Name" type="text" value={template.name} onInput={updateField("name")} />
           {!templateType && (
@@ -200,7 +200,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
           <BulkDefinitionSchemaBuilder
             schema={template.template}
             setSchema={updateTemplate}
-            bulkGenerateInfo={bulkGenerateInfo || bulkGenerateInfoDict[template.template_type]}
+            bulkGenerateInfo={bulkGenerateInfo}
           />
         </div>
       )}
@@ -239,7 +239,9 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
         )}
       </div>
 
-      {previewTemplate && <PreviewTable template={previewTemplate} parentId={parentId} />}
+      {previewTemplate && bulkGenerateInfo && (
+        <PreviewTable template={previewTemplate} parentId={parentId} bulkGenerateInfo={bulkGenerateInfo} />
+      )}
 
       <Dialog
         title="Bulk create"

@@ -215,7 +215,10 @@ class BulkGenerator:
                         raise ValueError(
                             f"'{path_str}' is a required field, but template '{generate}' returned empty string")
                     if field.cast_func:
-                        return field.cast_func(v)
+                        try:
+                            return field.cast_func(v, field=field)
+                        except ValueError as e:
+                            raise ValueError(f"{path_str}: {e}")
                     return v
 
                 return render

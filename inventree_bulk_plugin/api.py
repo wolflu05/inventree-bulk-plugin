@@ -12,7 +12,7 @@ from pydantic import ValidationError
 from InvenTree.filters import SEARCH_ORDER_FILTER
 
 from .bulkcreate_objects import bulkcreate_objects
-from .serializers import TemplateSerializer, BulkCreateObjectSerializer
+from .serializers import TemplateSerializer, BulkCreateObjectSerializer, BulkCreateObjectDetailSerializer
 from .models import BulkCreationTemplate
 from .BulkGenerator.utils import str2bool
 from .BulkGenerator.BulkGenerator import BulkGenerator
@@ -102,7 +102,7 @@ class BulkCreate(APIView):
             )
 
         bulkcreate_object = bulkcreate_object_class(request)
-        results = BulkCreateObjectSerializer(bulkcreate_object).data
+        results = BulkCreateObjectDetailSerializer(bulkcreate_object).data
         return Response(results)
 
     def post(self, request: Request):

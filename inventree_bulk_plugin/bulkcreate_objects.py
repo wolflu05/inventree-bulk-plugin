@@ -34,6 +34,33 @@ def get_model(model_name: str):
     return model
 
 
+def get_model_instance(model: Model, pk, limit_choices={}, error_msg=""):
+    try:
+        return model.objects.get(pk=pk, **limit_choices)
+    except model.DoesNotExist:
+        raise ValueError(f"Model '{model._meta}' where {({'pk': pk,**limit_choices})} not found {error_msg}")
+
+
+def cast_model(value: str, *, field: "FieldDefinition" = None):
+    if not field.model or not field.model[2]:
+        return value
+
+    _, limit_choices, model = field.model
+
+    # raises value error if object with pk=value doesn't exist
+    get_model_instance(model, value, limit_choices)
+
+    return value
+
+
+def cast_select(value: str, *, field: "FieldDefinition" = None, create=False):
+    options = field.options or field.get_options()
+    if value not in options.keys():
+        raise ValueError(
+            f"'{value}' is not a valid option, choose one of: {', '.join(options.keys())}.")
+    return value
+
+
 @dataclass
 class FieldDefinition(BaseFieldDefinition):
     name: str
@@ -51,10 +78,12 @@ class FieldDefinition(BaseFieldDefinition):
     get_options: Optional[Callable[[], list[dict[str, str]]]] = None
 
     type_casts = {
-        "text": str,
-        "boolean": str2bool,
-        "number": str2int,
-        "float": str2float,
+        "text": lambda x, **kwargs: str(x),
+        "boolean": lambda x, **kwargs: str2bool(x),
+        "number": lambda x, **kwargs: str2int(x),
+        "float": lambda x, **kwargs: str2float(x),
+        "model": cast_model,
+        "select": cast_select,
     }
 
     def __post_init__(self):
@@ -97,13 +126,6 @@ class FieldDefinition(BaseFieldDefinition):
         return None
 
 
-def get_model_instance(model: Model, pk, limit_choices={}, error_msg=""):
-    try:
-        return model.objects.get(pk=pk, **limit_choices)
-    except model.DoesNotExist:
-        raise ValueError(f"Model '{model._meta}' where {({'pk': pk,**limit_choices})} not found {error_msg}")
-
-
 ModelType = TypeVar("ModelType")
 
 
@@ -112,10 +134,14 @@ class BulkCreateObject(Generic[ModelType]):
     template_type: str
     generate_type: Literal["tree", "single"] = "tree"
     model: ModelType
-    fields: dict[str, FieldDefinition]
+    fields: Optional[dict[str, FieldDefinition]]
+    get_fields: Optional[Callable[[], dict[str, FieldDefinition]]]
 
     def __init__(self, request: Request) -> None:
         self.request = request
+
+        if hasattr(self, "get_fields"):
+            self.fields = self.get_fields()
 
     def create_object(self, data: ParseChildReturnElement, **kwargs):
         properties = {}
@@ -212,99 +238,100 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
     generate_type = "single"
     model = Part
 
-    fields = {
-        "name": FieldDefinition("Name", required=True),
-        "description": FieldDefinition("Description"),
-        "category": FieldDefinition("Category", field_type="model", model="part.PartCategory", description="If not set, defaults to current category"),
-        "variant_of": FieldDefinition("Variant of", field_type="model", model=("part.Part", {"is_template": True})),
-        "keywords": FieldDefinition("Keywords"),
-        "IPN": FieldDefinition("IPN"),
-        "revision": FieldDefinition("Revision"),
-        "is_template": FieldDefinition("Is Template", field_type="boolean"),
-        "link": FieldDefinition("Link"),
-        "default_location": FieldDefinition("Default Location", field_type="model", model=("stock.StockLocation", {"structural": False})),
-        "default_expiry": FieldDefinition("Default Expiry", field_type="number", description="Expiry time (in days) for stock items of this part"),
-        "minimum_stock": FieldDefinition("Minimum Stock", field_type="number", description="Minimum allowed stock level"),
-        "units": FieldDefinition("Units", description="Units of measure for this part"),
-        "salable": FieldDefinition("Salable", field_type="boolean"),
-        "assembly": FieldDefinition("Assembly", field_type="boolean"),
-        "component": FieldDefinition("Component", field_type="boolean"),
-        "purchaseable": FieldDefinition("Purchaseable", field_type="boolean"),
-        "trackable": FieldDefinition("Trackable", field_type="boolean"),
-        "active": FieldDefinition("Active", field_type="boolean"),
-        "virtual": FieldDefinition("Virtual", field_type="boolean"),
-        "notes": FieldDefinition("Notes"),
-        "responsible": FieldDefinition("Responsible", field_type="model", model="auth.user"),
-        # model does not exist, so a custom processor will be used in the frontend
-        "image": FieldDefinition("Image", field_type="model", api_url="/api/part/thumbs/", model=("_part.part_image", {}, None), description="You can use any already uploaded part picture here"),
-        "parameters": FieldDefinition(
-            "Parameters",
-            field_type="list",
-            get_default="get_parameters_default",
-            items_type=FieldDefinition(
-                "",
+    def get_fields(self):
+        return {
+            "name": FieldDefinition("Name", required=True),
+            "description": FieldDefinition("Description"),
+            "category": FieldDefinition("Category", field_type="model", model="part.PartCategory", description="If not set, defaults to current category"),
+            "variant_of": FieldDefinition("Variant of", field_type="model", model=("part.Part", {"is_template": True})),
+            "keywords": FieldDefinition("Keywords"),
+            "IPN": FieldDefinition("IPN"),
+            "revision": FieldDefinition("Revision"),
+            "is_template": FieldDefinition("Is Template", field_type="boolean"),
+            "link": FieldDefinition("Link"),
+            "default_location": FieldDefinition("Default Location", field_type="model", model=("stock.StockLocation", {"structural": False})),
+            "default_expiry": FieldDefinition("Default Expiry", field_type="number", description="Expiry time (in days) for stock items of this part"),
+            "minimum_stock": FieldDefinition("Minimum Stock", field_type="number", description="Minimum allowed stock level"),
+            "units": FieldDefinition("Units", description="Units of measure for this part"),
+            "salable": FieldDefinition("Salable", field_type="boolean"),
+            "assembly": FieldDefinition("Assembly", field_type="boolean"),
+            "component": FieldDefinition("Component", field_type="boolean"),
+            "purchaseable": FieldDefinition("Purchaseable", field_type="boolean"),
+            "trackable": FieldDefinition("Trackable", field_type="boolean"),
+            "active": FieldDefinition("Active", field_type="boolean"),
+            "virtual": FieldDefinition("Virtual", field_type="boolean"),
+            "notes": FieldDefinition("Notes"),
+            "responsible": FieldDefinition("Responsible", field_type="model", model="auth.user"),
+            # model does not exist, so a custom processor will be used in the frontend
+            "image": FieldDefinition("Image", field_type="model", api_url="/api/part/thumbs/", model=("_part.part_image", {}, None), description="You can use any already uploaded part picture here"),
+            "parameters": FieldDefinition(
+                "Parameters",
+                field_type="list",
+                get_default=self.get_parameters_default,
+                items_type=FieldDefinition(
+                    "",
+                    field_type="object",
+                    fields={
+                        "template": FieldDefinition("Template", field_type="model", model="part.PartParameterTemplate", required=True),
+                        "value": FieldDefinition("Value", required=True)
+                    },
+                    required=True,
+                )),
+            "attachments": FieldDefinition(
+                "Attachments",
+                description="Either provide a link or a url to a file that should be downloaded on create.",
+                field_type="list",
+                items_type=FieldDefinition(
+                    "",
+                    field_type="object",
+                    fields={
+                        "comment": FieldDefinition("Comment", required=True),
+                        "link": FieldDefinition("Link"),
+                        "file_url": FieldDefinition("File Url"),
+                    },
+                    required=True,
+                )),
+            "supplier": FieldDefinition(
+                "Supplier",
                 field_type="object",
                 fields={
-                    "template": FieldDefinition("Template", field_type="model", model="part.PartParameterTemplate", required=True),
-                    "value": FieldDefinition("Value", required=True)
-                },
-                required=True,
-            )),
-        "attachments": FieldDefinition(
-            "Attachments",
-            description="Either provide a link or a url to a file that should be downloaded on create.",
-            field_type="list",
-            items_type=FieldDefinition(
-                "",
-                field_type="object",
-                fields={
-                    "comment": FieldDefinition("Comment", required=True),
+                    "supplier": FieldDefinition("Supplier", field_type="model", model=("company.Company", {'is_supplier': True}), required=True),
+                    "SKU": FieldDefinition("SKU", required=True),
+                    "description": FieldDefinition("Description"),
                     "link": FieldDefinition("Link"),
-                    "file_url": FieldDefinition("File Url"),
-                },
-                required=True,
-            )),
-        "supplier": FieldDefinition(
-            "Supplier",
-            field_type="object",
-            fields={
-                "supplier": FieldDefinition("Supplier", field_type="model", model=("company.Company", {'is_supplier': True}), required=True),
-                "SKU": FieldDefinition("SKU", required=True),
-                "description": FieldDefinition("Description"),
-                "link": FieldDefinition("Link"),
-                "note": FieldDefinition("Note"),
-                "packaging": FieldDefinition("Packaging"),
-                "pack_quantity": FieldDefinition("Pack Quantity", description="Total quantity supplied in a single pack. Leave empty for single items."),
-                "multiple": FieldDefinition("Multiple", field_type="number"),
-                "_make_default": FieldDefinition("Make default", field_type="boolean", description="Make this supplier part the default for this part."),
-            }),
-        "manufacturer": FieldDefinition(
-            "Manufacturer",
-            field_type="object",
-            fields={
-                "manufacturer": FieldDefinition("Manufacturer", field_type="model", model=("company.Company", {'is_manufacturer': True}), required=True),
-                "MPN": FieldDefinition("MPN", required=True),
-                "description": FieldDefinition("Description"),
-                "link": FieldDefinition("Link"),
-            }),
-        "stock": FieldDefinition(
-            "Stock",
-            field_type="object",
-            fields={
-                "quantity": FieldDefinition("Quantity", field_type="float", required=True),
-                "location": FieldDefinition("Location", field_type="model", model=("stock.StockLocation", {"structural": False}), required=True),
-                "batch": FieldDefinition("Batch"),
-                "link": FieldDefinition("Link"),
-                "review_needed": FieldDefinition("Review needed", field_type="boolean"),
-                "delete_on_deplete": FieldDefinition("Delete on deplete", field_type="boolean"),
-                "status": FieldDefinition("Status", description="Either define the numeric status code or the name in all uppercase, like OK, DAMAGED, ..."),
-                "notes": FieldDefinition("Note"),
-                "packaging": FieldDefinition("Packaging"),
-                "purchase_price": FieldDefinition("Purchase price", field_type="float"),
-                "purchase_price_currency": FieldDefinition("Currency", field_type="select", get_options="get_currencies_options", get_default="get_currency_default"),
-            }
-        ),
-    }
+                    "note": FieldDefinition("Note"),
+                    "packaging": FieldDefinition("Packaging"),
+                    "pack_quantity": FieldDefinition("Pack Quantity", description="Total quantity supplied in a single pack. Leave empty for single items."),
+                    "multiple": FieldDefinition("Multiple", field_type="number"),
+                    "_make_default": FieldDefinition("Make default", field_type="boolean", description="Make this supplier part the default for this part."),
+                }),
+            "manufacturer": FieldDefinition(
+                "Manufacturer",
+                field_type="object",
+                fields={
+                    "manufacturer": FieldDefinition("Manufacturer", field_type="model", model=("company.Company", {'is_manufacturer': True}), required=True),
+                    "MPN": FieldDefinition("MPN", required=True),
+                    "description": FieldDefinition("Description"),
+                    "link": FieldDefinition("Link"),
+                }),
+            "stock": FieldDefinition(
+                "Stock",
+                field_type="object",
+                fields={
+                    "quantity": FieldDefinition("Quantity", field_type="float", required=True),
+                    "location": FieldDefinition("Location", field_type="model", model=("stock.StockLocation", {"structural": False}), required=True),
+                    "batch": FieldDefinition("Batch"),
+                    "link": FieldDefinition("Link"),
+                    "review_needed": FieldDefinition("Review needed", field_type="boolean"),
+                    "delete_on_deplete": FieldDefinition("Delete on deplete", field_type="boolean"),
+                    "status": FieldDefinition("Status", field_type="select", get_options=self.get_stock_status_options, default="10"),
+                    "notes": FieldDefinition("Note"),
+                    "packaging": FieldDefinition("Packaging"),
+                    "purchase_price": FieldDefinition("Purchase price", field_type="float"),
+                    "purchase_price_currency": FieldDefinition("Currency", field_type="select", get_options=self.get_currencies_options, get_default=self.get_currency_default),
+                }
+            ),
+        }
 
     def create_object(self, data: ParseChildReturnElement):
         # remove relations from data to create them separately
@@ -370,21 +397,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
         # create initial stock
         if stock_data:
             location_pk = stock_data.pop("location", None)
-            status = stock_data.pop("status", None)
             location = get_model_instance(StockLocation, location_pk, {}, f"for {part.name}")
-
-            # convert status to numeric StatusCode value
-            if status:
-                if (status_int := str2int(status)) is not None:
-                    status_code = getattr(StockStatus.values(status_int), "value", None)
-                else:
-                    status_code = StockStatus.names().get(status, None)
-
-                if status_code is None:
-                    raise ValueError(
-                        f"Stock status '{status}' for part '{part.name}' not found, use one of {', '.join(StockStatus.names().keys())}")
-
-                stock_data["status"] = status_code
 
             stock_item = StockItem(
                 part=part,
@@ -406,10 +419,10 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             return ctx
 
         try:
-            category = PartCategory.objects.get(pk=parent_id)
-            self.category = category
-            category_dict = {key: getattr(category, key)
-                             for key in PartCategoryBulkCreateObject.fields.keys() if hasattr(category, key)}
+            part_category_fields = PartCategoryBulkCreateObject(self.request).fields
+            self.category = PartCategory.objects.get(pk=parent_id)
+            category_dict = {key: getattr(self.category, key)
+                             for key in part_category_fields.keys() if hasattr(self.category, key)}
             return {**ctx, "category": category_dict}
         except PartCategory.DoesNotExist:
             raise ValueError(f"category with id '{parent_id}' cannot be found")
@@ -435,6 +448,9 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
 
     def get_currencies_options(self):
         return {r.currency: r.currency for r in Rate.objects.all()}
+
+    def get_stock_status_options(self):
+        return {f"{x.value}": f"{x.name} ({x.value})" for x in StockStatus.values()}
 
     def get_currency_default(self):
         return InvenTreeSetting.get_setting('INVENTREE_DEFAULT_CURRENCY', 'USD')

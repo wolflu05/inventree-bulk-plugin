@@ -70,8 +70,8 @@ class FieldDefinitionSerializer(serializers.Serializer):
         get_default = getattr(obj, "get_default", None)
 
         # try to get default value from associated BulkCreateObject class
-        if get_default is not None and (func := getattr(self.root.instance, get_default, None)):
-            return func()
+        if get_default is not None:
+            return get_default()
         if default is not None:
             return default
         return None
@@ -81,8 +81,8 @@ class FieldDefinitionSerializer(serializers.Serializer):
         get_options = getattr(obj, "get_options", None)
 
         # try to get options value from associated BulkCreateObject class
-        if get_options is not None and (func := getattr(self.root.instance, get_options, None)):
-            return func()
+        if get_options is not None:
+            return get_options()
         if options is not None:
             return options
         return None
@@ -96,7 +96,6 @@ class BulkCreateObjectSerializer(serializers.Serializer):
             "name",
             "template_type",
             "generate_type",
-            "fields",
         ]
 
         read_only_fields = fields
@@ -104,4 +103,12 @@ class BulkCreateObjectSerializer(serializers.Serializer):
     name = serializers.CharField()
     template_type = serializers.CharField()
     generate_type = serializers.CharField()
+
+
+class BulkCreateObjectDetailSerializer(BulkCreateObjectSerializer):
+    """Serializer for a BulkCreateObjectDetail implementation."""
+
+    class Meta(BulkCreateObjectSerializer.Meta):
+        fields = BulkCreateObjectSerializer.Meta.fields + ["fields"]
+
     fields = serializers.DictField(child=FieldDefinitionSerializer(read_only=True))

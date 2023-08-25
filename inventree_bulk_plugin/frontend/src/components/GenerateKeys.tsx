@@ -19,12 +19,20 @@ const getDefaultValue = (fieldDefinition: FieldDefinition): FieldType => {
 
   if (fieldDefinition.field_type === "list") {
     return [getDefaultValue(fieldDefinition.items_type)];
-  } else if (fieldDefinition.field_type == "object") {
+  } else if (fieldDefinition.field_type === "object") {
     return Object.fromEntries(
       Object.entries(fieldDefinition.fields)
         .filter(([, f]) => f.required)
         .map(([k, f]) => [k, getDefaultValue(f)]),
     );
+  } else if (fieldDefinition.field_type === "boolean") {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    return false;
+  } else if (fieldDefinition.field_type === "float") {
+    return "0";
+  } else if (fieldDefinition.field_type === "number") {
+    return "0";
   }
   return "";
 };
