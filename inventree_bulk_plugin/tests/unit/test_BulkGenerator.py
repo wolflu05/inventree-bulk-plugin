@@ -364,7 +364,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
             "input": {},
             "templates": [],
             "output": {"generate": {"number_field": "42"}, }
-        }, {"number_field": BaseFieldDefinition("number_field", cast_func=int)}).generate()
+        }, {"number_field": BaseFieldDefinition("number_field", cast_func=lambda x, **kwargs: int(x))}).generate()
 
         self.assertEqual(res[0][0]["number_field"], 42)
 

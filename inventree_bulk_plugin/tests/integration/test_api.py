@@ -72,10 +72,10 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
             self.assertTrue("name" in generate_info)
             self.assertTrue("template_type" in generate_info)
             self.assertTrue("generate_type" in generate_info)
-            self.assertTrue("fields" in generate_info)
 
         self.assertTrue("STOCK_LOCATION" in template_types)
         self.assertTrue("PART_CATEGORY" in template_types)
+        self.assertTrue("PART" in template_types)
 
     def test_url_bulkcreate_preview(self):
         url = reverse("plugin:inventree-bulk-plugin:api-bulk-create")
