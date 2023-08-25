@@ -1,10 +1,11 @@
-from dataclasses import dataclass
 import json
+from dataclasses import dataclass
 
 from django.views import View
+from django.core.exceptions import ValidationError
 
 from plugin import InvenTreePlugin
-from plugin.mixins import PanelMixin, UrlsMixin, AppMixin
+from plugin.mixins import PanelMixin, UrlsMixin, AppMixin, SettingsMixin
 from stock.views import StockLocationDetail
 from part.views import CategoryDetail
 
@@ -30,18 +31,35 @@ class Panel:
             self.description = self.title
 
 
-class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, InvenTreePlugin):
+def validate_json(value):
+    try:
+        json.loads(value)
+    except Exception as e:
+        raise ValidationError(str(e))
+
+
+class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, SettingsMixin, InvenTreePlugin):
     AUTHOR = "wolflu05"
     DESCRIPTION = "InvenTree Bulk plugin"
     VERSION = BULK_PLUGIN_VERSION
 
     # 0.9.1 - due to "invoke update" doesn't run collectstatic (see inventree/InvenTree#4077)
     # 0.12.6 - Settings do not work in combination with api views (see inventree/InvenTree#5408)
-    MIN_VERSION = "0.12.6"
+    # 0.12.7 - Fix missing filters for get settings validator (see inventree/InvenTree#5480)
+    MIN_VERSION = "0.12.7"
 
     TITLE = "InvenTree Bulk Plugin"
     SLUG = "inventree-bulk-plugin"
     NAME = "InvenTreeBulkPlugin"
+
+    SETTINGS = {
+        "DEFAULT_DOWNLOAD_HEADERS": {
+            "name": "Default download headers",
+            "description": "Set default download headers that should be used each time in json format",
+            "default": "{}",
+            "validator": validate_json
+        }
+    }
 
     PREACT_PANELS: list[Panel] = [
         Panel(

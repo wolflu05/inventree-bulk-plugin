@@ -1,11 +1,14 @@
 import io
 import re
+import requests
+import json
 from dataclasses import dataclass
 from typing import Any, Callable, Generic, Literal, Optional, TypeVar, Union
 from django.db import transaction
 from django.db.models import Model
 from django.apps import apps
 from django.urls import reverse
+from django.core.files import File
 from django.core.files.base import ContentFile
 from rest_framework.request import Request
 from djmoney.contrib.exchange.models import Rate
@@ -17,6 +20,7 @@ from stock.models import StockItem
 from common.models import InvenTreeSetting
 from InvenTree.status_codes import StockStatus
 from InvenTree.helpers_model import download_image_from_url
+from plugin import registry
 
 from .BulkGenerator.utils import str2bool, str2int, str2float
 from .BulkGenerator.BulkGenerator import BaseFieldDefinition, ParseChildReturnElement, ParseChildReturnType
@@ -292,6 +296,8 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                         "comment": FieldDefinition("Comment", required=True),
                         "link": FieldDefinition("Link"),
                         "file_url": FieldDefinition("File Url"),
+                        "file_name": FieldDefinition("File name"),
+                        "file_headers": FieldDefinition("File headers", description="Provide headers that should be used to download the file in json format."),
                     },
                     required=True,
                 )),
@@ -338,8 +344,8 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
         }
 
     def create_objects(self, objects: ParseChildReturnType) -> list[Part]:
+        # download images outside of db transaction
         self.part_images = {}
-
         for part_data in objects:
             if url := part_data[0].get("image", None):
                 # check if image is relative
@@ -360,6 +366,25 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                     self.part_images[url] = download_image_from_url(part_data[0]["image"])
                 except Exception as exc:
                     raise ValueError(str(exc))
+
+        # download attachments outside of db transaction
+        self.attachments = {}
+        for attachment_data in [a for p in objects for a in p[0].get("attachments", [])]:
+            if attachment_data.get("link", None) and attachment_data.get("file_url", None):
+                raise ValueError("Either provide a link or an attachment.")
+
+            file_url = attachment_data.get("file_url", None)
+            if file_url and file_url not in self.attachments:
+                try:
+                    default_headers = json.loads(registry.get_plugin(
+                        "inventree-bulk-plugin").get_setting("DEFAULT_DOWNLOAD_HEADERS"))
+                    headers = json.loads(attachment_data.get("file_headers", "{}"))
+                    r = requests.get(file_url, allow_redirects=True, headers={**default_headers, **headers})
+                    r.raise_for_status()
+                    filename = attachment_data.get("file_name", None) or file_url.split("/")[-1]
+                    self.attachments[file_url] = File(ContentFile(r.content), filename)
+                except Exception as e:
+                    raise ValueError(f"{e}")
 
         return super().create_objects(objects)
 
@@ -412,12 +437,12 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
 
         # create attachments
         for attachment in attachments:
-            # TODO: download attachment if link available
             PartAttachment.objects.create(
                 part=part,
                 link=attachment.get("link", None),
                 comment=attachment["comment"],
-                user=self.request.user
+                attachment=self.attachments.get(attachment.get("file_url", None), None),
+                user=self.request.user,
             )
 
         # create manufacturer part
