@@ -7,6 +7,14 @@ from part.models import Part, PartCategory
 from ...bulkcreate_objects import get_model, get_model_instance, FieldDefinition, BulkCreateObject
 
 
+# custom request factory, used to patch query_params which were not defined by default
+class CustomRequestFactory(RequestFactory):
+    def request(self, **request):
+        r = super().request(**request)
+        r.query_params = r.GET or r.POST
+        return r
+
+
 class BulkCreateObjectsUtilsTestCase(TestCase):
     def test_get_model(self):
         # no valid format
@@ -83,13 +91,6 @@ class FieldDefinitionTestCase(TestCase):
 
 class BulkCreateObjectTestCase(TestCase):
     def setUp(self):
-        # custom request factory, used to patch query_params which were not defined by default
-        class CustomRequestFactory(RequestFactory):
-            def request(self, **request):
-                r = super().request(**request)
-                r.query_params = r.GET or r.POST
-                return r
-
         self.request = CustomRequestFactory()
 
     def test_fields(self):
@@ -146,12 +147,14 @@ class BulkCreateObjectTestCase(TestCase):
         class MyBulkCreateObject(BulkCreateObject):
             name = "part"
             template_type = "PART"
+            generate_type = "single"
             model = Part
             fields = {
                 "name": FieldDefinition("Name", required=True),
             }
 
         my_obj = MyBulkCreateObject(self.request.get("/abc"))
+        my_obj.get_context()  # used to init
         created_parts = my_obj.create_objects([({"name": "1"}, []), ({"name": "2"}, [])])
         all_parts = list(Part.objects.all())
         self.assertEqual(len(created_parts), 2)
@@ -171,7 +174,9 @@ class BulkCreateObjectTestCase(TestCase):
                 "name": FieldDefinition("Name", required=True),
             }
 
-        my_obj = MyBulkCreateObject(self.request.get("/abc"))
+        parent_category = PartCategory.objects.create(name="Parent")
+        my_obj = MyBulkCreateObject(self.request.get(f"/abc?parent_id={parent_category.pk}"))
+        my_obj.get_context()  # used to init
         created_categories = my_obj.create_objects(
             [({"name": "Test"}, [({"name": "1"}, []), ({"name": "2"}, [({"name": "1"}, [])])])])
         all_categories = list(PartCategory.objects.all())
@@ -183,7 +188,7 @@ class BulkCreateObjectTestCase(TestCase):
         path_list = list(map(lambda category: category.pathstring, all_categories))
         self.assertListEqual(expected, path_list)
 
-    def test_get_context(self):
+    def test_get_context_tree(self):
         class MyBulkCreateObject(BulkCreateObject):
             name = "part category"
             template_type = "PART_CATEGORY"
@@ -205,5 +210,12 @@ class BulkCreateObjectTestCase(TestCase):
 
         # with existing parent_id
         parent_category = PartCategory.objects.create(name="Parent")
-        ctx = MyBulkCreateObject(self.request.get(f"/abc?parent_id={parent_category.pk}")).get_context()
+        obj = MyBulkCreateObject(self.request.get(f"/abc?parent_id={parent_category.pk}"))
+        ctx = obj.get_context()
         self.assertEqual(ctx, {'gen': {'name': 'Parent'}})
+        self.assertEqual(obj.parent, parent_category)
+
+
+class PartBulkCreateObjectTestCase(TestCase):
+    def setUp(self):
+        self.request = CustomRequestFactory()
