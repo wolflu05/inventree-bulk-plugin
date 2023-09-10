@@ -24,8 +24,8 @@ class BulkCreateObjectsUtilsTestCase(TestCase):
         self.assertEqual(get_model("  cOmPaNy.CoMpAnY "), Company)
 
     def test_get_model_instance(self):
-        supplier_company = Company.objects.create(name="Supplier company", is_supplier=True)
-        customer_company = Company.objects.create(name="Customer company", is_customer=True)
+        supplier_company = Company.objects.create(name="Supplier company", is_supplier=True, is_customer=False)
+        customer_company = Company.objects.create(name="Customer company", is_supplier=False, is_customer=True)
 
         # simple test
         self.assertEqual(get_model_instance(Company, supplier_company.pk), supplier_company)
