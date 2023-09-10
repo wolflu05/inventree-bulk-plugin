@@ -133,12 +133,14 @@ class BulkCreateObjectTestCase(TestCase):
             fields = {
                 "name": FieldDefinition("Name", required=True),
                 "category": FieldDefinition("Category", field_type="model", model="part.PartCategory", description="If not set, defaults to current category"),
+                "description": FieldDefinition("Description"),
             }
 
         category = PartCategory.objects.create(name="Test category")
 
+        desc = "A very long description to work around the sample plugin limitation which is present in testing"
         my_obj = MyBulkCreateObject(self.request.get("/abc"))
-        created_part = my_obj.create_object(({"name": "Test", "category": str(category.pk)}, []))
+        created_part = my_obj.create_object(({"name": "Test", "category": str(category.pk), "description": desc}, []))
         self.assertEqual(created_part.name, "Test")
         self.assertEqual(created_part.category, category)
         self.assertEqual(len(Part.objects.all()), 1)
@@ -151,12 +153,14 @@ class BulkCreateObjectTestCase(TestCase):
             model = Part
             fields = {
                 "name": FieldDefinition("Name", required=True),
-                "description": FieldDefinition("Description", default="A very long description to work around the sample plugin limitation which is present in testing"),
+                "description": FieldDefinition("Description"),
             }
 
+        desc = "A very long description to work around the sample plugin limitation which is present in testing"
         my_obj = MyBulkCreateObject(self.request.get("/abc"))
         my_obj.get_context()  # used to init
-        created_parts = my_obj.create_objects([({"name": "1"}, []), ({"name": "2"}, [])])
+        created_parts = my_obj.create_objects(
+            [({"name": "1", "description": desc}, []), ({"name": "2", "description": desc}, [])])
         all_parts = list(Part.objects.all())
         self.assertEqual(len(created_parts), 2)
         self.assertEqual(len(all_parts), 2)
@@ -173,7 +177,6 @@ class BulkCreateObjectTestCase(TestCase):
             model = PartCategory
             fields = {
                 "name": FieldDefinition("Name", required=True),
-                "description": FieldDefinition("Description", default="A very long description to work around the sample plugin limitation which is present in testing"),
             }
 
         parent_category = PartCategory.objects.create(name="Parent")
@@ -185,7 +188,7 @@ class BulkCreateObjectTestCase(TestCase):
         self.assertEqual(len(created_categories), 4)
         self.assertEqual(len(all_categories), 5)
 
-        expected = ["Test", "Test/1", "Test/2", "Test/2/1"]
+        expected = ["Parent", "Parent/Test", "Parent/Test/1", "Parent/Test/2", "Parent/Test/2/1"]
 
         path_list = list(map(lambda category: category.pathstring, all_categories))
         self.assertListEqual(expected, path_list)
