@@ -67,7 +67,7 @@ class InvenTreeBulkPluginTestCase(TestCase):
         not_valid_json = '{"ts""13"}'
 
         # no error, should pass validator
-        valid_json(valid_json)
+        validate_json(valid_json)
 
         # should throw an error
         with self.assertRaises(ValidationError):
