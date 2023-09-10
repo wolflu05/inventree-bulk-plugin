@@ -365,8 +365,28 @@ class BulkGeneratorTestCase(unittest.TestCase):
             "templates": [],
             "output": {"generate": {"number_field": "42"}, }
         }, {"number_field": BaseFieldDefinition("number_field", cast_func=lambda x, **kwargs: int(x))}).generate()
-
         self.assertEqual(res[0][0]["number_field"], 42)
+
+        def complex_cast_func(x, **kwargs):
+            if x == "3":
+                return x
+            raise ValueError(f"Value for field {kwargs['field'].name} is not '3'")
+
+        res = BulkGenerator({
+            "version": "1.0.0",
+            "input": {},
+            "templates": [],
+            "output": {"generate": {"number_field": "3"}, }
+        }, {"number_field": BaseFieldDefinition("number_field", cast_func=complex_cast_func)}).generate()
+        self.assertEqual(res[0][0]["number_field"], "3")
+
+        with self.assertRaisesRegex(ValueError, "number_field: Value for field number_field is not '3'"):
+            res = BulkGenerator({
+                "version": "1.0.0",
+                "input": {},
+                "templates": [],
+                "output": {"generate": {"number_field": "42"}, }
+            }, {"number_field": BaseFieldDefinition("number_field", cast_func=complex_cast_func)}).generate()
 
     def test_required_field(self):
         with self.assertRaisesRegex(ValueError, "'required_field' is a required field, but template '' returned empty string"):
@@ -385,6 +405,22 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 "output": {"generate": {"description": ""}, }
             }, {"name": BaseFieldDefinition("name", required=True)}).generate()
 
+        with self.assertRaisesRegex(ValueError, "'required_dict' are missing in generated keys"):
+            BulkGenerator({
+                "version": "1.0.0",
+                "input": {},
+                "templates": [],
+                "output": {"generate": {}, }
+            }, {"required_dict": BaseFieldDefinition("required_dict", required=True, field_type="object", fields={"a": BaseFieldDefinition("A")})}).generate()
+
+        with self.assertRaisesRegex(ValueError, "'required_list' are missing in generated keys"):
+            BulkGenerator({
+                "version": "1.0.0",
+                "input": {},
+                "templates": [],
+                "output": {"generate": {}, }
+            }, {"required_list": BaseFieldDefinition("required_list", required=True, field_type="list", items_type=BaseFieldDefinition("A"))}).generate()
+
         with self.assertRaisesRegex(ValueError, "'name' is a required field, but template '' returned empty string"):
             BulkGenerator({
                 "version": "1.0.0",
@@ -392,3 +428,12 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 "templates": [],
                 "output": {"generate": {"name": "", "description": "AA"}, }
             }, {"name": BaseFieldDefinition("name", required=True), "description": BaseFieldDefinition("description")}).generate()
+
+    def test_recursive_output(self):
+        res = BulkGenerator({
+            "version": "1.0.0",
+            "input": {},
+            "templates": [],
+            "output": {"generate": {"required_list": ["1", "2", "3"]}, }
+        }, {"required_list": BaseFieldDefinition("required_list", required=True, field_type="list", items_type=BaseFieldDefinition("A"))}).generate()
+        self.assertEqual(res, [({'required_list': ['1', '2', '3']}, [])])

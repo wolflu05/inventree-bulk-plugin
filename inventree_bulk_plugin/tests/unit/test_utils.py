@@ -1,6 +1,6 @@
 import unittest
 
-from ...BulkGenerator.utils import version_tuple, str2bool, str2int
+from ...BulkGenerator.utils import version_tuple, str2bool, str2int, str2float
 
 
 class UtilsTestCase(unittest.TestCase):
@@ -31,3 +31,10 @@ class UtilsTestCase(unittest.TestCase):
         self.assertEqual(42, str2int("42"))
         self.assertEqual(None, str2int("abc"))
         self.assertEqual(13, str2int("abc", 13))
+
+    def test_str2float(self):
+        self.assertEqual(42.14, str2float("42.14"))
+        self.assertEqual(42.0, str2float("42"))
+        self.assertEqual(None, str2float("abc"))
+        self.assertEqual(13.0, str2float("abc", 13))
+        self.assertEqual(13.0, str2float("abc", 13.0))

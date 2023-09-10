@@ -77,6 +77,18 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         self.assertTrue("PART_CATEGORY" in template_types)
         self.assertTrue("PART" in template_types)
 
+    def test_url_bulkcreate_info_detail(self):
+        url = reverse("plugin:inventree-bulk-plugin:api-bulk-create")
+
+        self.get(url + "?template_type=NOT_EXISTING_TEMPLATE_TYPE", expected_code=400)
+
+        response = self.get(url + "?template_type=PART", expected_code=200).json()
+        self.assertTrue("name" in response)
+        self.assertTrue("template_type" in response)
+        self.assertEqual(response["template_type"], "PART")
+        self.assertTrue("generate_type" in response)
+        self.assertTrue("fields" in response)
+
     def test_url_bulkcreate_preview(self):
         url = reverse("plugin:inventree-bulk-plugin:api-bulk-create")
 
