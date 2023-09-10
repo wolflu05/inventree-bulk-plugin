@@ -131,7 +131,7 @@ class FieldDefinition(BaseFieldDefinition):
         if url := hardcoded_models[model_table]:
             return reverse(url)
 
-        return None
+        return None  # pragma: no cover
 
 
 ModelType = TypeVar("ModelType")
