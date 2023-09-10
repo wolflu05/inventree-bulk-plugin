@@ -2,6 +2,7 @@ from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
 from company.models import Company
+from part.models import Part, PartCategory
 
 from ...bulkcreate_objects import get_model, get_model_instance, FieldDefinition, BulkCreateObject
 
@@ -82,7 +83,14 @@ class FieldDefinitionTestCase(TestCase):
 
 class BulkCreateObjectTestCase(TestCase):
     def setUp(self):
-        self.request = RequestFactory()
+        # custom request factory, used to patch query_params which were not defined by default
+        class CustomRequestFactory(RequestFactory):
+            def request(self, **request):
+                r = super().request(**request)
+                r.query_params = r.GET or r.POST
+                return r
+
+        self.request = CustomRequestFactory()
 
     def test_fields(self):
         test = self
@@ -114,3 +122,88 @@ class BulkCreateObjectTestCase(TestCase):
         my_obj2 = MyBulkCreateObject2(self.request.get("/abc"))
         self.assertTrue("a" in my_obj2.fields)
         self.assertTrue("b" in my_obj2.fields)
+
+    def test_create_object(self):
+        class MyBulkCreateObject(BulkCreateObject):
+            name = "part"
+            template_type = "PART"
+            generate_type = "single"
+            model = Part
+            fields = {
+                "name": FieldDefinition("Name", required=True),
+                "category": FieldDefinition("Category", field_type="model", model="part.PartCategory", description="If not set, defaults to current category"),
+            }
+
+        category = PartCategory.objects.create(name="Test category")
+
+        my_obj = MyBulkCreateObject(self.request.get("/abc"))
+        created_part = my_obj.create_object(({"name": "Test", "category": str(category.pk)}, []))
+        self.assertEqual(created_part.name, "Test")
+        self.assertEqual(created_part.category, category)
+        self.assertEqual(len(Part.objects.all()), 1)
+
+    def test_create_objects_single(self):
+        class MyBulkCreateObject(BulkCreateObject):
+            name = "part"
+            template_type = "PART"
+            model = Part
+            fields = {
+                "name": FieldDefinition("Name", required=True),
+            }
+
+        my_obj = MyBulkCreateObject(self.request.get("/abc"))
+        created_parts = my_obj.create_objects([({"name": "1"}, []), ({"name": "2"}, [])])
+        all_parts = list(Part.objects.all())
+        self.assertEqual(len(created_parts), 2)
+        self.assertEqual(len(all_parts), 2)
+
+        expected = ["1", "2"]
+
+        parts_list = list(map(lambda part: part.name, all_parts))
+        self.assertListEqual(expected, parts_list)
+
+    def test_create_objects_tree(self):
+        class MyBulkCreateObject(BulkCreateObject):
+            name = "part category"
+            template_type = "PART_CATEGORY"
+            model = PartCategory
+            fields = {
+                "name": FieldDefinition("Name", required=True),
+            }
+
+        my_obj = MyBulkCreateObject(self.request.get("/abc"))
+        created_categories = my_obj.create_objects(
+            [({"name": "Test"}, [({"name": "1"}, []), ({"name": "2"}, [({"name": "1"}, [])])])])
+        all_categories = list(PartCategory.objects.all())
+        self.assertEqual(len(created_categories), 4)
+        self.assertEqual(len(all_categories), 4)
+
+        expected = ["Test", "Test/1", "Test/2", "Test/2/1"]
+
+        path_list = list(map(lambda category: category.pathstring, all_categories))
+        self.assertListEqual(expected, path_list)
+
+    def test_get_context(self):
+        class MyBulkCreateObject(BulkCreateObject):
+            name = "part category"
+            template_type = "PART_CATEGORY"
+            model = PartCategory
+            fields = {
+                "name": FieldDefinition("Name", required=True),
+            }
+        # without parent_id and not create => placeholder ctx for gen
+        ctx = MyBulkCreateObject(self.request.get("/abc")).get_context()
+        self.assertEqual(ctx, {'gen': {'name': "<parent 'Name'>"}})
+
+        # without parent_id but with create
+        with self.assertRaisesRegex(ValueError, "parent_id query parameter missing"):
+            MyBulkCreateObject(self.request.get("/abc?create=True")).get_context()
+
+        # with not existing parent_id
+        with self.assertRaisesRegex(ValueError, "object with id '999999' cannot be found"):
+            MyBulkCreateObject(self.request.get("/abc?parent_id=999999")).get_context()
+
+        # with existing parent_id
+        parent_category = PartCategory.objects.create(name="Parent")
+        ctx = MyBulkCreateObject(self.request.get(f"/abc?parent_id={parent_category.pk}")).get_context()
+        self.assertEqual(ctx, {'gen': {'name': 'Parent'}})
