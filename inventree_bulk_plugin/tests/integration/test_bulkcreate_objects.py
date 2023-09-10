@@ -151,6 +151,7 @@ class BulkCreateObjectTestCase(TestCase):
             model = Part
             fields = {
                 "name": FieldDefinition("Name", required=True),
+                "description": FieldDefinition("Description", default="A very long description to work around the sample plugin limitation which is present in testing"),
             }
 
         my_obj = MyBulkCreateObject(self.request.get("/abc"))
@@ -172,6 +173,7 @@ class BulkCreateObjectTestCase(TestCase):
             model = PartCategory
             fields = {
                 "name": FieldDefinition("Name", required=True),
+                "description": FieldDefinition("Description", default="A very long description to work around the sample plugin limitation which is present in testing"),
             }
 
         parent_category = PartCategory.objects.create(name="Parent")
@@ -181,7 +183,7 @@ class BulkCreateObjectTestCase(TestCase):
             [({"name": "Test"}, [({"name": "1"}, []), ({"name": "2"}, [({"name": "1"}, [])])])])
         all_categories = list(PartCategory.objects.all())
         self.assertEqual(len(created_categories), 4)
-        self.assertEqual(len(all_categories), 4)
+        self.assertEqual(len(all_categories), 5)
 
         expected = ["Test", "Test/1", "Test/2", "Test/2/1"]
 
