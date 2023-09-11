@@ -138,16 +138,16 @@ export function BulkDefinitionChildSchemaBuilder({
         onInput={setDimension("count")}
       />
 
-      {bulkGenerateInfo.generate_type === "tree" && (
-        <>
-          <h6
-            class={`user-select-none collapsable-heading ${outputAdvancedState ? "active" : ""}`}
-            role="button"
-            onClick={onOutputAdvanceToggle}
-          >
-            Advanced
-          </h6>
-          <div class="collapse" id={outputAdvancedId}>
+      <h6
+        class={`user-select-none collapsable-heading ${outputAdvancedState ? "active" : ""}`}
+        role="button"
+        onClick={onOutputAdvanceToggle}
+      >
+        Advanced
+      </h6>
+      <div class="collapse" id={outputAdvancedId}>
+        {bulkGenerateInfo.generate_type === "tree" && (
+          <>
             <Input
               label="Parent name match"
               tooltip="First child that matches the parent name matcher will be chosen for generating the childs for a specific parent. Must evaluate to something that can be casted to a boolean."
@@ -165,9 +165,16 @@ export function BulkDefinitionChildSchemaBuilder({
                 onInput={setValue("extends")}
               />
             )}
-          </div>
-        </>
-      )}
+          </>
+        )}
+        <Input
+          label="Global context"
+          tooltip="This template gets imported under the 'global' namespace to all generate fields. Use this to setup variables via the set keyword ('{% set hello = 'world' %}')which can be accessed as 'global.<x>' ('{{ global.hello }}')."
+          type="text"
+          value={childSchema.global_context || ""}
+          onInput={setValue("global_context")}
+        />
+      </div>
 
       <div class="mt-3">
         <Tooltip

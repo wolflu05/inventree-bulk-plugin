@@ -110,7 +110,7 @@ class BulkGenerator:
             child = apply_template(child, template)
 
         # generate
-        render = self.compile_generate_fields(self.fields, child.generate)
+        render = self.compile_generate_fields(self.fields, child.generate, child.global_context)
         product = []
         dimensions = []
         if len(child.dimensions) > 0:
@@ -176,8 +176,10 @@ class BulkGenerator:
 
         return seq
 
-    def compile_generate_fields(self, fields: FieldType, generate: dict):
+    def compile_generate_fields(self, fields: FieldType, generate: dict, global_context: str):
         missing_fields = []
+
+        global_context_template = Template(global_context).compile()
 
         def compile_templates(field: FieldType, generate, path: list[str] = []):
             path_str = ".".join(map(str, path))
@@ -203,7 +205,8 @@ class BulkGenerator:
 
                 # compile template
                 try:
-                    compiled_template = Template(generate).compile()
+                    template_str = "{% import global_context_template as global with context %}" + str(generate)
+                    compiled_template = Template(template_str, ctx={"global_context_template": global_context_template}).compile()
                 except TemplateError as e:  # pragma: no cover
                     # catch this error in any case it bypasses validation somehow because an error is not handled during ast creation but occurred on compile
                     raise ValueError(f"Invalid generator template '{generate}' at: '{path_str}'\nException: {e}")

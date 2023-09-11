@@ -4,7 +4,8 @@ env = Environment(variable_start_string="{{", variable_end_string="}}")
 
 
 class Template:
-    def __init__(self, template_str: str) -> None:
+    def __init__(self, template_str: str, **kwargs) -> None:
+        self.ctx = kwargs.get("ctx", {})
         self.template_str = template_str
 
     def validate(self):
@@ -12,4 +13,4 @@ class Template:
         return True
 
     def compile(self):
-        return env.from_string(str(self.template_str))
+        return env.from_string(str(self.template_str), self.ctx)
