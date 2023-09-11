@@ -51,28 +51,28 @@ class BulkCreateObjectsUtilsTestCase(TestCase):
 
     def test_cast_model(self):
         # shouldn't change anything if field is no model field or uses custom processor
-        self.assertEqual(cast_model("10", FieldDefinition("A")), "10")
-        self.assertEqual(cast_model("10", FieldDefinition("A", model=("abc", {}, None))), "10")
+        self.assertEqual(cast_model("10", field=FieldDefinition("A")), "10")
+        self.assertEqual(cast_model("10", field=FieldDefinition("A", model=("abc", {}, None))), "10")
 
         with self.assertRaises(ValueError):
-            cast_model("999999", FieldDefinition("A", model="company.company"))
+            cast_model("999999", field=FieldDefinition("A", model="company.company"))
 
         # should get correct model instance
         company = Company.objects.create(name="Test")
-        self.assertEqual(cast_model(str(company.pk), FieldDefinition("A", model="company.company")), company)
+        self.assertEqual(cast_model(str(company.pk), field=FieldDefinition("A", model="company.company")), company)
 
     def test_cast_select(self):
         options = {"a": "A", "b": "B"}
 
         # test not valid option
         with self.assertRaisesRegex(ValueError, "'c' is not a valid option, choose one of: a, b."):
-            cast_select("c", FieldDefinition("A", field_type="select", options=options))
+            cast_select("c", field=FieldDefinition("A", field_type="select", options=options))
 
         # test valid option
-        self.assertEqual(cast_select("b", FieldDefinition("A", field_type="select", options=options)), "b")
+        self.assertEqual(cast_select("b", field=FieldDefinition("A", field_type="select", options=options)), "b")
 
         # test valid option using get_options
-        self.assertEqual(cast_select("b", FieldDefinition("A", field_type="select", get_options=lambda: options)), "b")
+        self.assertEqual(cast_select("b", field=FieldDefinition("A", field_type="select", get_options=lambda: options)), "b")
 
 
 class FieldDefinitionTestCase(TestCase):
