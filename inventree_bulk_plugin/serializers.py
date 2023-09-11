@@ -83,8 +83,8 @@ class FieldDefinitionSerializer(serializers.Serializer):
         # try to get options value from associated BulkCreateObject class
         if get_options is not None:
             return get_options()
-        if options is not None:
-            return options
+        if options is not None:  # pragma: no cover
+            return options  # currently there is no option that needs this case
         return None
 
 

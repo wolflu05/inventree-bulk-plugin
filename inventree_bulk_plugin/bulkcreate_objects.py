@@ -4,12 +4,14 @@ import requests
 import json
 from dataclasses import dataclass
 from typing import Any, Callable, Generic, Literal, Optional, TypeVar, Union
+from pathlib import Path
 from django.db import transaction
 from django.db.models import Model
 from django.apps import apps
 from django.urls import reverse
 from django.core.files import File
 from django.core.files.base import ContentFile
+from django.conf import settings
 from rest_framework.request import Request
 from djmoney.contrib.exchange.models import Rate
 
@@ -402,6 +404,9 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             # maybe use already saved image with same url
             if image in self.part_images and isinstance(self.part_images[image], str):
                 image = self.part_images[image]
+            elif not (Path(settings.MEDIA_ROOT.joinpath(image))).is_file():
+                # try to use local image which is not available
+                raise ValueError(f"Image '{image}' for part '{data[0]['name']}' does not exist")
             data[0]["image"] = image
 
         # create part
@@ -523,7 +528,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                     return [{"template": "", "value": ""}]
 
                 return [{"template": str(c.parameter_template.id), "value": c.default_value} for c in parameters]
-            except Exception:
+            except Exception:  # pragma: no cover
                 pass
 
         return None

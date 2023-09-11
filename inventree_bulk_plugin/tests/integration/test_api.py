@@ -4,6 +4,7 @@ from django.urls import reverse
 
 from InvenTree.unit_test import InvenTreeAPITestCase
 from stock.models import StockLocation
+from part.models import PartCategory, PartParameterTemplate, PartCategoryParameterTemplate
 
 from ...models import BulkCreationTemplate
 
@@ -82,12 +83,34 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
 
         self.get(url + "?template_type=NOT_EXISTING_TEMPLATE_TYPE", expected_code=400)
 
+        # normal detail
         response = self.get(url + "?template_type=PART", expected_code=200).json()
         self.assertTrue("name" in response)
         self.assertTrue("template_type" in response)
         self.assertEqual(response["template_type"], "PART")
         self.assertTrue("generate_type" in response)
         self.assertTrue("fields" in response)
+
+        # detail with parent id set but without defined part category parameter templates
+        category = PartCategory.objects.create(name="Test category")
+
+        response = self.get(url + f"?template_type=PART&parent_id={category.pk}", expected_code=200).json()
+        self.assertEqual(response["fields"]["parameters"]["default"], [
+            {"template": "", "value": ""},
+        ])
+
+        # detail with parent id set and with defined part category parameter templates
+        part_parameter_template1 = PartParameterTemplate.objects.create(name="Length", units="m")
+        part_parameter_template2 = PartParameterTemplate.objects.create(name="Weight per meter", units="kg/m")
+        PartCategoryParameterTemplate.objects.create(category=category, parameter_template=part_parameter_template1)
+        PartCategoryParameterTemplate.objects.create(
+            category=category, parameter_template=part_parameter_template2, default_value="10")
+
+        response = self.get(url + f"?template_type=PART&parent_id={category.pk}", expected_code=200).json()
+        self.assertEqual(response["fields"]["parameters"]["default"], [
+            {"template": str(part_parameter_template1), "value": ""},
+            {"template": str(part_parameter_template2), "value": "10"},
+        ])
 
     def test_url_bulkcreate_preview(self):
         url = reverse("plugin:inventree-bulk-plugin:api-bulk-create")

@@ -323,6 +323,118 @@ class PartBulkCreateObjectTestCase(TestCase):
             c = len(model.objects.all())
             self.assertEqual(c, count, f"There should be only {count} of {model}, found {c}")
 
+        # --- start: Test all exceptions here
+
+        # try attachment and link for the same attachment
+        with self.assertRaisesRegex(ValueError, "Either provide a link or an attachment."):
+            req = self.request.get(f"/abc?parent_id={category.pk}")
+            req.user = self.user
+            obj = PartBulkCreateObject(req)
+            obj.get_context()
+            obj.create_objects([
+                ({
+                    "name": "Test 1_0",
+                    "description": "Test Description",
+                    "attachments": [{"comment": "A", "link": "https://github.com", "file_url": "https://github.com"}]
+                }, [])
+            ])
+
+        # try with disabled image download
+        InvenTreeSetting.set_setting("INVENTREE_DOWNLOAD_FROM_URL", False, None)
+        with self.assertRaisesRegex(ValueError, "Downloading images from remote URL is not enabled"):
+            req = self.request.get(f"/abc?parent_id={category.pk}")
+            req.user = self.user
+            obj = PartBulkCreateObject(req)
+            obj.get_context()
+            obj.create_objects([
+                ({
+                    "name": "Test 1_1",
+                    "description": "Test Description",
+                    "image": "https://raw.githubusercontent.com/test-images/png/main/202105/cs-black-000.png"
+                }, [])
+            ])
+        InvenTreeSetting.set_setting("INVENTREE_DOWNLOAD_FROM_URL", True, None)
+
+        # try with invalid url image download
+        with self.assertRaises(ValueError):
+            req = self.request.get(f"/abc?parent_id={category.pk}")
+            req.user = self.user
+            obj = PartBulkCreateObject(req)
+            obj.get_context()
+            obj.create_objects([
+                ({
+                    "name": "Test 1_2",
+                    "description": "Test Description",
+                    "image": "https://example.com/test.png"
+                }, [])
+            ])
+
+        # try with invalid attachment download
+        with self.assertRaises(ValueError):
+            req = self.request.get(f"/abc?parent_id={category.pk}")
+            req.user = self.user
+            obj = PartBulkCreateObject(req)
+            obj.get_context()
+            obj.create_objects([
+                ({
+                    "name": "Test 1_3",
+                    "description": "Test Description",
+                    "attachments": [{"comment": "A", "file_url": "https://example.com/test.pdf"}]
+                }, [])
+            ])
+
+        # try with not existing image
+        with self.assertRaisesRegex(ValueError, "Image '__not_existing.png' for part 'Test 1_4' does not exist"):
+            req = self.request.get(f"/abc?parent_id={category.pk}")
+            req.user = self.user
+            obj = PartBulkCreateObject(req)
+            obj.get_context()
+            obj.create_objects([
+                ({
+                    "name": "Test 1_4",
+                    "description": "Test Description",
+                    "image": "__not_existing.png"
+                }, [])
+            ])
+        # --- end: Test all exceptions here
+
+        # even there are errors thrown, there shouldn't be created anything, because of the transaction
+        for model, count in expected_objs:
+            c = len(model.objects.all())
+            self.assertEqual(
+                c, count, f"There should be only {count} of {model}, found {c} - even after a few generations all should have failed")
+
+        # try with existing image
+        req = self.request.get(f"/abc?parent_id={category.pk}")
+        req.user = self.user
+        obj = PartBulkCreateObject(req)
+        obj.get_context()
+        obj.create_objects([
+            ({
+                "name": "Test 1_5",
+                "description": "Test Description",
+                "image": str(Part.objects.first().image)
+            }, [])
+        ])
+
+        # try with reusing existing image
+        req = self.request.get(f"/abc?parent_id={category.pk}")
+        req.user = self.user
+        obj = PartBulkCreateObject(req)
+        obj.get_context()
+        obj.create_objects([
+            ({
+                "name": "Test 1_6_1",
+                "description": "Test Description",
+                "image": "https://raw.githubusercontent.com/test-images/png/main/202105/cs-black-000.png"
+            }, []),
+            ({
+                "name": "Test 1_6_2",
+                "description": "Test Description",
+                "image": "https://raw.githubusercontent.com/test-images/png/main/202105/cs-black-000.png"
+            }, [])
+        ])
+
     def test_get_context(self):
         # test without category id
         obj = PartBulkCreateObject(self.request.get("/abc"))
