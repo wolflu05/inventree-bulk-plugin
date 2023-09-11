@@ -265,7 +265,7 @@ class PartBulkCreateObjectTestCase(TestCase):
 
         base_data = {
             "image": "https://raw.githubusercontent.com/test-images/png/main/202105/cs-black-000.png",
-            "attachment": [
+            "attachments": [
                 {
                     "comment": "Test attachment 1",
                     "file_url": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
