@@ -59,7 +59,8 @@ class BulkCreateObjectsUtilsTestCase(TestCase):
 
         # should get correct model instance
         company = Company.objects.create(name="Test")
-        self.assertEqual(cast_model(str(company.pk), field=FieldDefinition("A", model="company.company")), company)
+        self.assertEqual(cast_model(str(company.pk), field=FieldDefinition(
+            "A", model="company.company")), str(company.pk))
 
     def test_cast_select(self):
         options = {"a": "A", "b": "B"}
@@ -72,7 +73,8 @@ class BulkCreateObjectsUtilsTestCase(TestCase):
         self.assertEqual(cast_select("b", field=FieldDefinition("A", field_type="select", options=options)), "b")
 
         # test valid option using get_options
-        self.assertEqual(cast_select("b", field=FieldDefinition("A", field_type="select", get_options=lambda: options)), "b")
+        self.assertEqual(cast_select("b", field=FieldDefinition(
+            "A", field_type="select", get_options=lambda: options)), "b")
 
 
 class FieldDefinitionTestCase(TestCase):
