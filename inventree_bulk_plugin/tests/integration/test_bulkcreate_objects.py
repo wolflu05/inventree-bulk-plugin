@@ -1,10 +1,11 @@
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 
-from company.models import Company
-from part.models import Part, PartCategory
+from company.models import Company, ManufacturerPart, SupplierPart
+from part.models import Part, PartCategory, PartParameterTemplate, PartParameter, PartAttachment
+from stock.models import StockLocation, StockItem
 
-from ...bulkcreate_objects import get_model, get_model_instance, FieldDefinition, BulkCreateObject
+from ...bulkcreate_objects import get_model, get_model_instance, FieldDefinition, BulkCreateObject, PartBulkCreateObject
 
 
 # custom request factory, used to patch query_params which were not defined by default
@@ -224,3 +225,84 @@ class BulkCreateObjectTestCase(TestCase):
 class PartBulkCreateObjectTestCase(TestCase):
     def setUp(self):
         self.request = CustomRequestFactory()
+
+    def test_create_objects(self):
+        parameter_template = PartParameterTemplate.objects.create(name="Test", units="kg", description="Test template")
+        supplier_company = Company.objects.create(name="Supplier", is_supplier=True)
+        manufacturer_company = Company.objects.create(name="Supplier", is_supplier=False, is_manufacturer=True)
+        stock_location = StockLocation.objects.create(name="Test location")
+        category = PartCategory.objects.create(name="Test category")
+
+        base_data = {
+            "image": "https://raw.githubusercontent.com/test-images/png/main/202105/cs-black-000.png",
+            "attachment": [
+                {
+                    "comment": "Test attachment 1",
+                    "file_url": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+                    "file_name": "ABC.pdf",
+                },
+                {
+                    "comment": "Test attachment 2",
+                    "link": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+                },
+                {
+                    "comment": "Test attachment 3",
+                    "file_url": "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf",
+                },
+            ],
+            "parameters": [
+                {"template": str(parameter_template.pk), "value": "100"},
+            ],
+            "supplier": {
+                "supplier": str(supplier_company.pk),
+                "SKU": "ABC-01",
+                "_make_default": True
+            },
+            "manufacturer": {
+                "manufacturer": str(manufacturer_company.pk),
+                "MPN": "DEF-02"
+            },
+            "stock": {
+                "quantity": 1.0,
+                "location": str(stock_location.pk),
+            },
+        }
+
+        data = [
+            ({"name": "Test 1", "description": "Test 1 description", **base_data}, []),
+        ]
+
+        obj = PartBulkCreateObject(self.request.get(f"/abc?parent_id={category.pk}"))
+        obj.get_context()
+        obj.create_objects(data)
+
+        expected_objs = [
+            (Part, 1),
+            (PartParameter, 1),
+            (ManufacturerPart, 1),
+            (SupplierPart, 1),
+            (StockItem, 1),
+            (PartAttachment, 3)
+        ]
+
+        for model, count in expected_objs:
+            c = len(model.objects.all())
+            self.assertEqual(c, count, f"There should be only {count} of {model}, found {c}")
+
+    def test_get_context(self):
+        # test without category id
+        obj = PartBulkCreateObject(self.request.get("/abc"))
+        ctx = obj.get_context()
+        self.assertEqual(ctx, {})
+
+        # test with invalid category id
+        obj = PartBulkCreateObject(self.request.get("/abc?parent_id=999999"))
+        with self.assertRaisesRegex(ValueError, "category with id '999999' cannot be found"):
+            obj.get_context()
+
+        # test with category id
+        category = PartCategory.objects.create(name="Test category 123")
+        obj = PartBulkCreateObject(self.request.get(f"/abc?parent_id={category.pk}"))
+        ctx = obj.get_context()
+        self.assertTrue("category" in ctx)
+        self.assertEqual(ctx["category"]["name"], "Test category 123")
