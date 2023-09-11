@@ -8,7 +8,7 @@ from stock.views import StockLocationDetail
 from part.views import CategoryDetail
 
 from ...models import validate_template
-from ...InvenTreeBulkPlugin import InvenTreeBulkPlugin
+from ...InvenTreeBulkPlugin import InvenTreeBulkPlugin, validate_json
 from ...version import BULK_PLUGIN_VERSION
 
 
@@ -56,7 +56,19 @@ class InvenTreeBulkPluginTestCase(TestCase):
             self.assertListEqual(["title", "icon", "content", "description"], list(found.keys()))
 
         panels = bulk_plugin.get_custom_panels(StockLocationDetail(), None)
-        assert_contains_by_title("Bulk creation", panels)
+        assert_contains_by_title("Location bulk creation", panels)
 
         panels = bulk_plugin.get_custom_panels(CategoryDetail(), None)
-        assert_contains_by_title("Bulk creation", panels)
+        assert_contains_by_title("Category bulk creation", panels)
+        assert_contains_by_title("Part bulk creation", panels)
+
+    def test_validate_json(self):
+        valid_json = '{"ts": 13}'
+        not_valid_json = '{"ts""13"}'
+
+        # no error, should pass validator
+        validate_json(valid_json)
+
+        # should throw an error
+        with self.assertRaises(ValidationError):
+            validate_json(not_valid_json)

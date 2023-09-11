@@ -104,12 +104,13 @@ export function BulkDefinitionSchemaBuilder({ schema, setSchema, bulkGenerateInf
         <div id={`accordion-${accordionId}-input`} class="collapse">
           <div class="card-body">
             {input.map((inp, i) => (
-              <div class="input-group mb-2">
-                <span class="input-group-text">Key/Value</span>
+              <div class="input-group input-group-sm mb-2">
+                <span class="input-group-text">Key</span>
                 <input type="text" value={inp.key} onInput={setInputKey(i, "key")} />
-                <input type="text" value={inp.value} onInput={setInputKey(i, "value")} />
+                <span class="input-group-text">Value</span>
+                <input type="text" style="flex: 1;" value={inp.value} onInput={setInputKey(i, "value")} />
                 <button class="btn btn-outline-danger btn-sm" onClick={removeInput(i)}>
-                  X
+                  <i class="fa fa-trash"></i>
                 </button>
               </div>
             ))}
@@ -121,55 +122,59 @@ export function BulkDefinitionSchemaBuilder({ schema, setSchema, bulkGenerateInf
         </div>
       </div>
 
-      <div class="card mt-2">
-        <div class="card-header">
-          <h5
-            class="mb-0 user-select-none"
-            role="button"
-            data-bs-toggle="collapse"
-            data-bs-target={`#accordion-${accordionId}-templates`}
-          >
-            Templates
-          </h5>
-        </div>
+      {bulkGenerateInfo.generate_type === "tree" && (
+        <>
+          <div class="card mt-2">
+            <div class="card-header">
+              <h5
+                class="mb-0 user-select-none"
+                role="button"
+                data-bs-toggle="collapse"
+                data-bs-target={`#accordion-${accordionId}-templates`}
+              >
+                Templates
+              </h5>
+            </div>
 
-        <div id={`accordion-${accordionId}-templates`} class="collapse">
-          <div class="card-body">
-            {schema.templates.map((template, i) => (
-              <div class="card mb-2">
-                <div class="d-flex justify-content-between">
-                  <div class="col p-3">
-                    {template !== null && (
-                      <Input
-                        label="Template name"
-                        type="text"
-                        value={template.name}
-                        onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) =>
-                          setTemplate(i)((t) => ({ ...t, name: e.currentTarget.value }))
-                        }
-                      />
-                    )}
-                    <BulkDefinitionChildSchemaBuilder
-                      childSchema={template}
-                      setChildSchema={setTemplate(i) as unknown as StateUpdater<BulkDefinitionChild>}
-                      bulkGenerateInfo={bulkGenerateInfo}
-                      extendsKeys={extendsKeys}
-                    />
+            <div id={`accordion-${accordionId}-templates`} class="collapse">
+              <div class="card-body">
+                {schema.templates.map((template, i) => (
+                  <div class="card mb-2">
+                    <div class="d-flex justify-content-between">
+                      <div class="col p-3">
+                        {template !== null && (
+                          <Input
+                            label="Template name"
+                            type="text"
+                            value={template.name}
+                            onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) =>
+                              setTemplate(i)((t) => ({ ...t, name: e.currentTarget.value }))
+                            }
+                          />
+                        )}
+                        <BulkDefinitionChildSchemaBuilder
+                          childSchema={template}
+                          setChildSchema={setTemplate(i) as unknown as StateUpdater<BulkDefinitionChild>}
+                          bulkGenerateInfo={bulkGenerateInfo}
+                          extendsKeys={extendsKeys}
+                        />
+                      </div>
+                      <div class="p-1">
+                        <button onClick={removeTemplate(i)} class="btn btn-sm btn-outline-danger">
+                          <i class="fa fa-trash"></i>
+                        </button>
+                      </div>
+                    </div>
                   </div>
-                  <div class="p-1">
-                    <button onClick={removeTemplate(i)} class="btn btn-outline-danger">
-                      X
-                    </button>
-                  </div>
-                </div>
+                ))}
+                <button onClick={addTemplate} class="btn btn-outline-primary btn-sm">
+                  Add template
+                </button>
               </div>
-            ))}
-            <button onClick={addTemplate} class="btn btn-outline-primary btn-sm">
-              Add template
-            </button>
+            </div>
           </div>
-        </div>
-      </div>
+        </>
+      )}
 
       <div class="card mt-2">
         <div class="card-header">

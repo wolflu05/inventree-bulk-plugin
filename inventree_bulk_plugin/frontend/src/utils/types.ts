@@ -1,17 +1,47 @@
-export interface GenerateKey {
+export interface FieldDefinitionBase {
   name: string;
-  field_type: "text" | "boolean" | "number";
-  required: boolean;
   description: null | string;
+  required: boolean;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  default?: any;
 }
 
-export type GenerateKeys = Record<string, GenerateKey>;
+export interface FieldDefinitionText extends FieldDefinitionBase {
+  field_type: "text" | "boolean" | "number" | "float";
+}
+
+export interface FieldDefinitionModel extends FieldDefinitionBase {
+  field_type: "model";
+  model: { model: string; limit_choices_to: Record<string, string>; api_url: string };
+}
+
+export interface FieldDefinitionSelect extends FieldDefinitionBase {
+  field_type: "select";
+  options: Record<string, string>;
+}
+
+export interface FieldDefinitionObject extends FieldDefinitionBase {
+  field_type: "object";
+  fields: Record<string, FieldDefinition>;
+}
+
+export interface FieldDefinitionList extends FieldDefinitionBase {
+  field_type: "list";
+  items_type: FieldDefinition;
+}
+
+export type FieldDefinition =
+  | FieldDefinitionText
+  | FieldDefinitionModel
+  | FieldDefinitionSelect
+  | FieldDefinitionObject
+  | FieldDefinitionList;
 
 export interface BulkGenerateInfo {
   name: string;
   template_type: string;
-  generate_type: string;
-  fields: GenerateKeys;
+  generate_type: "single" | "tree";
+  fields: Record<string, FieldDefinition>;
 }
 
 export interface TemplateModel {
@@ -28,12 +58,14 @@ export interface BulkDefinitionSchema {
   output: BulkDefinitionChild;
 }
 
+export type FieldType = string | { [key: string]: FieldType } | FieldType[];
+
 export interface BulkDefinitionChild {
   parent_name_match?: string;
   extends?: string;
   dimensions: (string | null)[];
   count: (string | null)[];
-  generate: Record<string, string>;
+  generate: Record<string, FieldType>;
   child?: BulkDefinitionChild;
   childs?: BulkDefinitionChild[];
 }

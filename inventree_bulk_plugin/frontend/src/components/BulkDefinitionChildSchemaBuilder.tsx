@@ -1,10 +1,11 @@
 import { JSX } from "preact";
-import { useState, useCallback, useEffect, useMemo, useId, StateUpdater } from "preact/hooks";
+import { useState, useCallback, useEffect, useId, StateUpdater } from "preact/hooks";
 
+import { GenerateKeysObject } from "./GenerateKeys";
 import { Input } from "./Input";
 import { Tooltip } from "./Tooltip";
 import { defaultSchema } from "../utils/constants";
-import { BulkDefinitionChild, BulkGenerateInfo } from "../utils/types";
+import { BulkDefinitionChild, BulkGenerateInfo, FieldType } from "../utils/types";
 
 import "./BulkDefinitionChildSchemaBuilder.css";
 
@@ -43,35 +44,8 @@ export function BulkDefinitionChildSchemaBuilder({
   );
 
   // set a generated value by key and event
-  const setGenerateValue = useCallback(
-    (key: string) => (value: string) => setChildSchema((s) => ({ ...s, generate: { ...s.generate, [key]: value } })),
-    [setChildSchema],
-  );
-
-  const remainingGenerateKeys = useMemo(() => {
-    const currentKeys = Object.keys(childSchema?.generate || {});
-    return Object.entries(bulkGenerateInfo.fields).filter(([k]) => !currentKeys.includes(k));
-  }, [childSchema?.generate, bulkGenerateInfo.fields]);
-
-  const [remainingGenerateKeysValue, setRemainingGenerateKeysValue] = useState("");
-
-  const handleAddGenerateKey = useCallback(
-    (key: string) => {
-      if (key !== "") {
-        setGenerateValue(key)("");
-        setRemainingGenerateKeysValue("");
-      }
-    },
-    [setGenerateValue, setRemainingGenerateKeysValue],
-  );
-
-  const handleDeleteGenerateKey = useCallback(
-    (key: string) => () => {
-      setChildSchema((s) => ({
-        ...s,
-        generate: Object.fromEntries(Object.entries(s.generate).filter(([k]) => k !== key)),
-      }));
-    },
+  const setGenerate: StateUpdater<Record<string, FieldType>> = useCallback(
+    (value) => setChildSchema((s) => ({ ...s, generate: typeof value === "function" ? value(s.generate) : value })),
     [setChildSchema],
   );
 
@@ -164,32 +138,36 @@ export function BulkDefinitionChildSchemaBuilder({
         onInput={setDimension("count")}
       />
 
-      <h6
-        class={`user-select-none collapsable-heading ${outputAdvancedState ? "active" : ""}`}
-        role="button"
-        onClick={onOutputAdvanceToggle}
-      >
-        Advanced
-      </h6>
-      <div class="collapse" id={outputAdvancedId}>
-        <Input
-          label="Parent name match"
-          tooltip="First child that matches the parent name matcher will be chosen for generating the childs for a specific parent. Must evaluate to something that can be casted to a boolean."
-          type="text"
-          value={childSchema.parent_name_match || ""}
-          onInput={setValue("parent_name_match")}
-        />
-        {extendsKeys && (
-          <Input
-            label="Extends"
-            tooltip="Choose to extend from a template"
-            type="select"
-            options={extendsKeys}
-            value={childSchema.extends || ""}
-            onInput={setValue("extends")}
-          />
-        )}
-      </div>
+      {bulkGenerateInfo.generate_type === "tree" && (
+        <>
+          <h6
+            class={`user-select-none collapsable-heading ${outputAdvancedState ? "active" : ""}`}
+            role="button"
+            onClick={onOutputAdvanceToggle}
+          >
+            Advanced
+          </h6>
+          <div class="collapse" id={outputAdvancedId}>
+            <Input
+              label="Parent name match"
+              tooltip="First child that matches the parent name matcher will be chosen for generating the childs for a specific parent. Must evaluate to something that can be casted to a boolean."
+              type="text"
+              value={childSchema.parent_name_match || ""}
+              onInput={setValue("parent_name_match")}
+            />
+            {extendsKeys && (
+              <Input
+                label="Extends"
+                tooltip="Choose to extend from a template"
+                type="select"
+                options={extendsKeys}
+                value={childSchema.extends || ""}
+                onInput={setValue("extends")}
+              />
+            )}
+          </div>
+        </>
+      )}
 
       <div class="mt-3">
         <Tooltip
@@ -198,60 +176,48 @@ export function BulkDefinitionChildSchemaBuilder({
           <h5>Generate</h5>
         </Tooltip>
       </div>
-      {Object.entries(bulkGenerateInfo.fields)
-        .filter(([key]) => childSchema.generate[key] !== undefined)
-        .map(([key, { name, required, description }]) => (
-          <Input
-            label={name}
-            tooltip={description || undefined}
-            type="text"
-            value={childSchema.generate[key]}
-            onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) => setGenerateValue(key)(e.currentTarget.value)}
-            onDelete={required ? undefined : handleDeleteGenerateKey(key)}
-          />
-        ))}
-      {remainingGenerateKeys.length > 0 && (
-        <div style="display: flex; max-width: 200px;">
-          <select
-            class="form-select form-select-sm"
-            value={remainingGenerateKeysValue}
-            onInput={(e) => handleAddGenerateKey(e.currentTarget.value)}
-          >
-            <option selected value="">
-              Add key
-            </option>
-            {remainingGenerateKeys.map(([key, { name }]) => (
-              <option value={key}>{name}</option>
-            ))}
-          </select>
-        </div>
-      )}
+      <GenerateKeysObject
+        fieldsDefinition={{
+          name: "",
+          description: null,
+          required: true,
+          field_type: "object",
+          fields: bulkGenerateInfo.fields,
+        }}
+        fields={childSchema.generate}
+        setFields={setGenerate}
+        showCard={false}
+      />
 
-      <h5 class="mt-3">Childs</h5>
-      <div class="ms-3">
-        {childSchema.childs?.map((child, i) => (
-          <div class="card mb-2">
-            <div class="d-flex justify-content-between">
-              <div class="col p-3">
-                <BulkDefinitionChildSchemaBuilder
-                  childSchema={child}
-                  setChildSchema={setChildChildSchema(i)}
-                  bulkGenerateInfo={bulkGenerateInfo}
-                  extendsKeys={extendsKeys}
-                />
+      {bulkGenerateInfo.generate_type === "tree" && (
+        <>
+          <h5 class="mt-3">Childs</h5>
+          <div class="ms-3">
+            {childSchema.childs?.map((child, i) => (
+              <div class="card mb-2">
+                <div class="d-flex justify-content-between">
+                  <div class="col p-3">
+                    <BulkDefinitionChildSchemaBuilder
+                      childSchema={child}
+                      setChildSchema={setChildChildSchema(i)}
+                      bulkGenerateInfo={bulkGenerateInfo}
+                      extendsKeys={extendsKeys}
+                    />
+                  </div>
+                  <div class="p-1">
+                    <button onClick={removeChild(i)} class="btn btn-sm btn-outline-danger">
+                      <i class="fa fa-trash"></i>
+                    </button>
+                  </div>
+                </div>
               </div>
-              <div class="p-1">
-                <button onClick={removeChild(i)} class="btn btn-outline-danger">
-                  X
-                </button>
-              </div>
-            </div>
+            ))}
           </div>
-        ))}
-      </div>
-      <button onClick={addChild} class="btn btn-outline-primary btn-sm">
-        Add child
-      </button>
+          <button onClick={addChild} class="btn btn-outline-primary btn-sm">
+            Add child
+          </button>
+        </>
+      )}
     </div>
   );
 }

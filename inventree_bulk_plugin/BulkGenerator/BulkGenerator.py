@@ -1,13 +1,13 @@
 from dataclasses import dataclass
 import itertools
-from typing import Any, Callable, Iterable, Literal, Optional
+from typing import Any, Callable, Iterable, Literal, Optional, Union
 
 from jinja2.exceptions import TemplateError
 
 from ..version import BULK_PLUGIN_VERSION
 from .validations import BulkDefinitionChild, BulkDefinitionChildCount, BulkDefinitionChildDimensions, BulkDefinitionChildTemplate, BulkDefinitionSchema
 from .dimensions import get_dimension_values
-from .utils import version_tuple, str2bool, str2int
+from .utils import version_tuple
 from .template import Template
 
 
@@ -57,37 +57,24 @@ class DimStr(str):
 
 
 @dataclass
-class FieldDefinition:
+class BaseFieldDefinition:
     name: str
-    field_type: Literal["text", "boolean", "number"] = "text"
+    field_type: Literal["text", "list", "object"] = "text"
     cast_func: Callable[[str], Any] = None
-    description: Optional[str] = None
     required: bool = False
-
-    type_casts = {
-        "text": str,
-        "boolean": str2bool,
-        "number": str2int,
-    }
-
-    default_descriptions = {
-        "boolean": "This must evaluate to something that can be casted to a boolean (e.g. 'true' or 'false').",
-        "number": "This must evaluate to something that can be casted as number.",
-    }
-
-    def __post_init__(self):
-        if self.cast_func is None and (cast_func := self.type_casts.get(self.field_type, None)):
-            self.cast_func = cast_func
-
-        if not self.description and self.field_type in self.default_descriptions:
-            self.description = self.default_descriptions.get(self.field_type, None)
+    items_type: Optional["BaseFieldDefinition"] = None
+    fields: Optional[dict[str, "BaseFieldDefinition"]] = None
 
 
-ParseChildReturnType = list[tuple[dict[str, str], list["ParseChildReturnType"]]]
+FieldType = Union[BaseFieldDefinition, dict[str, BaseFieldDefinition], list[BaseFieldDefinition]]
+
+
+ParseChildReturnElement = tuple[dict[str, str], list["ParseChildReturnType"]]
+ParseChildReturnType = list[ParseChildReturnElement]
 
 
 class BulkGenerator:
-    def __init__(self, inp, fields: dict[str, FieldDefinition] = None):
+    def __init__(self, inp, fields: dict[str, BaseFieldDefinition]):
         self.inp = inp
         self.schema: BulkDefinitionSchema = None
         self.fields = fields
@@ -123,7 +110,7 @@ class BulkGenerator:
             child = apply_template(child, template)
 
         # generate
-        render = self.compile_child_templates(child)
+        render = self.compile_generate_fields(self.fields, child.generate)
         product = []
         dimensions = []
         if len(child.dimensions) > 0:
@@ -189,42 +176,69 @@ class BulkGenerator:
 
         return seq
 
-    def compile_child_templates(self, child: BulkDefinitionChild):
-        # check required fields
-        if self.fields:
-            for k, v in self.fields.items():
-                if getattr(v, "required", False) and k not in child.generate:
-                    raise ValueError(f"'{k}' is missing in generated keys")
+    def compile_generate_fields(self, fields: FieldType, generate: dict):
+        missing_fields = []
 
-        def get_wrapper(key):
-            cast_func, field_required = None, None
+        def compile_templates(field: FieldType, generate, path: list[str] = []):
+            path_str = ".".join(map(str, path))
 
-            if self.fields and (field := self.fields.get(key, None)):
-                cast_func = field.cast_func
-                field_required = field.required
+            if field.field_type == "object" and field.fields:
+                if not isinstance(generate, dict):
+                    if field.required:
+                        missing_fields.append(path_str)
+                    return None
+                return {k: v for k, f in field.fields.items() if (v := compile_templates(f, generate.get(k, None), [*path, k])) is not None}
+            elif field.field_type == "list" and field.items_type:
+                if not isinstance(generate, list):
+                    if field.required:
+                        missing_fields.append(path_str)
+                    return None
+                return [v for i, f in enumerate(generate) if (v := compile_templates(field.items_type, f, [*path, i])) is not None]
+            else:
+                # check required fields
+                if generate is None:
+                    if field.required:
+                        missing_fields.append(path_str)
+                    return None
 
-            def wrapper(v):
-                if field_required and v == "":
-                    raise ValueError(f"'{key}' is a required field, but template returned empty string")
-                if cast_func:
-                    return cast_func(v)
-                return v
-            return wrapper
+                # compile template
+                try:
+                    compiled_template = Template(generate).compile()
+                except TemplateError as e:  # pragma: no cover
+                    # catch this error in any case it bypasses validation somehow because an error is not handled during ast creation but occurred on compile
+                    raise ValueError(f"Invalid generator template '{generate}' at: '{path_str}'\nException: {e}")
 
-        compiled_templates = {}
-        for key, template_str in child.generate.items():
-            if self.fields and key not in self.fields:
-                raise ValueError(f"'{key}' is not allowed to be generated")
+                # prepare render function
+                def render(**ctx):
+                    v = compiled_template.render(**ctx)
+                    if field.required and v == "":
+                        raise ValueError(
+                            f"'{path_str}' is a required field, but template '{generate}' returned empty string")
+                    if field.cast_func:
+                        try:
+                            return field.cast_func(v, field=field)
+                        except ValueError as e:
+                            raise ValueError(f"{path_str}: {e}")
+                    return v
 
-            try:
-                compiled_templates[key] = Template(template_str).compile(), get_wrapper(key)
-            except TemplateError as e:  # pragma: no cover
-                # catch this error in any case it bypasses validation somehow because an error is not handled during ast creation but occurred on compile
-                raise ValueError(f"Invalid generator template '{template_str}'\nException: {e}")
+                return render
+
+        compiled_templates = compile_templates(BaseFieldDefinition(
+            "", field_type="object", fields=fields), generate)
+
+        if len(missing_fields) > 0:
+            raise ValueError(f"'{','.join(missing_fields)}' are missing in generated keys.")
+
+        def recursive_map(func: Callable[[Any, list[str]], Any], d: Any, path: list[str] = []):
+            if isinstance(d, dict):
+                return {k: recursive_map(func, v, [*path, str(k)]) for k, v in d.items()}
+            if isinstance(d, list):
+                return [recursive_map(func, v, [*path, i]) for i, v in enumerate(d)]
+            return func(d, path)
 
         def render(**ctx):
             try:
-                return {key: wrapper(template.render(**ctx)) for key, (template, wrapper) in compiled_templates.items()}
+                return recursive_map(lambda x, path: x(**ctx) if x else None, compiled_templates)
             except TemplateError as e:
                 raise ValueError(f"Exception: {e}")
 

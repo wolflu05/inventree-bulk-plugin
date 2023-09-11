@@ -6,7 +6,7 @@ import { PreviewTable } from "./PreviewTable";
 import { useNotifications } from "../contexts/Notification";
 import { beautifySchema } from "../utils";
 import { URLS, fetchAPI } from "../utils/api";
-import { TemplateModel } from "../utils/types";
+import { BulkGenerateInfo, TemplateModel } from "../utils/types";
 
 interface PreviewCreateProps {
   template: TemplateModel;
@@ -42,9 +42,24 @@ export const PreviewCreate = ({
 }: PreviewCreateProps) => {
   const [previewTemplate, setPreviewTemplate] = useState<TemplateModel>();
   const [inputs, setInputs] = useState<InputType[]>([]);
-  const [initial, setIntial] = useState(true);
+  const [initial, setInitial] = useState(true);
+  const [bulkGenerateInfo, setBulkGenerateInfo] = useState<BulkGenerateInfo>();
 
   const { showNotification } = useNotifications();
+
+  useEffect(() => {
+    if (!template?.template_type || !parentId) return;
+
+    (async () => {
+      const res = await fetchAPI(URLS.bulkcreate({ parentId, templateType: template.template_type }));
+      if (!res.ok) {
+        return showNotification({ type: "danger", message: `Failed to load bulk generate info,\n${res.statusText}` });
+      }
+
+      const data = await res.json();
+      setBulkGenerateInfo(data);
+    })();
+  }, [parentId, showNotification, template?.template_type]);
 
   useEffect(() => {
     setInputs(Object.entries(template.template.input).map(([k, v]) => ({ key: k, value: v })));
@@ -75,17 +90,20 @@ export const PreviewCreate = ({
 
     if (!res.ok) {
       handleDoneCreate?.(false);
-      return showNotification({ type: "danger", message: `An error occourd, ${json.error}` });
+      return showNotification({ type: "danger", message: `An error occurred, ${json.error}` });
     }
 
-    showNotification({ type: "success", message: `Successfully bulk created ${json.length} ${final.template_type}s.` });
+    showNotification({
+      type: "success",
+      message: `Successfully bulk created ${json.length} ${bulkGenerateInfo?.name}s.`,
+    });
     handleDoneCreate?.(true);
-  }, [handleDoneCreate, inputs, parentId, setIsBulkCreateLoading, showNotification, template]);
+  }, [bulkGenerateInfo?.name, handleDoneCreate, inputs, parentId, setIsBulkCreateLoading, showNotification, template]);
 
   const previewHandler = useCallback(() => {
     const final = structuredClone(getTemplateWithInputs(template, inputs));
     setPreviewTemplate(final);
-    setIntial(false);
+    setInitial(false);
   }, [inputs, template]);
 
   const createHandler = useCallback(() => {
@@ -104,11 +122,16 @@ export const PreviewCreate = ({
         ))}
       </div>
 
-      {previewTemplate && (
+      {previewTemplate && bulkGenerateInfo && (
         <>
           <h5>Preview</h5>
           <div class={initial ? "mb-4" : ""}>
-            <PreviewTable template={previewTemplate} height={250} parentId={parentId} />
+            <PreviewTable
+              template={previewTemplate}
+              height={350}
+              parentId={parentId}
+              bulkGenerateInfo={bulkGenerateInfo}
+            />
           </div>
         </>
       )}

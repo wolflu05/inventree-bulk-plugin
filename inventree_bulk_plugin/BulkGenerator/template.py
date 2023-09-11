@@ -12,4 +12,4 @@ class Template:
         return True
 
     def compile(self):
-        return env.from_string(self.template_str)
+        return env.from_string(str(self.template_str))

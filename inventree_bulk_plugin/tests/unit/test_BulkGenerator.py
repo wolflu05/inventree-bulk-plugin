@@ -1,6 +1,6 @@
 import unittest
 
-from ...BulkGenerator.BulkGenerator import BulkGenerator, FieldDefinition, apply_template
+from ...BulkGenerator.BulkGenerator import BulkGenerator, BaseFieldDefinition, apply_template
 from ...BulkGenerator.validations import BulkDefinitionChild, BulkDefinitionChildTemplate
 
 
@@ -26,7 +26,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                         },
                         "childs": []
                     }
-                }).generate()
+                }, fields={"name": BaseFieldDefinition("Name")}).generate()
 
                 for e, (r, child) in zip(exp, res):
                     self.assertDictEqual({"name": f"before{e}after"}, r)
@@ -60,7 +60,11 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 },
                 "childs": []
             }
-        }).generate()
+        }, fields={
+            "name": BaseFieldDefinition("Name"),
+            "description": BaseFieldDefinition("Description"),
+            "abc": BaseFieldDefinition("ABC")}
+        ).generate()
 
         self.assertEqual(len(res), 10, "should generate 10 elements")
 
@@ -112,7 +116,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 "output": {
                     "extends": "Drawer",
                 }
-            }).generate()
+            }, fields={}).generate()
 
     def test_without_dimensions(self):
         res = BulkGenerator({
@@ -127,7 +131,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 },
                 "childs": []
             }
-        }).generate()
+        }, fields={"name": BaseFieldDefinition("Name")}).generate()
 
         self.assertEqual(1, len(res))
         self.assertDictEqual({"name": "test"}, res[0][0])
@@ -146,7 +150,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 },
                 "childs": []
             }
-        }).generate()
+        }, fields={"name": BaseFieldDefinition("Name")}).generate()
 
         self.assertEqual(2, len(res))
         self.assertDictEqual({"name": "Hello 1"}, res[0][0])
@@ -168,7 +172,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                     },
                     "childs": []
                 }
-            }).generate()
+            }, fields={"name": BaseFieldDefinition("Name")}).generate()
 
     def test_invalid_template_on_dimensions_render(self):
         cases = [
@@ -191,7 +195,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                             },
                             "childs": []
                         }
-                    }).generate()
+                    }, fields={"name": BaseFieldDefinition("Name")}).generate()
 
     def test_merge_base_child_to_childs(self):
         res = BulkGenerator({
@@ -207,7 +211,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                     {"generate": {"description": "ghi"}}
                 ]
             }
-        }).generate()
+        }, fields={"name": BaseFieldDefinition("Name"), "description": BaseFieldDefinition("Description")}).generate()
 
         self.assertEqual(1, len(res))
         self.assertDictEqual({"name": "abc"}, res[0][0])
@@ -227,7 +231,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 "child": {"generate": {"name": "def", "description": "jkl"}},
                 "childs": []
             }
-        }).generate()
+        }, fields={"name": BaseFieldDefinition("Name"), "description": BaseFieldDefinition("Description")}).generate()
 
         self.assertEqual(1, len(res))
         self.assertDictEqual({"name": "abc"}, res[0][0])
@@ -255,7 +259,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                     }
                 ]
             }
-        }).generate()
+        }, fields={"name": BaseFieldDefinition("Name"), "a": BaseFieldDefinition("A")}).generate()
 
         self.assertEqual(9, len(res))
         for i, (e, childs) in enumerate(res):
@@ -278,7 +282,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                         },
                     ]
                 }
-            }).generate()
+            }, fields={"name": BaseFieldDefinition("Name")}).generate()
 
     def test_error_in_parent_name_match(self):
         with self.assertRaisesRegex(ValueError, "Invalid generator template '{{something.not.existing}}'"):
@@ -297,7 +301,7 @@ class BulkGeneratorTestCase(unittest.TestCase):
                         },
                     ]
                 }
-            }).generate()
+            }, fields={"name": BaseFieldDefinition("Name"), "a": BaseFieldDefinition("A")}).generate()
 
     def test_parent_context(self):
         res = BulkGenerator({
@@ -314,6 +318,10 @@ class BulkGeneratorTestCase(unittest.TestCase):
                     }
                 }
             }
+        }, fields={
+            "name": BaseFieldDefinition("Name"),
+            "parent_name": BaseFieldDefinition("parent_name"),
+            "parent_parent_dim_1": BaseFieldDefinition("parent_parent_dim_1"),
         }).generate()
 
         self.assertListEqual([({'name': 'First A'}, [({'name': 'Second '}, [({'parent_name': 'Second ', 'parent_parent_dim_1': 'A'}, [])])]), ({
@@ -329,6 +337,10 @@ class BulkGeneratorTestCase(unittest.TestCase):
                 "count": [10, 2],
                 "generate": {"length": "{{len}}", "dim1len": "{{dim.1.len}}", "dim2len": "{{dim.2.len}}"},
             }
+        }, fields={
+            "length": BaseFieldDefinition("Length"),
+            "dim1len": BaseFieldDefinition("dim1len"),
+            "dim2len": BaseFieldDefinition("dim2len"),
         }).generate()
 
         self.assertEqual(20, len(res))
@@ -338,13 +350,13 @@ class BulkGeneratorTestCase(unittest.TestCase):
             self.assertEqual("2", e['dim2len'])
 
     def test_not_allowed_field(self):
-        with self.assertRaisesRegex(ValueError, "'NOT_ALLOWED_KEY' is not allowed to be generated"):
-            BulkGenerator({
-                "version": "1.0.0",
-                "input": {},
-                "templates": [],
-                "output": {"generate": {"NOT_ALLOWED_KEY": "1"}, }
-            }, {"BBBB": FieldDefinition("BBBB")}).generate()
+        gen = BulkGenerator({
+            "version": "1.0.0",
+            "input": {},
+            "templates": [],
+            "output": {"generate": {"NOT_ALLOWED_KEY": "1"}, }
+        }, {"BBBB": BaseFieldDefinition("BBBB")}).generate()
+        self.assertEqual(gen, [({}, [])])
 
     def test_cast_field(self):
         res = BulkGenerator({
@@ -352,31 +364,76 @@ class BulkGeneratorTestCase(unittest.TestCase):
             "input": {},
             "templates": [],
             "output": {"generate": {"number_field": "42"}, }
-        }, {"number_field": FieldDefinition("number_field", cast_func=int)}).generate()
-
+        }, {"number_field": BaseFieldDefinition("number_field", cast_func=lambda x, **kwargs: int(x))}).generate()
         self.assertEqual(res[0][0]["number_field"], 42)
 
+        def complex_cast_func(x, **kwargs):
+            if x == "3":
+                return x
+            raise ValueError(f"Value for field {kwargs['field'].name} is not '3'")
+
+        res = BulkGenerator({
+            "version": "1.0.0",
+            "input": {},
+            "templates": [],
+            "output": {"generate": {"number_field": "3"}, }
+        }, {"number_field": BaseFieldDefinition("number_field", cast_func=complex_cast_func)}).generate()
+        self.assertEqual(res[0][0]["number_field"], "3")
+
+        with self.assertRaisesRegex(ValueError, "number_field: Value for field number_field is not '3'"):
+            res = BulkGenerator({
+                "version": "1.0.0",
+                "input": {},
+                "templates": [],
+                "output": {"generate": {"number_field": "42"}, }
+            }, {"number_field": BaseFieldDefinition("number_field", cast_func=complex_cast_func)}).generate()
+
     def test_required_field(self):
-        with self.assertRaisesRegex(ValueError, "'required_field' is a required field, but template returned empty string"):
+        with self.assertRaisesRegex(ValueError, "'required_field' is a required field, but template '' returned empty string"):
             BulkGenerator({
                 "version": "1.0.0",
                 "input": {},
                 "templates": [],
                 "output": {"generate": {"required_field": ""}, }
-            }, {"required_field": FieldDefinition("required_field", required=True)}).generate()
+            }, {"required_field": BaseFieldDefinition("required_field", required=True)}).generate()
 
-        with self.assertRaisesRegex(ValueError, "'name' is missing in generated keys"):
+        with self.assertRaisesRegex(ValueError, "'name' are missing in generated keys"):
             BulkGenerator({
                 "version": "1.0.0",
                 "input": {},
                 "templates": [],
                 "output": {"generate": {"description": ""}, }
-            }, {"name": FieldDefinition("name", required=True)}).generate()
+            }, {"name": BaseFieldDefinition("name", required=True)}).generate()
 
-        with self.assertRaisesRegex(ValueError, "'name' is a required field, but template returned empty string"):
+        with self.assertRaisesRegex(ValueError, "'required_dict' are missing in generated keys"):
+            BulkGenerator({
+                "version": "1.0.0",
+                "input": {},
+                "templates": [],
+                "output": {"generate": {}, }
+            }, {"required_dict": BaseFieldDefinition("required_dict", required=True, field_type="object", fields={"a": BaseFieldDefinition("A")})}).generate()
+
+        with self.assertRaisesRegex(ValueError, "'required_list' are missing in generated keys"):
+            BulkGenerator({
+                "version": "1.0.0",
+                "input": {},
+                "templates": [],
+                "output": {"generate": {}, }
+            }, {"required_list": BaseFieldDefinition("required_list", required=True, field_type="list", items_type=BaseFieldDefinition("A"))}).generate()
+
+        with self.assertRaisesRegex(ValueError, "'name' is a required field, but template '' returned empty string"):
             BulkGenerator({
                 "version": "1.0.0",
                 "input": {},
                 "templates": [],
                 "output": {"generate": {"name": "", "description": "AA"}, }
-            }, {"name": FieldDefinition("name", required=True), "description": FieldDefinition("description")}).generate()
+            }, {"name": BaseFieldDefinition("name", required=True), "description": BaseFieldDefinition("description")}).generate()
+
+    def test_recursive_output(self):
+        res = BulkGenerator({
+            "version": "1.0.0",
+            "input": {},
+            "templates": [],
+            "output": {"generate": {"required_list": ["1", "2", "3"]}, }
+        }, {"required_list": BaseFieldDefinition("required_list", required=True, field_type="list", items_type=BaseFieldDefinition("A"))}).generate()
+        self.assertEqual(res, [({'required_list': ['1', '2', '3']}, [])])

@@ -4,6 +4,7 @@ from django.urls import reverse
 
 from InvenTree.unit_test import InvenTreeAPITestCase
 from stock.models import StockLocation
+from part.models import PartCategory, PartParameterTemplate, PartCategoryParameterTemplate
 
 from ...models import BulkCreationTemplate
 
@@ -72,10 +73,44 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
             self.assertTrue("name" in generate_info)
             self.assertTrue("template_type" in generate_info)
             self.assertTrue("generate_type" in generate_info)
-            self.assertTrue("fields" in generate_info)
 
         self.assertTrue("STOCK_LOCATION" in template_types)
         self.assertTrue("PART_CATEGORY" in template_types)
+        self.assertTrue("PART" in template_types)
+
+    def test_url_bulkcreate_info_detail(self):
+        url = reverse("plugin:inventree-bulk-plugin:api-bulk-create")
+
+        self.get(url + "?template_type=NOT_EXISTING_TEMPLATE_TYPE", expected_code=400)
+
+        # normal detail
+        response = self.get(url + "?template_type=PART", expected_code=200).json()
+        self.assertTrue("name" in response)
+        self.assertTrue("template_type" in response)
+        self.assertEqual(response["template_type"], "PART")
+        self.assertTrue("generate_type" in response)
+        self.assertTrue("fields" in response)
+
+        # detail with parent id set but without defined part category parameter templates
+        category = PartCategory.objects.create(name="Test category")
+
+        response = self.get(url + f"?template_type=PART&parent_id={category.pk}", expected_code=200).json()
+        self.assertEqual(response["fields"]["parameters"]["default"], [
+            {"template": "", "value": ""},
+        ])
+
+        # detail with parent id set and with defined part category parameter templates
+        part_parameter_template1 = PartParameterTemplate.objects.create(name="Length", units="m")
+        part_parameter_template2 = PartParameterTemplate.objects.create(name="Weight per meter", units="kg/m")
+        PartCategoryParameterTemplate.objects.create(category=category, parameter_template=part_parameter_template1)
+        PartCategoryParameterTemplate.objects.create(
+            category=category, parameter_template=part_parameter_template2, default_value="10")
+
+        response = self.get(url + f"?template_type=PART&parent_id={category.pk}", expected_code=200).json()
+        self.assertEqual(response["fields"]["parameters"]["default"], [
+            {"template": str(part_parameter_template1.pk), "value": ""},
+            {"template": str(part_parameter_template2.pk), "value": "10"},
+        ])
 
     def test_url_bulkcreate_preview(self):
         url = reverse("plugin:inventree-bulk-plugin:api-bulk-create")
@@ -172,7 +207,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
                 },
             },
         }
-        response = self.post(url + "?parent_id=99999", data, expected_code=404)
+        response = self.post(url + "?parent_id=99999", data, expected_code=400)
 
         # If template_type is provided and parent_id, everything should work and parent context should be used
         parent = StockLocation.objects.create(name="Parent 13", description="Parent description", parent=None)
@@ -258,7 +293,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
             }
         }
         response = self.post(url + f"?parent_id={parent.pk}&create=true", schema, expected_code=400)
-        self.assertEqual({"error": "'name' is missing in generated keys"}, response.json())
+        self.assertEqual({"error": "'name' are missing in generated keys."}, response.json())
 
     def _template_url(self, pk=None):
         if pk:
