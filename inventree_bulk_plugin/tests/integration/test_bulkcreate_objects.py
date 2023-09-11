@@ -4,6 +4,7 @@ from django.urls import reverse
 from company.models import Company, ManufacturerPart, SupplierPart
 from part.models import Part, PartCategory, PartParameterTemplate, PartParameter, PartAttachment
 from stock.models import StockLocation, StockItem
+from common.models import InvenTreeSetting
 
 from ...bulkcreate_objects import get_model, get_model_instance, FieldDefinition, BulkCreateObject, PartBulkCreateObject
 
@@ -227,6 +228,8 @@ class PartBulkCreateObjectTestCase(TestCase):
         self.request = CustomRequestFactory()
 
     def test_create_objects(self):
+        InvenTreeSetting.set_setting("INVENTREE_DOWNLOAD_FROM_URL", True, None)
+
         parameter_template = PartParameterTemplate.objects.create(name="Test", units="kg", description="Test template")
         supplier_company = Company.objects.create(name="Supplier", is_supplier=True)
         manufacturer_company = Company.objects.create(name="Supplier", is_supplier=False, is_manufacturer=True)
