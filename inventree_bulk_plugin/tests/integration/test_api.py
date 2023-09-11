@@ -108,8 +108,8 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
 
         response = self.get(url + f"?template_type=PART&parent_id={category.pk}", expected_code=200).json()
         self.assertEqual(response["fields"]["parameters"]["default"], [
-            {"template": str(part_parameter_template1), "value": ""},
-            {"template": str(part_parameter_template2), "value": "10"},
+            {"template": str(part_parameter_template1.pk), "value": ""},
+            {"template": str(part_parameter_template2.pk), "value": "10"},
         ])
 
     def test_url_bulkcreate_preview(self):

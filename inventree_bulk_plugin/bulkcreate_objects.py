@@ -404,9 +404,10 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             # maybe use already saved image with same url
             if image in self.part_images and isinstance(self.part_images[image], str):
                 image = self.part_images[image]
-            elif not (Path(settings.MEDIA_ROOT.joinpath(image))).is_file():
-                # try to use local image which is not available
-                raise ValueError(f"Image '{image}' for part '{data[0]['name']}' does not exist")
+            elif not re.match(r"^(?:[a-z+]+:)?//", image):
+                # try use local image
+                if not (Path(settings.MEDIA_ROOT.joinpath(image))).is_file():
+                    raise ValueError(f"Image '{image}' for part '{data[0]['name']}' does not exist")
             data[0]["image"] = image
 
         # create part
