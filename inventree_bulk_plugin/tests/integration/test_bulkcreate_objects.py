@@ -1,5 +1,6 @@
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
+from django.contrib.auth.models import User
 
 from company.models import Company, ManufacturerPart, SupplierPart
 from part.models import Part, PartCategory, PartParameterTemplate, PartParameter, PartAttachment
@@ -226,6 +227,7 @@ class BulkCreateObjectTestCase(TestCase):
 class PartBulkCreateObjectTestCase(TestCase):
     def setUp(self):
         self.request = CustomRequestFactory()
+        self.user = User.objects.create_user(username="test", password="test")
 
     def test_create_objects(self):
         InvenTreeSetting.set_setting("INVENTREE_DOWNLOAD_FROM_URL", True, None)
@@ -275,7 +277,9 @@ class PartBulkCreateObjectTestCase(TestCase):
             ({"name": "Test 1", "description": "Test 1 description", **base_data}, []),
         ]
 
-        obj = PartBulkCreateObject(self.request.get(f"/abc?parent_id={category.pk}"))
+        req = self.request.get(f"/abc?parent_id={category.pk}")
+        req.user = self.user
+        obj = PartBulkCreateObject(req)
         obj.get_context()
         obj.create_objects(data)
 
