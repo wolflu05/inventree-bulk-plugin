@@ -7,7 +7,7 @@ from part.models import Part, PartCategory, PartParameterTemplate, PartParameter
 from stock.models import StockLocation, StockItem
 from common.models import InvenTreeSetting
 
-from ...bulkcreate_objects import get_model, get_model_instance, FieldDefinition, BulkCreateObject, PartBulkCreateObject
+from ...bulkcreate_objects import get_model, get_model_instance, cast_model, cast_select, FieldDefinition, BulkCreateObject, PartBulkCreateObject
 
 
 # custom request factory, used to patch query_params which were not defined by default
@@ -48,6 +48,31 @@ class BulkCreateObjectsUtilsTestCase(TestCase):
         # test limit_choices without result
         with self.assertRaisesRegex(ValueError, "Model 'company.company' where {'pk': " + str(customer_company.pk) + ", 'is_supplier': True} not found at XXX"):
             get_model_instance(Company, customer_company.pk, {"is_supplier": True}, "at XXX")
+
+    def test_cast_model(self):
+        # shouldn't change anything if field is no model field or uses custom processor
+        self.assertEqual(cast_model("10", FieldDefinition("A")), "10")
+        self.assertEqual(cast_model("10", FieldDefinition("A", model=("abc", {}, None))), "10")
+
+        with self.assertRaises(ValueError):
+            cast_model("999999", FieldDefinition("A", model="company.company"))
+
+        # should get correct model instance
+        company = Company.objects.create(name="Test")
+        self.assertEqual(cast_model(str(company.pk), FieldDefinition("A", model="company.company")), company)
+
+    def test_cast_select(self):
+        options = {"a": "A", "b": "B"}
+
+        # test not valid option
+        with self.assertRaisesRegex(ValueError, "'c' is not a valid option, choose one of: a, b."):
+            cast_select("c", FieldDefinition("A", field_type="select", options=options))
+
+        # test valid option
+        self.assertEqual(cast_select("b", FieldDefinition("A", field_type="select", options=options)), "b")
+
+        # test valid option using get_options
+        self.assertEqual(cast_select("b", FieldDefinition("A", field_type="select", get_options=lambda: options)), "b")
 
 
 class FieldDefinitionTestCase(TestCase):
