@@ -63,6 +63,7 @@ export type FieldType = string | { [key: string]: FieldType } | FieldType[];
 export interface BulkDefinitionChild {
   parent_name_match?: string;
   extends?: string;
+  global_context?: string;
   dimensions: (string | null)[];
   count: (string | null)[];
   generate: Record<string, FieldType>;

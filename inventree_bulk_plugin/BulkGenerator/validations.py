@@ -14,6 +14,7 @@ BulkDefinitionChildCount = Optional[List[Union[int, None]]]
 class BulkDefinitionChild(BaseModel):
     parent_name_match: Optional[str] = "true"
     extends: Optional[str] = None
+    global_context: Optional[str] = ""
     dimensions: BulkDefinitionChildDimensions = []
     generate: Optional[dict] = {}
     count: BulkDefinitionChildCount = []
@@ -49,7 +50,7 @@ class BulkDefinitionSchema(BaseModel):
                 for i, v in enumerate(value):
                     value[i] = _apply_input(v, f"{path}.{i}")
             elif isinstance(value, str):
-                use_extra_contexts = [r".*\.generate\..*$", r".*\.parent_name_match"]
+                use_extra_contexts = [r".*\.generate\..*$", r".*\.parent_name_match", r".*\.global_context"]
 
                 try:
                     # if path ends with one in use_extra_contexts, only validate the template,
