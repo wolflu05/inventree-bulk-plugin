@@ -265,6 +265,9 @@ class BulkCreateObjectTestMixin:
         self.request = CustomRequestFactory()
 
     def model_test(self, model: Model, fields: dict[str, FieldDefinition], path: str, *, ignore_fields: list[str] = [], ignore_model_required_fields: list[str] = []):
+        if issubclass(model, MPTTModel):
+            ignore_model_required_fields.extend(["lft", "level", "tree_id", "rght"])
+
         issues = []
         required_fields = {model_field.name: not (
             model_field.blank or model_field.null) and not model_field.has_default() for model_field in model._meta.fields}
@@ -329,13 +332,9 @@ class BulkCreateObjectTestMixin:
 
         obj = self.bulk_create_object(self.request.get("/abc"))
         ignore_fields = [*self.ignore_fields, *(f[0] for f in self.model_object_fields)]
-        ignore_model_required_fields = [*self.ignore_model_required_fields]
-
-        if issubclass(obj.model, MPTTModel):
-            ignore_model_required_fields.extend(["lft", "level", "tree_id", "rght"])
 
         issues.extend(self.model_test(obj.model, obj.fields,
-                      f"{obj.template_type}", ignore_fields=ignore_fields, ignore_model_required_fields=ignore_model_required_fields))
+                      f"{obj.template_type}", ignore_fields=ignore_fields, ignore_model_required_fields=self.ignore_model_required_fields))
 
         for key, model, ignore_fields, ignore_model_required_fields in self.model_object_fields:
             issues.extend(self.model_test(model, obj.fields[key].fields,
@@ -378,7 +377,7 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
             obj.fields["parameters"].items_type.fields,
             f"{obj.name}.parameters.[x]",
             ignore_fields=["value"],
-            ignore_model_required_fields=["data"],
+            ignore_model_required_fields=["data", "part"],
         ))
 
         issues.extend(self.model_test(
@@ -386,6 +385,7 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
             obj.fields["attachments"].items_type.fields,
             f"{obj.name}.attachments.[x]",
             ignore_fields=["file_url", "file_name", "file_headers"],
+            ignore_model_required_fields=["part"],
         ))
 
         return issues
