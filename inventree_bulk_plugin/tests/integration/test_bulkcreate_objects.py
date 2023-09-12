@@ -4,6 +4,7 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models import Model, IntegerField, DecimalField, FloatField, BooleanField
+from mptt.models import MPTTModel
 
 from company.models import Company, ManufacturerPart, SupplierPart
 from part.models import Part, PartCategory, PartParameterTemplate, PartParameter, PartAttachment
@@ -257,12 +258,13 @@ class BulkCreateObjectTestCase(TestCase):
 class BulkCreateObjectTestMixin:
     bulk_create_object: Type[BulkCreateObject]
     ignore_fields = []
+    ignore_model_required_fields = []
     model_object_fields = []
 
     def setUp(self):
         self.request = CustomRequestFactory()
 
-    def model_test(self, model: Model, fields: dict[str, FieldDefinition], path: str, *, ignore_fields: list[str] = []):
+    def model_test(self, model: Model, fields: dict[str, FieldDefinition], path: str, *, ignore_fields: list[str] = [], ignore_model_required_fields: list[str] = []):
         issues = []
         required_fields = {model_field.name: not (
             model_field.blank or model_field.null) and not model_field.has_default() for model_field in model._meta.fields}
@@ -304,7 +306,7 @@ class BulkCreateObjectTestMixin:
                         f"Field '{path}.{key}' is related to {model_field.related_model} on model field level, but generate field is related to {field.model[2]}")
                 else:
                     wrong_fields = {f: v for f in field.model[1].keys() if (
-                        v := f not in model_field.related_model._meta.fields_map)}
+                        v := f not in model_field.related_model._meta.fields_map.keys())}
                     if len(wrong_fields.keys()) > 0:
                         wrong_fields = ",".join(wrong_fields)
                         issues.append(
@@ -312,9 +314,9 @@ class BulkCreateObjectTestMixin:
 
         # check for missing fields
         missing_fields = set(k for k, required in required_fields.items() if required) - \
-            set(k for k in fields.keys() if k not in ignore_fields)
+            set(k for k in fields.keys() if k not in ignore_fields) - set(ignore_model_required_fields)
         if len(missing_fields) > 0:
-            missing_fields = "\n".join(missing_fields)
+            missing_fields = ",".join(missing_fields)
             issues.append(
                 f"The model {model} used by {path} has the following required fields which are not present as generate keys: {missing_fields}")
 
@@ -327,7 +329,14 @@ class BulkCreateObjectTestMixin:
         issues = []
 
         obj = self.bulk_create_object(self.request.get("/abc"))
-        issues.extend(self.model_test(obj.model, obj.fields, f"{obj.template_type}", ignore_fields=self.ignore_fields))
+        ignore_fields = [*self.ignore_fields, *(f[0] for f in self.model_object_fields)]
+        ignore_model_required_fields = [*self.ignore_model_required_fields]
+
+        if issubclass(obj.model, MPTTModel):
+            ignore_model_required_fields.extend(["lft", "level", "tree_id", "rght"])
+
+        issues.extend(self.model_test(obj.model, obj.fields,
+                      f"{obj.template_type}", ignore_fields=ignore_fields, ignore_model_required_fields=ignore_model_required_fields))
 
         for key, model, ignore_fields in self.model_object_fields:
             issues.extend(self.model_test(model, obj.fields[key].fields,
@@ -352,9 +361,9 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
     bulk_create_object = PartBulkCreateObject
     ignore_fields = ["parameters", "attachments"]
     model_object_fields = [
-        ("supplier", SupplierPart, ["_make_default"]),
-        ("manufacturer", ManufacturerPart, []),
-        ("stock", StockItem, ["status"]),
+        ("supplier", SupplierPart, ["_make_default"], ["part"]),
+        ("manufacturer", ManufacturerPart, [], ["part"]),
+        ("stock", StockItem, ["status"], ["part"]),
     ]
 
     def setUp(self):
@@ -370,6 +379,7 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
             obj.fields["parameters"].items_type.fields,
             f"{obj.name}.parameters.[x]",
             ignore_fields=["value"],
+            ignore_model_required_fields=["data"],
         ))
 
         issues.extend(self.model_test(
