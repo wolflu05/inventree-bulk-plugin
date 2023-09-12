@@ -223,7 +223,6 @@ class StockLocationBulkCreateObject(BulkCreateObject[StockLocation]):
         "structural": FieldDefinition("Structural", field_type="boolean"),
         "external": FieldDefinition("External", field_type="boolean"),
         "icon": FieldDefinition("Icon"),
-        "not_existing_field": FieldDefinition("Test"),
     }
 
 
@@ -236,7 +235,7 @@ class PartCategoryBulkCreateObject(BulkCreateObject[PartCategory]):
     fields = {
         "name": FieldDefinition("Name", required=True),
         "description": FieldDefinition("Description"),
-        "default_location": FieldDefinition("Default location", field_type="model", model="part.part"),
+        "default_location": FieldDefinition("Default location", field_type="model", model="stock.StockLocation"),
         "default_keywords": FieldDefinition("Default keywords"),
         "structural": FieldDefinition("Structural", field_type="boolean"),
         "icon": FieldDefinition("Icon"),
@@ -254,7 +253,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             "name": FieldDefinition("Name", required=True),
             "description": FieldDefinition("Description"),
             "category": FieldDefinition("Category", field_type="model", model="part.PartCategory", description="If not set, defaults to current category"),
-            "variant_of": FieldDefinition("Variant of", field_type="model", model=("part.Part", {"is_template": True, "abc": 1})),
+            "variant_of": FieldDefinition("Variant of", field_type="model", model=("part.Part", {"is_template": True})),
             "keywords": FieldDefinition("Keywords"),
             "IPN": FieldDefinition("IPN"),
             "revision": FieldDefinition("Revision"),
