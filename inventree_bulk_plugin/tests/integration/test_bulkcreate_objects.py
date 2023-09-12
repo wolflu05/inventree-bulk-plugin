@@ -254,7 +254,7 @@ class BulkCreateObjectTestCase(TestCase):
         self.assertEqual(obj.parent, parent_category)
 
 
-class BulkCreateObjectTestMixin(TestCase):
+class BulkCreateObjectTestMixin:
     bulk_create_object: Type[BulkCreateObject]
     ignore_fields = []
     model_object_fields = []
@@ -272,36 +272,36 @@ class BulkCreateObjectTestMixin(TestCase):
             try:
                 model_field = model._meta.get_field(key)
             except FieldDoesNotExist:
-                issues.append(f"Field {path}.{key} does not exist on {model}")
+                issues.append(f"Field '{path}.{key}' does not exist on {model}")
 
             # required field
             if (not model_field.blank or not model_field.null) and not model_field.has_default() and not field.required:
-                issues.append(f"Field {path}.{key} is required on model, but not as generate field")
+                issues.append(f"Field '{path}.{key}' is required on model, but not as generate field")
 
             # integer field
             if isinstance(model_field, IntegerField) and field.field_type != "number":
-                issues.append(f"Field {path}.{key} is integer model field, but generate field is {field.field_type}")
+                issues.append(f"Field '{path}.{key}' is integer model field, but generate field is {field.field_type}")
 
             # float field
             if isinstance(model_field, (FloatField, DecimalField)) and field.field_type != "float":
                 issues.append(
-                    f"Field {path}.{key} is float/decimal model field, but generate field is {field.field_type}")
+                    f"Field '{path}.{key}' is float/decimal model field, but generate field is {field.field_type}")
 
             # boolean field
             if isinstance(model_field, BooleanField) and field.field_type != "boolean":
-                issues.append(f"Field {path}.{key} is boolean model field, but generate field is {field.field_type}")
+                issues.append(f"Field '{path}.{key}' is boolean model field, but generate field is {field.field_type}")
 
             # relation field
             if model_field.is_relation:
                 if field.field_type != "model":
                     issues.append(
-                        f"Field {path}.{key} is relation model field, but generate field is {field.field_type}")
+                        f"Field '{path}.{key}' is relation model field, but generate field is {field.field_type}")
                 elif model_field.related_model != field.model[2]:
                     issues.append(
-                        f"Field {path}.{key} is related to {model_field.related_model} on model field level, but generate field is related to {field.model[2]}")
+                        f"Field '{path}.{key}' is related to {model_field.related_model} on model field level, but generate field is related to {field.model[2]}")
                 elif any(f not in model_field.related_model._meta.fields_map for f in field.model[1].keys()):
                     issues.append(
-                        f"Field {path}.{key} has limit options that doesn't exist on {model_field.related_model} on model field level, but generate field is related to {field.model[2]}")
+                        f"Field '{path}.{key}' has limit options that doesn't exist on {model_field.related_model} on model field level, but generate field is related to {field.model[2]}")
 
         return issues
 
@@ -312,10 +312,11 @@ class BulkCreateObjectTestMixin(TestCase):
         issues = []
 
         obj = self.bulk_create_object(self.request.get("/abc"))
-        issues.extend(self.model_test(obj.model, obj.fields, f"{obj.name}", ignore_fields=self.ignore_fields))
+        issues.extend(self.model_test(obj.model, obj.fields, f"{obj.template_type}", ignore_fields=self.ignore_fields))
 
         for key, model, ignore_fields in self.model_object_fields:
-            issues.extend(self.model_test(model, obj[key], f"{obj.name}.{key}", ignore_fields=ignore_fields))
+            issues.extend(self.model_test(model, obj.fields[key].fields,
+                          f"{obj.name}.{key}", ignore_fields=ignore_fields))
 
         issues.extend(self.extra_model_tests(obj))
 
