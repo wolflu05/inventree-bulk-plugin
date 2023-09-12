@@ -7,7 +7,6 @@ from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIV
 from rest_framework.views import APIView
 from rest_framework.response import Response
 from rest_framework.request import Request
-from pydantic import ValidationError
 
 from InvenTree.filters import SEARCH_ORDER_FILTER
 
@@ -129,10 +128,8 @@ class BulkCreate(APIView):
             if not isinstance(schema, dict):
                 schema = json.loads(schema)
             bg = BulkGenerator(schema, fields=bulkcreate_object.fields).generate(ctx)
-        except (ValueError, ValidationError) as e:
+        except Exception as e:
             return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
-        except Exception:  # pragma: no cover
-            return Response({"error": "An error occurred"}, status=status.HTTP_400_BAD_REQUEST)
 
         # only create if create query param is set
         if create_objects:
