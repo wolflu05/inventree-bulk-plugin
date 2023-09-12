@@ -338,7 +338,7 @@ class BulkCreateObjectTestMixin:
 
         for key, model, ignore_fields, ignore_model_required_fields in self.model_object_fields:
             issues.extend(self.model_test(model, obj.fields[key].fields,
-                          f"{obj.name}.{key}", ignore_fields=ignore_fields, ignore_model_required_fields=ignore_model_required_fields))
+                          f"{obj.template_type}.{key}", ignore_fields=ignore_fields, ignore_model_required_fields=ignore_model_required_fields))
 
         issues.extend(self.extra_model_tests(obj))
 
@@ -375,7 +375,7 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         issues.extend(self.model_test(
             PartParameter,
             obj.fields["parameters"].items_type.fields,
-            f"{obj.name}.parameters.[x]",
+            f"{obj.template_type}.parameters.[x]",
             ignore_fields=["value"],
             ignore_model_required_fields=["data", "part"],
         ))
@@ -383,7 +383,7 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         issues.extend(self.model_test(
             PartAttachment,
             obj.fields["attachments"].items_type.fields,
-            f"{obj.name}.attachments.[x]",
+            f"{obj.template_type}.attachments.[x]",
             ignore_fields=["file_url", "file_name", "file_headers"],
             ignore_model_required_fields=["part"],
         ))
