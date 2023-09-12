@@ -25,6 +25,10 @@ interface NumberInputProps extends DefaultInputProps {
   type: "number";
   value: number;
 }
+interface TextareaInputProps extends DefaultInputProps {
+  type: "textarea";
+  value: string;
+}
 interface CheckboxInputProps extends DefaultInputProps {
   type: "checkbox" | "boolean";
   value: boolean;
@@ -44,6 +48,7 @@ type InputProps =
   | TextInputProps
   | ModelInputProps
   | NumberInputProps
+  | TextareaInputProps
   | CheckboxInputProps
   | SelectInputProps
   | ArrayInputProps;
@@ -105,6 +110,13 @@ export function Input(props: InputProps) {
                   }
                 />
               </label>
+              {extraFormGroup}
+            </div>
+          );
+        } else if (props.type === "textarea") {
+          return (
+            <div class="col-sm-10 input-group" style="flex: 1;">
+              <textarea class="form-control form-control-sm" id={`input-${id}`} {...props} />
               {extraFormGroup}
             </div>
           );

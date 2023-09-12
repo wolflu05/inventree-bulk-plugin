@@ -170,7 +170,7 @@ export function BulkDefinitionChildSchemaBuilder({
         <Input
           label="Global context"
           tooltip="This template gets imported under the 'global' namespace to all generate fields. Use this to setup variables via the set keyword ('{% set hello = 'world' %}')which can be accessed as 'global.<x>' ('{{ global.hello }}')."
-          type="text"
+          type="textarea"
           value={childSchema.global_context || ""}
           onInput={setValue("global_context")}
         />
