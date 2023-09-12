@@ -305,12 +305,11 @@ class BulkCreateObjectTestMixin:
                     issues.append(
                         f"Field '{path}.{key}' is related to {model_field.related_model} on model field level, but generate field is related to {field.model[2]}")
                 else:
-                    wrong_fields = {f: v for f in field.model[1].keys() if (
-                        v := f not in model_field.related_model._meta.fields_map.keys())}
+                    related_model_fields = list(f.name for f in model_field.related_model._meta.fields)
+                    wrong_fields = {f: v for f in field.model[1].keys() if (v := f not in related_model_fields)}
                     if len(wrong_fields.keys()) > 0:
-                        wrong_fields = ",".join(wrong_fields)
                         issues.append(
-                            f"Field '{path}.{key}' has the following limit options that doesn't exist on {model_field.related_model} on model field level, but generate field is related to {field.model[2]}: {wrong_fields}")
+                            f"Field '{path}.{key}' has the following limit options that doesn't exist on {model_field.related_model} on model field level, but generate field is related to {field.model[2]}: {','.join(wrong_fields)}")
 
         # check for missing fields
         missing_fields = set(k for k, required in required_fields.items() if required) - \
@@ -338,9 +337,9 @@ class BulkCreateObjectTestMixin:
         issues.extend(self.model_test(obj.model, obj.fields,
                       f"{obj.template_type}", ignore_fields=ignore_fields, ignore_model_required_fields=ignore_model_required_fields))
 
-        for key, model, ignore_fields in self.model_object_fields:
+        for key, model, ignore_fields, ignore_model_required_fields in self.model_object_fields:
             issues.extend(self.model_test(model, obj.fields[key].fields,
-                          f"{obj.name}.{key}", ignore_fields=ignore_fields))
+                          f"{obj.name}.{key}", ignore_fields=ignore_fields, ignore_model_required_fields=ignore_model_required_fields))
 
         issues.extend(self.extra_model_tests(obj))
 
