@@ -264,6 +264,8 @@ class BulkCreateObjectTestMixin:
 
     def model_test(self, model: Model, fields: dict[str, FieldDefinition], path: str, *, ignore_fields: list[str] = []):
         issues = []
+        required_fields = {model_field.name: not (
+            model_field.blank or model_field.null) and not model_field.has_default() for model_field in model._meta.fields}
 
         for key, field in fields.items():
             if key in ignore_fields:
@@ -273,9 +275,10 @@ class BulkCreateObjectTestMixin:
                 model_field = model._meta.get_field(key)
             except FieldDoesNotExist:
                 issues.append(f"Field '{path}.{key}' does not exist on {model}")
+                continue
 
             # required field
-            if (not model_field.blank or not model_field.null) and not model_field.has_default() and not field.required:
+            if required_fields[key] and not field.default and not field.required:
                 issues.append(f"Field '{path}.{key}' is required on model, but not as generate field")
 
             # integer field
@@ -299,9 +302,21 @@ class BulkCreateObjectTestMixin:
                 elif model_field.related_model != field.model[2]:
                     issues.append(
                         f"Field '{path}.{key}' is related to {model_field.related_model} on model field level, but generate field is related to {field.model[2]}")
-                elif any(f not in model_field.related_model._meta.fields_map for f in field.model[1].keys()):
-                    issues.append(
-                        f"Field '{path}.{key}' has limit options that doesn't exist on {model_field.related_model} on model field level, but generate field is related to {field.model[2]}")
+                else:
+                    wrong_fields = {f: v for f in field.model[1].keys() if (
+                        v := f not in model_field.related_model._meta.fields_map)}
+                    if len(wrong_fields.keys()) > 0:
+                        wrong_fields = ",".join(wrong_fields)
+                        issues.append(
+                            f"Field '{path}.{key}' has the following limit options that doesn't exist on {model_field.related_model} on model field level, but generate field is related to {field.model[2]}: {wrong_fields}")
+
+        # check for missing fields
+        missing_fields = set(k for k, required in required_fields.items() if required) - \
+            set(k for k in fields.keys() if k not in ignore_fields)
+        if len(missing_fields) > 0:
+            missing_fields = "\n".join(missing_fields)
+            issues.append(
+                f"The model {model} used by {path} has the following required fields which are not present as generate keys: {missing_fields}")
 
         return issues
 
@@ -339,7 +354,7 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
     model_object_fields = [
         ("supplier", SupplierPart, ["_make_default"]),
         ("manufacturer", ManufacturerPart, []),
-        ("stock", StockItem, []),
+        ("stock", StockItem, ["status"]),
     ]
 
     def setUp(self):
@@ -354,13 +369,14 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
             PartParameter,
             obj.fields["parameters"].items_type.fields,
             f"{obj.name}.parameters.[x]",
+            ignore_fields=["value"],
         ))
 
         issues.extend(self.model_test(
             PartAttachment,
             obj.fields["attachments"].items_type.fields,
             f"{obj.name}.attachments.[x]",
-            ignore_fields=["file_url", "file_name", "file_headers"]
+            ignore_fields=["file_url", "file_name", "file_headers"],
         ))
 
         return issues
