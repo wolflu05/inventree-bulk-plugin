@@ -347,18 +347,22 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         return super().setUp()
 
     def extra_model_tests(self, obj):
-        self.model_test(
+        issues = []
+
+        issues.extend(self.model_test(
             PartParameter,
             obj.fields["parameters"].items_type.fields,
             f"{obj.name}.parameters.[x]",
-        )
+        ))
 
-        self.model_test(
+        issues.extend(self.model_test(
             PartAttachment,
             obj.fields["attachments"].items_type.fields,
             f"{obj.name}.attachments.[x]",
             ignore_fields=["file_url", "file_name", "file_headers"]
-        )
+        ))
+
+        return issues
 
     def test_create_objects(self):
         InvenTreeSetting.set_setting("INVENTREE_DOWNLOAD_FROM_URL", True, None)
