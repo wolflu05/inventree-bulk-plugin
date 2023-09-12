@@ -1,13 +1,16 @@
+from typing import Type
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
 from django.contrib.auth.models import User
+from django.core.exceptions import FieldDoesNotExist
+from django.db.models import Model, IntegerField, DecimalField, FloatField, BooleanField
 
 from company.models import Company, ManufacturerPart, SupplierPart
 from part.models import Part, PartCategory, PartParameterTemplate, PartParameter, PartAttachment
 from stock.models import StockLocation, StockItem
 from common.models import InvenTreeSetting
 
-from ...bulkcreate_objects import get_model, get_model_instance, cast_model, cast_select, FieldDefinition, BulkCreateObject, PartBulkCreateObject
+from ...bulkcreate_objects import get_model, get_model_instance, cast_model, cast_select, FieldDefinition, BulkCreateObject, StockLocationBulkCreateObject, PartCategoryBulkCreateObject, PartBulkCreateObject
 
 
 # custom request factory, used to patch query_params which were not defined by default
@@ -251,10 +254,109 @@ class BulkCreateObjectTestCase(TestCase):
         self.assertEqual(obj.parent, parent_category)
 
 
-class PartBulkCreateObjectTestCase(TestCase):
+class BulkCreateObjectTestMixin(TestCase):
+    bulk_create_object: Type[BulkCreateObject]
+    ignore_fields = []
+    model_object_fields = []
+
+    def setUp(self):
+        self.request = CustomRequestFactory()
+
+    def model_test(self, model: Model, fields: dict[str, FieldDefinition], path: str, *, ignore_fields: list[str] = []):
+        issues = []
+
+        for key, field in fields.items():
+            if key in ignore_fields:
+                continue
+
+            try:
+                model_field = model._meta.get_field(key)
+            except FieldDoesNotExist:
+                issues.append(f"Field {path}.{key} does not exist on {model}")
+
+            # required field
+            if (not model_field.blank or not model_field.null) and not model_field.has_default() and not field.required:
+                issues.append(f"Field {path}.{key} is required on model, but not as generate field")
+
+            # integer field
+            if isinstance(model_field, IntegerField) and field.field_type != "number":
+                issues.append(f"Field {path}.{key} is integer model field, but generate field is {field.field_type}")
+
+            # float field
+            if isinstance(model_field, (FloatField, DecimalField)) and field.field_type != "float":
+                issues.append(
+                    f"Field {path}.{key} is float/decimal model field, but generate field is {field.field_type}")
+
+            # boolean field
+            if isinstance(model_field, BooleanField) and field.field_type != "boolean":
+                issues.append(f"Field {path}.{key} is boolean model field, but generate field is {field.field_type}")
+
+            # relation field
+            if model_field.is_relation:
+                if field.field_type != "model":
+                    issues.append(
+                        f"Field {path}.{key} is relation model field, but generate field is {field.field_type}")
+                elif model_field.related_model != field.model[2]:
+                    issues.append(
+                        f"Field {path}.{key} is related to {model_field.related_model} on model field level, but generate field is related to {field.model[2]}")
+                elif any(f not in model_field.related_model._meta.fields_map for f in field.model[1].keys()):
+                    issues.append(
+                        f"Field {path}.{key} has limit options that doesn't exist on {model_field.related_model} on model field level, but generate field is related to {field.model[2]}")
+
+    def extra_model_tests(self, obj: BulkCreateObject):
+        return []
+
+    def test_fields(self):
+        issues = []
+
+        obj = self.bulk_create_object(self.request.get("/abc"))
+        issues.extend(self.model_test(obj.model, obj.fields, f"{obj.name}", ignore_fields=self.ignore_fields))
+
+        for key, model, ignore_fields in self.model_object_fields:
+            issues.extend(self.model_test(model, obj[key], f"{obj.name}.{key}", ignore_fields=ignore_fields))
+
+        issues.extend(self.extra_model_tests(obj))
+
+        if len(issues) > 0:
+            error_msgs = "\n".join(f"- {i}" for i in issues)
+            self.fail(f"There are {len(issues)} issues with the generate fields:\n{error_msgs}")
+
+
+class StockLocationBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
+    bulk_create_object = StockLocationBulkCreateObject
+
+
+class PartCategoryBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
+    bulk_create_object = PartCategoryBulkCreateObject
+
+
+class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
+    bulk_create_object = PartBulkCreateObject
+    ignore_fields = ["parameters", "attachments"]
+    model_object_fields = [
+        ("supplier", SupplierPart, ["_make_default"]),
+        ("manufacturer", ManufacturerPart, []),
+        ("stock", StockItem, []),
+    ]
+
     def setUp(self):
         self.request = CustomRequestFactory()
         self.user = User.objects.create_user(username="test", password="test")
+        return super().setUp()
+
+    def extra_model_tests(self, obj):
+        self.model_test(
+            PartParameter,
+            obj.fields["parameters"].items_type.fields,
+            f"{obj.name}.parameters.[x]",
+        )
+
+        self.model_test(
+            PartAttachment,
+            obj.fields["attachments"].items_type.fields,
+            f"{obj.name}.attachments.[x]",
+            ignore_fields=["file_url", "file_name", "file_headers"]
+        )
 
     def test_create_objects(self):
         InvenTreeSetting.set_setting("INVENTREE_DOWNLOAD_FROM_URL", True, None)
