@@ -437,3 +437,22 @@ class BulkGeneratorTestCase(unittest.TestCase):
             "output": {"generate": {"required_list": ["1", "2", "3"]}, }
         }, {"required_list": BaseFieldDefinition("required_list", required=True, field_type="list", items_type=BaseFieldDefinition("A"))}).generate()
         self.assertEqual(res, [({'required_list': ['1', '2', '3']}, [])])
+
+    def test_global_context(self):
+        res = BulkGenerator({
+            "version": "1.0.0",
+            "input": {},
+            "templates": [],
+            "output": {
+                "dimensions": ["1-3"],
+                "global_context": "{% set a = dim.1 %}",
+                "generate": {
+                    "name": "{{global.a}}",
+                }
+            }
+        }, fields={"name": BaseFieldDefinition("Name")}).generate()
+
+        self.assertEqual(len(res), 3)
+
+        for i, (el, childs) in enumerate(res):
+            self.assertDictEqual({"name": f"{i+1}"}, el)
