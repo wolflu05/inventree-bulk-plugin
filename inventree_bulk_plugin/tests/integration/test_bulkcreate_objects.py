@@ -303,6 +303,8 @@ class BulkCreateObjectTestMixin(TestCase):
                     issues.append(
                         f"Field {path}.{key} has limit options that doesn't exist on {model_field.related_model} on model field level, but generate field is related to {field.model[2]}")
 
+        return issues
+
     def extra_model_tests(self, obj: BulkCreateObject):
         return []
 
