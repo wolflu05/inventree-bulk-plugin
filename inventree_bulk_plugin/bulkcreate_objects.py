@@ -235,7 +235,7 @@ class PartCategoryBulkCreateObject(BulkCreateObject[PartCategory]):
     fields = {
         "name": FieldDefinition("Name", required=True),
         "description": FieldDefinition("Description"),
-        "default_location": FieldDefinition("Default location", field_type="model", model="stock.StockLocation"),
+        "default_location": FieldDefinition("Default location", field_type="model", model=("stock.StockLocation", {"structural": False})),
         "default_keywords": FieldDefinition("Default keywords"),
         "structural": FieldDefinition("Structural", field_type="boolean"),
         "icon": FieldDefinition("Icon"),
