@@ -15,6 +15,8 @@ This plugin helps you bulk create storage locations and part categories in [Inve
 
 ![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/c1ad6ccd-bc27-445b-a3fc-ae5ce74390b5)
 
+If you want to try out the templates on you're own, you can just copy the below json to your clipboard and use the "New untitled schema from clipboard" button to import them (see [import/export](#import-export)).
+
 <!-- prettier-ignore-start -->
 ```json
 {"name":"Example","template_type":"STOCK_LOCATION","template":{"version":"1.0.0","input":{},"templates":[],"output":{"parent_name_match":"true","dimensions":["*NUMERIC","*ALPHA"],"count":["3","2"],"generate":{"name":"D{{dim.1}}.{{dim.2}}"},"childs":[]}}}
