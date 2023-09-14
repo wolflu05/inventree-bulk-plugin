@@ -34,6 +34,7 @@ class FieldDefinitionSerializer(serializers.Serializer):
             "description",
             "required",
             "model",
+            "allow_multiple",
             "items_type",
             "fields",
             "default",
@@ -45,6 +46,7 @@ class FieldDefinitionSerializer(serializers.Serializer):
     description = serializers.CharField()
     required = serializers.BooleanField()
     model = serializers.SerializerMethodField()
+    allow_multiple = serializers.BooleanField()
     default = serializers.SerializerMethodField("get_default_method")
     options = serializers.SerializerMethodField("get_options_method")
 

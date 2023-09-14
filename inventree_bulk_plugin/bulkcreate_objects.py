@@ -44,11 +44,25 @@ def get_model(model_name: str):
     return model
 
 
-def get_model_instance(model: Model, pk, limit_choices={}, error_msg=""):
+def get_model_instance(model: Model, pk: str, limit_choices={}, error_msg="", allow_multiple=False):
     try:
-        return model.objects.get(pk=pk, **limit_choices)
+        filters = {"pk": int(pk)}
+    except ValueError:
+        # value is not an pk, try casting it from json to a python dict
+        try:
+            filters = json.loads(pk)
+        except Exception:
+            raise ValueError(f"Cannot parse json query string {error_msg}")
+
+    try:
+        if allow_multiple:
+            return model.objects.filter(**filters, **limit_choices)
+        return model.objects.get(**filters, **limit_choices)
     except model.DoesNotExist:
-        raise ValueError(f"Model '{model._meta}' where {({'pk': pk,**limit_choices})} not found {error_msg}")
+        raise ValueError(f"Model '{model._meta}' where {({**filters, **limit_choices})} not found {error_msg}")
+    except model.MultipleObjectsReturned:
+        raise ValueError(
+            f"Model '{model._meta}' where {({**filters, **limit_choices})} returned multiple models {error_msg}")
 
 
 def cast_model(value: str, *, field: "FieldDefinition" = None):
@@ -58,7 +72,7 @@ def cast_model(value: str, *, field: "FieldDefinition" = None):
     _, limit_choices, model = field.model
 
     # raises value error if object with pk=value doesn't exist
-    get_model_instance(model, value, limit_choices)
+    get_model_instance(model, value, limit_choices, allow_multiple=field.allow_multiple)
 
     return value
 
@@ -79,6 +93,7 @@ class FieldDefinition(BaseFieldDefinition):
     description: Optional[str] = None
     required: bool = False
     model: Union[str, tuple[str, dict], tuple[str, dict, Model], None] = None
+    allow_multiple: Optional[bool] = False
     api_url: Optional[str] = None
     items_type: Optional["FieldDefinition"] = None
     fields: Optional[dict[str, "FieldDefinition"]] = None
@@ -350,6 +365,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                     "",
                     field_type="model",
                     model="part.part",
+                    allow_multiple=True,
                 )
             )
         }
@@ -507,8 +523,14 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
 
         # create related parts
         if related_parts:
+            # use set to filter out parts that are selected by multiple filters
+            related_parts_set = set()
             for related_part in related_parts:
-                related_part = get_model_instance(Part, related_part, {}, f"for {part.name}")
+                related_parts_query = get_model_instance(
+                    Part, related_part, {}, f"for {part.name}", allow_multiple=True).exclude(pk=part.pk)
+                related_parts_set.update(related_parts_query)
+
+            for related_part in related_parts_set:
                 PartRelated.objects.create(part_1=part, part_2=related_part)
 
         return part

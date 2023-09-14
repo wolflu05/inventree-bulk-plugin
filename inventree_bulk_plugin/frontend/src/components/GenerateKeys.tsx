@@ -252,7 +252,8 @@ const getTemplateHelpTexts = (fieldDefinition: FieldDefinition): string => {
     return "Use a template that evaluates to something float like (e.g. '3.1415').";
   }
   if (fieldDefinition.field_type === "model") {
-    return "Use a template that evaluates to a valid id for this model (e.g. '42').";
+    const extraString = fieldDefinition.allow_multiple ? ` The filters can also return multiple objects.` : "";
+    return `Use a template that evaluates to a valid id for this model (e.g. '42') or a json string containing django model filters (e.g. {"name": "R_10k_0808_10%"}).${extraString}`;
   }
   if (fieldDefinition.field_type === "select") {
     return `Use a template that evaluates to a valid option from the select field. Available options: ${Object.keys(
