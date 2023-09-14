@@ -5,9 +5,10 @@ import { BulkDefinitionSchemaBuilder } from "./BulkDefinitionSchemaBuilder";
 import { Dialog } from "./Dialog";
 import { Input } from "./Input";
 import { PreviewTable } from "./PreviewTable";
+import { Tooltip } from "./Tooltip";
 import { useBulkGenerateInfo } from "../contexts/BulkCreateInfo";
 import { useNotifications } from "../contexts/Notification";
-import { beautifySchema, isEqual } from "../utils";
+import { beautifySchema, downloadFile, isEqual } from "../utils";
 import { URLS, fetchAPI } from "../utils/api";
 import { defaultSchema } from "../utils/constants";
 import { BulkDefinitionSchema, BulkGenerateInfo, TemplateModel } from "../utils/types";
@@ -17,9 +18,16 @@ interface TemplateFormProps {
   templateType?: string;
   handleBack: () => void;
   parentId?: string;
+  initialTemplate?: TemplateModel;
 }
 
-export const TemplateForm = ({ templateId, handleBack, templateType, parentId }: TemplateFormProps) => {
+export const TemplateForm = ({
+  templateId,
+  handleBack,
+  templateType,
+  parentId,
+  initialTemplate: initialTemplateModel,
+}: TemplateFormProps) => {
   const [initialTemplate, setInitialTemplate] = useState<TemplateModel | null>(null);
   const [previewTemplate, setPreviewTemplate] = useState<TemplateModel | null>(null);
   const [template, setTemplate] = useState<TemplateModel | null>(null);
@@ -74,7 +82,9 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
     setIsLoading(true);
     let template: null | TemplateModel = null;
 
-    if (templateId) {
+    if (initialTemplateModel) {
+      template = structuredClone(initialTemplateModel);
+    } else if (templateId) {
       const res = await fetchAPI(URLS.templates({ id: templateId }));
       if (!res.ok) {
         setIsLoading(false);
@@ -99,7 +109,7 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
     setInitialTemplate(structuredClone(template));
     setTemplate(structuredClone(template));
     setIsLoading(false);
-  }, [showNotification, templateId, templateType]);
+  }, [initialTemplateModel, showNotification, templateId, templateType]);
 
   useEffect(() => {
     loadTemplate();
@@ -170,6 +180,37 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
     });
   }, [bulkGenerateInfoDict, parentId, showNotification, template]);
 
+  const downloadAsFile = useCallback(() => {
+    const filename = `${Date.now()}_${template?.name}.json`;
+    downloadFile(
+      filename,
+      JSON.stringify({ name: template?.name, template_type: template?.template_type, template: template?.template }),
+    );
+    showNotification({
+      type: "success",
+      message: `Successfully downloaded template '${template?.name}' as '${filename}'.`,
+    });
+  }, [showNotification, template?.name, template?.template, template?.template_type]);
+
+  const saveToClipboard = useCallback(() => {
+    navigator.clipboard
+      .writeText(
+        JSON.stringify({ name: template?.name, template_type: template?.template_type, template: template?.template }),
+      )
+      .then(() =>
+        showNotification({
+          type: "success",
+          message: `Successfully copied template '${template?.name}' to clipboard.`,
+        }),
+      )
+      .catch((err) =>
+        showNotification({
+          type: "danger",
+          message: `Error copying template '${template?.name}' to clipboard. ${err}`,
+        }),
+      );
+  }, [showNotification, template?.name, template?.template, template?.template_type]);
+
   return (
     <div>
       <h5>
@@ -237,6 +278,18 @@ export const TemplateForm = ({ templateId, handleBack, templateType, parentId }:
             Bulk create
           </button>
         )}
+        <div class="btn-group btn-group-sm">
+          <button class="btn btn-outline-primary px-3" onClick={saveToClipboard}>
+            <Tooltip text="Copy to clipboard" placement="top">
+              <i class="fas fa-clipboard"></i>
+            </Tooltip>
+          </button>
+          <button class="btn btn-outline-primary px-3" onClick={downloadAsFile} alt="Download as file">
+            <Tooltip text="Download as file" placement="top">
+              <i class="fas fa-download"></i>
+            </Tooltip>
+          </button>
+        </div>
       </div>
 
       {previewTemplate && bulkGenerateInfo && (
