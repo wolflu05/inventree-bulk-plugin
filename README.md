@@ -13,7 +13,13 @@ This plugin helps you bulk create storage locations and part categories in [Inve
 <details open>
 <summary>This will generate the previous mentioned example:</summary>
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/f0cd29fc-50c0-4880-afa2-f3bd1c2cdaf7)
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/c1ad6ccd-bc27-445b-a3fc-ae5ce74390b5)
+
+<!-- prettier-ignore-start -->
+```json
+{"name":"Example","template_type":"STOCK_LOCATION","template":{"version":"1.0.0","input":{},"templates":[],"output":{"parent_name_match":"true","dimensions":["*NUMERIC","*ALPHA"],"count":["3","2"],"generate":{"name":"D{{dim.1}}.{{dim.2}}"},"childs":[]}}}
+```
+<!-- prettier-ignore-end -->
 
 </details>
 
@@ -22,44 +28,100 @@ This plugin helps you bulk create storage locations and part categories in [Inve
 <details>
 <summary>But even nested generations don't stop you.</summary>
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/cd560237-94cb-485b-a1cc-cf9e7ab70335)
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/07d688da-b9e3-47ba-bf5b-ab44685c888a)
+
+<!-- prettier-ignore-start -->
+```json
+{"name":"","template_type":"STOCK_LOCATION","template":{"version":"1.0.0","input":{},"templates":[],"output":{"parent_name_match":"true","dimensions":["*NUMERIC"],"count":["3"],"generate":{"name":"D{{dim.1}}"},"childs":[{"parent_name_match":"true","dimensions":["*ALPHA(casing=upper)"],"count":["2"],"generate":{"name":"{{par.gen.name}}-{{dim.1}}"}}]}}}
+```
+<!-- prettier-ignore-end -->
 
 </details>
 
 <details>
 <summary>And with parent name match, you can even generate different sub-locations depending of the name of the parent.</summary>
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/ebe53203-1682-4aea-be39-6e79e2d542f2)
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/61ef2fa4-d765-4043-89e3-99840181768e)
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/83d8422f-d600-4bd3-991a-cdf2775b471b)
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/2dace3ea-a629-4a3b-b52e-9103ccffca50)
 
-</details>
+<!-- prettier-ignore-start -->
+```json
+{"name":"","template_type":"STOCK_LOCATION","template":{"version":"1.0.0","input":{},"templates":[],"output":{"parent_name_match":"true","dimensions":["*NUMERIC"],"count":["3"],"generate":{"name":"D{{dim.1}}"},"childs":[{"parent_name_match":"{{par.gen.name == \"D1\"}}","dimensions":["*ALPHA"],"count":["2"],"generate":{"name":"D.{{dim.1}}"}},{"parent_name_match":"true","dimensions":["*NUMERIC"],"count":["1"],"generate":{"name":"{{dim.1}}"}}]}}}
+```
+<!-- prettier-ignore-end -->
 
 <details>
 <summary>Pad your numeric dimensions with zeros.</summary>
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/d90b42e5-eca8-433c-962f-05fbedc48f03)
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/5cf35065-33c8-4e71-b04c-6fa541b2d821)
+
+<!-- prettier-ignore-start -->
+```json
+{"name":"","template_type":"STOCK_LOCATION","template":{"version":"1.0.0","input":{},"templates":[],"output":{"parent_name_match":"true","dimensions":["*NUMERIC"],"count":["100"],"generate":{"name":"D{{dim.1.zfill(dim.1.len|string|length)}}"},"childs":[]}}}
+```
+<!-- prettier-ignore-end -->
 
 </details>
 
 <details>
 <summary>Extend from a template.</summary>
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/b9622a93-b6b3-4dc7-91f8-d8c145fbdd3a)
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/7a7fbc78-e9e9-471a-8427-8b4b15389a57)
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/cd23b6af-995f-4220-bb54-d539af1a41ad)
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/8e303f31-2890-4cbe-87f7-9c02a453445e)
+
+<!-- prettier-ignore-start -->
+```json
+{"name":"","template_type":"STOCK_LOCATION","template":{"version":"1.0.0","input":{},"templates":[{"name":"Drawer sections","parent_name_match":"true","dimensions":["*ALPHA"],"count":["2"],"generate":{"name":"{{par.gen.name}} Section {{dim.1}}"}}],"output":{"parent_name_match":"true","dimensions":["*NUMERIC"],"count":["100"],"generate":{"name":"D{{dim.1.zfill(dim.1.len|string|length)}}"},"childs":[{"parent_name_match":"true","dimensions":[""],"count":[""],"generate":{"name":""},"extends":"Drawer sections"}]}}}
+```
+<!-- prettier-ignore-end -->
 
 </details>
 
 <details>
 <summary>Use more generate keys.</summary>
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/81b4617a-24ef-49c3-8b5a-b4ef9bb3ebac)
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/6d6f2105-b565-4aaf-aa31-723dc542d40f)
+
+<!-- prettier-ignore-start -->
+```json
+{"name":"","template_type":"STOCK_LOCATION","template":{"version":"1.0.0","input":{},"templates":[],"output":{"parent_name_match":"true","dimensions":["*NUMERIC"],"count":["100"],"generate":{"name":"D{{dim.1}}","description":"Drawer {{dim.1}}","structural":"{{dim.1|int<=3}}","external":true}}}}
+```
+<!-- prettier-ignore-end -->
 
 </details>
 
 <details>
 <summary>Using input to reuse a saved template.</summary>
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/8c56498b-c4a9-4a93-9a68-2ef87defe8da)
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/d547a6b5-7d26-40bf-ad49-085eb7d283b0)
+
+<!-- prettier-ignore-start -->
+```json
+{"name":"","template_type":"STOCK_LOCATION","template":{"version":"1.0.0","input":{"drawers":"10"},"templates":[],"output":{"parent_name_match":"true","dimensions":["*NUMERIC"],"count":["{{inp.drawers}}"],"generate":{"name":"D{{dim.1}}"},"childs":[]}}}
+```
+<!-- prettier-ignore-end -->
+
+</details>
+
+<details>
+<summary>And then use the preview/bulk create form</summary>
+
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/0d799bcd-585e-4f7e-a30a-e0070a57a776)
+
+</details>
+
+<details>
+<summary>Use the global context</summary>
+
+You can use the global context for some more complex things like generating resistor values in e.g. the E12 row.
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/6e2ddf3d-ea9c-4479-ac53-5bad88b79dcf)
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/a3cc5a60-229e-4509-8d54-eef8563fa922)
+
+<!-- prettier-ignore-start -->
+```json
+{"name":"Resistors","template_type":"PART","template":{"version":"1.0.0","input":{"packages":"0805,1206","tolerances":"5,10"},"templates":[],"output":{"parent_name_match":"true","dimensions":["{{inp.packages}}","{{inp.tolerances}}","0-8","1-12"],"count":[null,null,null,null],"generate":{"name":"R_{{global.formatted_value}}_{{dim.2}}%_{{dim.1}}","parameters":[{"template":"2","value":"{{global.formatted_value}}"},{"template":"3","value":"{{dim.2}}%"},{"template":"1","value":"{{dim.1}}"}]},"global_context":"{% set values = [1,1.2,1.5,1.8,2.2,2.7,3.3,3.9,4.7,5.6,6.8,8.2] %}\n{% set units = [\"\", \"k\", \"M\"] %}\n\n{% set value = values[dim.4|int-1] * 10 ** (dim.3|int) %}\n{% set formatted_value = \"{:.1f}\".format(value * 10 ** -(dim.3|int//3*3)).removesuffix(\".0\").replace(\".\", \",\") + units[dim.3|int//3] + \"Ω\" %}\n"}}}
+```
+<!-- prettier-ignore-end -->
 
 </details>
 
@@ -80,32 +142,44 @@ Install this plugin as follows:
 
 ## 🏃 Usage
 
-### Bulk create
+You can bulk create sub-stocklocations, sub-partcategories and parts (See [generate types](#generation-types)). Go to one and use the bulk creation panel on the side for the type you want to generate. Edit a [saved template](#saved-templates) with the [bulk creation editor](#bulk-creation-editor) or create a new untitled to setup a generation quickly. Use "Preview/Bulk create" to bulkcreate using a saved template in combination with inputs. Templates can als be [imported and exported](#import-export) from clipboard or a file which is useful if you want to follow along with the documentation. On most places this documentation shows the template in a codeblock with a copy button.
 
-You can bulk create sub-stocklocations and sub-partcategories. Goto one and use the panel "Bulk-creation". Either load a [saved template](#saved-templates) or set up the output quickly. Use "Preview" to see how the bulk creation will look like and create to bulk create the locations/categories. To see how this editor works see [bulk creation editor](#bulk-creation-editor).
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/a28ededb-72a8-499c-be55-e23f9557a2fa)
 
 ### Saved templates
 
 You can save bulk creation templates to ensure consistency along your storage trees. Let's say you have a bunch of drawer towers. With saved templates you can now easily store your templates to re-use it when you want to add a new tower to the system.
 
-1. Goto the stock index and select the "Manage bulk creation" panel.
-2. Click on "New Template".
-3. Adjust the schema to your needs and use "Preview" to see how the creation will look like
-4. Create you template by using "Create"
-5. Goto the specific sub-location where you want to apply that template, load it and Bulk generate your locations to your needs.
-
 > [!NOTE]
 > You can use [inputs](#input) to make your bulk creation schema dynamic in amount of drawers or their names.
+
+### Import export
+
+Templates can be imported and exported into the clipboard or can be downloaded as a file. Use the dropdown menu at the right of the "New untitled template" button for importing. Exporting can be done from the [editor view](#bulk-creation-editor) with the clipboard/download icon button.
 
 ### Bulk creation editor
 
 The bulk creation editor helps you to define the generation schema.
 
-> [!NOTE]
-> You can use [Jinja2 templating](https://jinja.palletsprojects.com/en/3.1.x/templates/) in every field (except in the `input` section). You can also use filters to manipulate the dimension output.
-> **Global context:**
->
-> - `inp.<key>` - Access [input variables](#input), e.g. (`{{inp.drawer_count|int / 2}}`)
+#### Jinja2
+
+You can use [Jinja2 templating](https://jinja.palletsprojects.com/en/3.1.x/templates/) in every field (except in the `input` section). You can also use filters to manipulate the dimension output.
+
+##### Global context
+
+- `inp.<key>` - Access [input variables](#input), e.g. (`{{inp.drawer_count|int / 2}}`)
+- `global.<...>` - Access any variable defined in [global context](#global-context)
+
+##### Extra useful filters
+
+- `to_json(value: Any, **kwargs)` - Convert any value into a json string. Uses the `json.dumps` method from python under the hood, therefore [these](https://docs.python.org/3/library/json.html#json.dumps) `kwargs` are available.
+- `from_json(value: str, **kwargs)` - Convert a string value into a python variable. Uses the `json.loads` method from python under the hood, therefore [these](https://docs.python.org/3/library/json.html#json.loads) `kwargs` are available.
+- `to_csv(value: list[dict[str, str]], **kwargs)` - Convert a csv like python list of dicts to a csv string. Uses the `csv.DictWriter` method from python under the hood, therefore [these](https://docs.python.org/3/library/csv.html#csv.DictWriter) `kwargs` are available.
+- `from_csv(value: str, **kwargs)` - Convert a string value in csv structure into a python list of dicts. Uses the `csv.DictReader` method from python under the hood, therefore [these](https://docs.python.org/3/library/csv.html#csv.DictReader) `kwargs` are available.
+
+##### Debug tools
+
+- `debug` - the debug command from jinja2 is available too and can be used as `{% debug %}`, see [jinja2 docs](https://jinja.palletsprojects.com/en/3.1.x/templates/#debug-statement)
 
 #### Input
 
@@ -129,6 +203,10 @@ First child that matches the parent name matcher will be chosen for generating t
 
 Select a template to extend from
 
+##### Global context
+
+Global context can be used to set up some more complex variables and reuse them between fields. Under the hood this template gets imported as `global` by prepending `{% import global_context_template as global with context %}` to every generate field. Therefore you can also use the dimensions and every available context variable there too.
+
 ##### Dimensions/Count
 
 Dimensions are a way to add various counting strategies to your naming. You can add a dimension by clicking on "Add dimension" and remove it via the red "X" on the right of the dimension field.
@@ -151,23 +229,52 @@ Example: `1-3,hello,*NUMERIC(start=1,step=2,end=10),*ALPHA(casing=upper,end=B),A
 
 ##### Generate
 
-These fields my differ between stock location and part category. They correspond to the generated items property. For example "Name" will be the name of the created location/category. Fields like "Structural" must evaluate to something that ca be casted to a boolean (e.g. `true` or `false`).
+These fields my differ between stock location and part category. They correspond to the generated items property. For example "Name" will be the name of the created location/category. For more info and also about the available jinja2 context, see [generation types](#generation-types).
 
-> [!NOTE]
->
-> **Extended Jinja2 context:**
->
-> - `len` - count of elements this child will generate
-> - `dim.<x>` - x-th dimension, one-based (e.g. `{{dim.1}}` to access the first dimension)
-> - `dim.<x>.len` - count of items the x-th dimension has
-> - `par.<...>` - parent's context
-> - `par.dim.<x>` - parents's dimensions
-> - `par.gen.<name>` - parent's generated fields (e.g. to reuse the parents name `{{par.gen.name}}`)
-> - `par.par.<...>` - parent's parent context, can be nested deeply
+Generate fields can be added with just one click from a list of available fields. If you're missing an field, please [open an issue](https://github.com/wolflu05/inventree-bulk-plugin/issues/new/choose). There are several different types of inputs for native values like numbers, booleans, model references, ... . You can either use the native fields or switch to template mode by clicking on the blue template icon on the right.
+
+- Boolean fields then must evaluate to something that can be interpreted as a boolean like `true` or `false`.
+- Number fields then must evaluate to a number
+- Model reference fields then must evaluate to a valid id
+
+![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/ed4f5a16-2beb-4a63-8626-a833d6f0084b)
 
 ##### Child's
 
 Child's are a way to add some nesting to your bulk creation tree. You can use them for e.g. generating sections in every of your drawer. You can use the [Parent name match](#parent-name-match) option to add for your drawers named from `Drawer 1` - `Drawer 10` two sections while your other drawers have different sections.
+
+### Generation types
+
+You can bulk create sub-stocklocations, sub-partcategories and parts with there different options. These objects can be categorized into two different generation groups, [Tree objects](#tree-objects) and [normal objects](#normal-objects). For all of those, the following context is available.
+
+| Key           | Description                                                                |
+| ------------- | -------------------------------------------------------------------------- |
+| `len`         | count of elements this child will generate                                 |
+| `dim.<x>`     | x-th dimension, one-based (e.g. `{{dim.1}}` to access the first dimension) |
+| `dim.<x>.len` | count of items the x-th dimension has                                      |
+
+#### Tree objects
+
+Tree objects are objects that can have childs and use templates. Currently "stock locations" and "part categories" are supported. In addition to the default context, the following attributes are also available in the context.
+
+| Key              | Description                                                                   |
+| ---------------- | ----------------------------------------------------------------------------- |
+| `par.<...>`      | parent's context                                                              |
+| `par.dim.<x>`    | parents's dimensions                                                          |
+| `par.gen.<name>` | parent's generated fields (e.g. to reuse the parents name `{{par.gen.name}}`) |
+| `par.par.<...>`  | parent's parent context, can be nested deeply                                 |
+
+#### Normal objects
+
+Normal objects are objects that don't have a tree structure and therefore don't need childs and templates. Currently "parts" is the only supported object. There is no additional context.
+
+##### Parts
+
+Parts have an additional context:
+
+| Key                  | Description                     |
+| -------------------- | ------------------------------- |
+| `par.category.<...>` | category fields this part is in |
 
 ## 🧑‍💻 Development
 
