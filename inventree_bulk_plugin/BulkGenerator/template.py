@@ -32,7 +32,7 @@ template_filters = {
     "from_json": from_json
 }
 
-env = Environment(variable_start_string="{{", variable_end_string="}}", )
+env = Environment(variable_start_string="{{", variable_end_string="}}", extensions=["jinja2.ext.debug"])
 env.filters.update(template_filters)
 
 

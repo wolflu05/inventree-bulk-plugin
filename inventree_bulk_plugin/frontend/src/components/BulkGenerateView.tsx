@@ -12,7 +12,7 @@ interface BulkGenerateViewProps {
   parentId?: string;
 }
 
-type BulkGenerateViewMode = "OVERVIEW" | "EDITING" | "DELETING" | "PREVIEWING";
+type BulkGenerateViewMode = "OVERVIEW" | "EDITING" | "DELETING" | "PREVIEWING" | "IMPORT_TEMPLATE";
 
 export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewProps) => {
   const [savedTemplates, setSavedTemplates] = useState<TemplateModel[]>([]);
@@ -96,6 +96,44 @@ export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewPro
   const [isBulkCreateLoading, setIsBulkCreateLoading] = useState(false);
   const [hasPreviewed, setHasPreviewed] = useState(false);
 
+  const importTemplate = useCallback(
+    (t: string) => {
+      const data = JSON.parse(t);
+      if (!("template_type" in data) || !("name" in data) || !("template" in data)) {
+        throw new Error("invalid format");
+      }
+
+      if (templateType && templateType !== data.template_type) {
+        throw new Error(`Template type ${data.template_type} cannot be imported as a ${templateType} template.`);
+      }
+      switchModeWithTemplate("EDITING", { id: null, ...data })();
+    },
+    [switchModeWithTemplate, templateType],
+  );
+
+  const fileInputRef = useRef(null);
+  const [fileUploaded, setFileUploaded] = useState(false);
+
+  const handleFileImport = useCallback(() => {
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const file = (fileInputRef as any).current?.files?.[0];
+      const fr = new FileReader();
+      fr.onload = (ee) => {
+        try {
+          importTemplate(ee.target?.result?.toString() || "");
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((fileInputRef as any).current?.value) (fileInputRef as any).current.value = "";
+        } catch (err) {
+          showNotification({ type: "danger", message: `Cannot import from file. ${err}` });
+        }
+      };
+      fr.readAsText(file, "UTF-8");
+    } catch (err) {
+      showNotification({ type: "danger", message: `Cannot import from file. ${err}` });
+    }
+  }, [importTemplate, showNotification]);
+
   if (currentMode === "EDITING") {
     return (
       <div>
@@ -104,6 +142,7 @@ export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewPro
           templateId={currentTemplate?.id}
           templateType={templateType}
           parentId={parentId}
+          initialTemplate={currentTemplate?.id === null ? currentTemplate : undefined}
         />
       </div>
     );
@@ -159,9 +198,38 @@ export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewPro
         </tbody>
       </table>
 
-      <button type="button" class="btn btn-outline-primary" onClick={switchModeWithTemplate("EDITING", null)}>
-        New untitled schema
-      </button>
+      <div class="btn-group">
+        <button type="button" class="btn btn-outline-primary" onClick={switchModeWithTemplate("EDITING", null)}>
+          New untitled schema
+        </button>
+        <button
+          class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split"
+          data-bs-toggle="dropdown"
+          aria-expanded="false"
+        ></button>
+        <ul class="dropdown-menu">
+          <li>
+            <button
+              class="dropdown-item"
+              onClick={() =>
+                navigator.clipboard
+                  .readText()
+                  .then((t) => importTemplate(t))
+                  .catch((err) =>
+                    showNotification({ type: "danger", message: `Error importing from clipboard, ${err}` }),
+                  )
+              }
+            >
+              From clipboard
+            </button>
+          </li>
+          <li>
+            <button class="dropdown-item" onClick={() => switchModeWithTemplate("IMPORT_TEMPLATE", null)()}>
+              From file
+            </button>
+          </li>
+        </ul>
+      </div>
 
       <Dialog
         title="Delete template"
@@ -218,6 +286,25 @@ export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewPro
             {!hasPreviewed && <i>You need to preview the items first.</i>}
           </>
         )}
+      </Dialog>
+
+      <Dialog
+        title="Import template"
+        show={currentMode === "IMPORT_TEMPLATE"}
+        onClose={() => {
+          setCurrentTemplate(null);
+          setCurrentMode("OVERVIEW");
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          if ((fileInputRef as any).current?.value) (fileInputRef as any).current.value = "";
+        }}
+        actions={[{ label: "Import", type: "outline-primary", onClick: handleFileImport, disabled: !fileUploaded }]}
+      >
+        <input
+          type="file"
+          // eslint-disable-next-line @typescript-eslint/no-explicit-any
+          onInput={(e) => setFileUploaded(!(e as any).current?.target?.files?.[0])}
+          ref={fileInputRef}
+        />
       </Dialog>
     </div>
   );

@@ -50,6 +50,11 @@ export const Dialog = ({ title, children, show, scrollable, onClose, actions = [
     return () => el.removeEventListener("hidden.bs.modal", handleClose);
   }, [onClose]);
 
+  useEffect(() => {
+    // close modal on component unmount
+    return () => modalInstance.current.hide();
+  }, []);
+
   return (
     <div class={`modal fade ${size ? `modal-${size}` : ""}`} tabIndex={-1} ref={modalRef}>
       <div class={`modal-dialog ${scrollable ? "modal-dialog-scrollable" : ""}`}>
