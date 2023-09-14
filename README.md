@@ -3,7 +3,7 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 ![CI](https://github.com/wolflu05/inventree-bulk-plugin/actions/workflows/ci.yml/badge.svg)
 
-This plugin helps you bulk create storage locations and part categories in [InvenTree](https://inventree.org/) by using customized naming strategies. That means you not only have the option to generate multidimensional* names for stock locations or part categories, but also have the option to save the templates for later usage if your storage room uses e.g. drawer towers, saved templates help to ensure naming consistency for all later added towers.
+This plugin helps you bulk create storage locations and part categories in [InvenTree](https://inventree.org/) by using customized naming strategies. That means you not only have the option to generate multidimensional\* names for stock locations or part categories, but also have the option to save the templates for later usage if your storage room uses e.g. drawer towers, saved templates help to ensure naming consistency for all later added towers.
 
 > [!NOTE]
 > multidimensional means that you are not limited to namings like `D1`,`D2`, .. but also something like `D1.A`, `D1.B`, `D2.A`, `D2.B`, ...
@@ -76,7 +76,7 @@ Install this plugin as follows:
 4. Stop your server and run `invoke update` (for docker installs it is `docker-compose inventree-server invoke update`). This ensures that all migrations run and the static files get collected. You can now start your server again and start using the plugin.
 
 > [!IMPORTANT]
-> At least InvenTree v0.12.6 is required to use this plugin.
+> At least InvenTree v0.12.7 is required to use this plugin.
 
 ## 🏃 Usage
 
@@ -99,11 +99,12 @@ You can save bulk creation templates to ensure consistency along your storage tr
 
 ### Bulk creation editor
 
-The bulk creation editor helps you to define the generation schema. 
+The bulk creation editor helps you to define the generation schema.
 
 > [!NOTE]
 > You can use [Jinja2 templating](https://jinja.palletsprojects.com/en/3.1.x/templates/) in every field (except in the `input` section). You can also use filters to manipulate the dimension output.
 > **Global context:**
+>
 > - `inp.<key>` - Access [input variables](#input), e.g. (`{{inp.drawer_count|int / 2}}`)
 
 #### Input
@@ -121,12 +122,15 @@ For the rest of the fields see [output](#output).
 #### Output
 
 ##### Parent name match
+
 First child that matches the parent name matcher will be chosen for generating the child's for a specific parent. This must evaluate to something that can be casted to a boolean. You can use Jinja2 for dynamically decide based on the parent. E.g. `{{par.gen.name == "D1"}}`. The global jinja2 and `par` context is available here.
 
 ##### Extends
+
 Select a template to extend from
 
 ##### Dimensions/Count
+
 Dimensions are a way to add various counting strategies to your naming. You can add a dimension by clicking on "Add dimension" and remove it via the red "X" on the right of the dimension field.
 
 A `dimension` can contain comma separated generators which generate the values for you. There are three types of generators. You can use the `count` field to limit a dimension to a specific amount of generating items. These generators can have arguments parsed via the following syntax: `GENERATOR(key1=value,key2=value)`, where `GENERATOR` is the name/range. <br/>
@@ -134,7 +138,7 @@ A `dimension` can contain comma separated generators which generate the values f
 **Generator types:**<br/>
 Word: _any arbitrary word, not starting with `*`_. E.g. `hello world`<br/>
 Ranges: _ranges are defined with a - in the middle_ E.g. `a-bx`<br/>
-Infinity: _infinity generators start with a *_ E.g. `*NUMERIC`<br/>
+Infinity: _infinity generators start with a `*`_ E.g. `*NUMERIC`<br/>
 
 **Available Generators:**<br/>
 Numeric generator: `*NUMERIC(start=0,end=10,step=2,count=5)` or `0-10(step=2)`<br/>
@@ -150,18 +154,20 @@ Example: `1-3,hello,*NUMERIC(start=1,step=2,end=10),*ALPHA(casing=upper,end=B),A
 These fields my differ between stock location and part category. They correspond to the generated items property. For example "Name" will be the name of the created location/category. Fields like "Structural" must evaluate to something that ca be casted to a boolean (e.g. `true` or `false`).
 
 > [!NOTE]
-> **Extended Jinja2 context**:
+>
+> **Extended Jinja2 context:**
+>
 > - `len` - count of elements this child will generate
 > - `dim.<x>` - x-th dimension, one-based (e.g. `{{dim.1}}` to access the first dimension)
 > - `dim.<x>.len` - count of items the x-th dimension has
 > - `par.<...>` - parent's context
 > - `par.dim.<x>` - parents's dimensions
-> - `par.gen.<name>` - parent's generated fields (e.g. to reuse the parents name `{{par.gen.name}}`)  
+> - `par.gen.<name>` - parent's generated fields (e.g. to reuse the parents name `{{par.gen.name}}`)
 > - `par.par.<...>` - parent's parent context, can be nested deeply
 
 ##### Child's
 
-Child's are a way to add some nesting to your bulk creation tree. You can use them for e.g. generating sections in every of your drawer. You can use the [Parent name match](#parent-name-match) option to add for your drawers named from `Drawer 1` - `Drawer 10` two sections while your other drawers have different sections. 
+Child's are a way to add some nesting to your bulk creation tree. You can use them for e.g. generating sections in every of your drawer. You can use the [Parent name match](#parent-name-match) option to add for your drawers named from `Drawer 1` - `Drawer 10` two sections while your other drawers have different sections.
 
 ## 🧑‍💻 Development
 
