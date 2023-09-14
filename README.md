@@ -146,7 +146,7 @@ Install this plugin as follows:
 
 ## 🏃 Usage
 
-You can bulk create sub-stocklocations, sub-partcategories and parts (See [generate types](#generation-types)). Go to one and use the bulk creation panel on the side for the type you want to generate. Edit a [saved template](#saved-templates) with the [bulk creation editor](#bulk-creation-editor) or create a new untitled to setup a generation quickly. Use "Preview/Bulk create" to bulkcreate using a saved template in combination with inputs. Templates can als be [imported and exported](#import-export) from clipboard or a file which is useful if you want to follow along with the documentation. On most places this documentation shows the template in a codeblock with a copy button.
+You can bulk create sub-stocklocations, sub-partcategories and parts (See [generate types](#generation-types)). Go to one and use the bulk creation panel on the side for the type you want to generate. Edit a [saved template](#saved-templates) with the [bulk creation editor](#bulk-creation-editor) or create a new untitled to setup a generation quickly. Use ["Preview/Bulk create"](#previewbulk-create) to bulkcreate using a saved template in combination with inputs. Templates can als be [imported and exported](#import-export) from clipboard or a file which is useful if you want to follow along with the documentation. On most places this documentation shows the template in a codeblock with a copy button.
 
 ![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/a28ededb-72a8-499c-be55-e23f9557a2fa)
 
