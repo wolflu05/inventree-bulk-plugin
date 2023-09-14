@@ -16,7 +16,7 @@ from rest_framework.request import Request
 from djmoney.contrib.exchange.models import Rate
 
 from stock.models import StockLocation
-from part.models import PartCategory, Part, PartParameter, PartParameterTemplate, PartCategoryParameterTemplate, PartAttachment
+from part.models import PartCategory, Part, PartParameter, PartParameterTemplate, PartCategoryParameterTemplate, PartAttachment, PartRelated
 from company.models import Company, ManufacturerPart, SupplierPart
 from stock.models import StockItem
 from common.models import InvenTreeSetting
@@ -343,6 +343,15 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                     "purchase_price_currency": FieldDefinition("Currency", field_type="select", get_options=self.get_currencies_options, get_default=self.get_currency_default),
                 }
             ),
+            "related_parts": FieldDefinition(
+                "Related parts",
+                field_type="list",
+                items_type=FieldDefinition(
+                    "",
+                    field_type="model",
+                    model="part.part",
+                )
+            )
         }
 
     def create_objects(self, objects: ParseChildReturnType) -> list[Part]:
@@ -398,6 +407,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
         manufacturer_data = data[0].pop("manufacturer", None)
         stock_data = data[0].pop("stock", None)
         image = data[0].pop("image", None)
+        related_parts = data[0].pop("related_parts", None)
 
         # use local image if available
         if image:
@@ -494,6 +504,12 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                 **stock_data,
             )
             stock_item.save(user=self.request.user)
+
+        # create related parts
+        if related_parts:
+            for related_part in related_parts:
+                related_part = get_model_instance(Part, related_part, {}, f"for {part.name}")
+                PartRelated.objects.create(part_1=part, part_2=related_part)
 
         return part
 

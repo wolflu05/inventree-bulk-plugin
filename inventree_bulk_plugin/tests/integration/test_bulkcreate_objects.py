@@ -7,7 +7,7 @@ from django.db.models import Model, IntegerField, DecimalField, FloatField, Bool
 from mptt.models import MPTTModel
 
 from company.models import Company, ManufacturerPart, SupplierPart
-from part.models import Part, PartCategory, PartParameterTemplate, PartParameter, PartAttachment
+from part.models import Part, PartCategory, PartParameterTemplate, PartParameter, PartAttachment, PartRelated
 from stock.models import StockLocation, StockItem
 from common.models import InvenTreeSetting
 
@@ -357,7 +357,7 @@ class PartCategoryBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
 
 class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
     bulk_create_object = PartBulkCreateObject
-    ignore_fields = ["parameters", "attachments"]
+    ignore_fields = ["parameters", "attachments", "related_parts"]
     model_object_fields = [
         ("supplier", SupplierPart, ["_make_default"], ["part"]),
         ("manufacturer", ManufacturerPart, [], ["part"]),
@@ -386,6 +386,13 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
             f"{obj.template_type}.attachments.[x]",
             ignore_fields=["file_url", "file_name", "file_headers"],
             ignore_model_required_fields=["part"],
+        ))
+
+        issues.extend(self.model_test(
+            PartRelated,
+            {"part_2": obj.fields["related_parts"].items_type},
+            f"{obj.template_type}.related_parts.[x]",
+            ignore_model_required_fields=["part_1"],
         ))
 
         return issues
@@ -568,6 +575,22 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
                 "image": "https://raw.githubusercontent.com/test-images/png/main/202105/cs-black-000.png"
             }, [])
         ])
+
+        # test related parts
+        related_part = Part.objects.create(name="Test to relate this part")
+        req = self.request.get(f"/abc?parent_id={category.pk}")
+        req.user = self.user
+        obj = PartBulkCreateObject(req)
+        obj.get_context()
+        created = obj.create_objects([
+            ({
+                "name": "Test 1_7",
+                "description": "Test Description",
+                "related_parts": [str(related_part.pk)]
+            }, []),
+        ])
+        self.assertEqual(len(created), 1)
+        self.assertEqual(created[0].get_related_parts(), {related_part})
 
     def test_get_context(self):
         # test without category id
