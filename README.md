@@ -223,7 +223,7 @@ A `dimension` can contain comma separated generators which generate the values f
 
 **Generator types:**<br/>
 Word: _any arbitrary word, not starting with `*`_. E.g. `hello world`<br/>
-Ranges: _ranges are defined with a - in the middle_ E.g. `a-bx`<br/>
+Ranges: _ranges are defined with a `-` in the middle_ E.g. `a-bx`<br/>
 Infinity: _infinity generators start with a `*`_ E.g. `*NUMERIC`<br/>
 
 **Available Generators:**<br/>
@@ -237,7 +237,7 @@ Example: `1-3,hello,*NUMERIC(start=1,step=2,end=10),*ALPHA(casing=upper,end=B),A
 
 ##### Generate
 
-These fields my differ between stock location and part category. They correspond to the generated items property. For example "Name" will be the name of the created location/category. For more info and also about the available jinja2 context, see [generation types](#generation-types).
+These fields my differ between the different available generate objects. They correspond to the generated items property. For example "Name" will be the name of the created location. For more info and also about the available jinja2 context, see [generation types](#generation-types).
 
 Generate fields can be added with just one click from a list of available fields. If you're missing an field, please [open an issue](https://github.com/wolflu05/inventree-bulk-plugin/issues/new/choose). There are several different types of inputs for native values like numbers, booleans, model references, ... . You can either use the native fields or switch to template mode by clicking on the blue template icon on the right.
 
