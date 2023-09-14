@@ -364,6 +364,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                 items_type=FieldDefinition(
                     "",
                     field_type="model",
+                    required=True,
                     model="part.part",
                     allow_multiple=True,
                 )

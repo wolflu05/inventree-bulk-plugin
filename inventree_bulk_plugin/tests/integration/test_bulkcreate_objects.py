@@ -577,7 +577,8 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         ])
 
         # test related parts
-        related_part = Part.objects.create(name="Test to relate this part")
+        related_part = Part.objects.create(name="Test to relate this part",
+                                           description="Test to relate this part description")
         req = self.request.get(f"/abc?parent_id={category.pk}")
         req.user = self.user
         obj = PartBulkCreateObject(req)
