@@ -155,11 +155,15 @@ You can bulk create sub-stocklocations, sub-partcategories and parts (See [gener
 You can save bulk creation templates to ensure consistency along your storage trees. Let's say you have a bunch of drawer towers. With saved templates you can now easily store your templates to re-use it when you want to add a new tower to the system.
 
 > [!NOTE]
-> You can use [inputs](#input) to make your bulk creation schema dynamic in amount of drawers or their names.
+> You can use [inputs](#input) to make your bulk creation schema dynamic in amount of drawers or their names and then use the [preview/bulk create](#previewbulk-create) dialog to quickly generate objects at different locations.
 
 ### Import export
 
 Templates can be imported and exported into the clipboard or can be downloaded as a file. Use the dropdown menu at the right of the "New untitled template" button for importing. Exporting can be done from the [editor view](#bulk-creation-editor) with the clipboard/download icon button.
+
+### Preview/Bulk create
+
+The preview bulk create dialog can be used to quickly generate objects at different locations by using inputs to make them dynamic. One use case would be the Resistor part generation template shown at the [screenshot section](#📄-some-more-examples).
 
 ### Bulk creation editor
 
