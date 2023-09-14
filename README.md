@@ -50,6 +50,8 @@ This plugin helps you bulk create storage locations and part categories in [Inve
 ```
 <!-- prettier-ignore-end -->
 
+</details>
+
 <details>
 <summary>Pad your numeric dimensions with zeros.</summary>
 
