@@ -45,6 +45,9 @@ def get_model(model_name: str):
 
 
 def get_model_instance(model: Model, pk: str, limit_choices={}, error_msg="", allow_multiple=False):
+    if isinstance(pk, Model):
+        return pk
+
     try:
         filters = {"pk": int(pk)}
     except ValueError:
@@ -169,6 +172,7 @@ class BulkCreateObject(Generic[ModelType]):
             self.fields = self.get_fields()
 
     def create_object(self, data: ParseChildReturnElement, **kwargs):
+        """Create an objects, the properties from data can override the kwargs."""
         properties = {}
         for k, v in data[0].items():
             if field := self.fields.get(k, None):
@@ -260,7 +264,7 @@ class PartCategoryBulkCreateObject(BulkCreateObject[PartCategory]):
 class PartBulkCreateObject(BulkCreateObject[Part]):
     name = "Part"
     template_type = "PART"
-    generate_type = "single"
+    generate_type = "tree"
     model = Part
 
     def get_fields(self):
@@ -416,17 +420,38 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
 
         return super().create_objects(objects)
 
-    def create_object(self, data: ParseChildReturnElement):
+    def create_object(self, data: ParseChildReturnElement, *, parent: Optional[Part] = None):
         # remove relations from data to create them separately
         parameters = data[0].pop("parameters", [])
         attachments = data[0].pop("attachments", [])
         supplier_data = data[0].pop("supplier", None)
         manufacturer_data = data[0].pop("manufacturer", None)
         stock_data = data[0].pop("stock", None)
-        image = data[0].pop("image", None)
         related_parts = data[0].pop("related_parts", None)
 
+        # define fields that should be skipped for duplicating
+        skip_duplicate_fields = ["parameters", "attachments", "supplier",
+                                 "manufacturer", "stock", "related_parts", "default_supplier"]
+        if not InvenTreeSetting.get_setting("PART_ALLOW_DUPLICATE_IPN"):
+            skip_duplicate_fields.append("IPN")
+
+        # check variant_of
+        if parent:
+            if not parent.is_template:
+                raise ValueError(
+                    f"Part '{data[0]['name']}' cannot be a variant of '{parent.name}' because the parent is not a template part.")
+            data[0]["variant_of"] = parent
+
+            # copy everything from parent if not set
+            for k in self.fields:
+                if k not in data[0] and (value := getattr(parent, k, None)):
+                    # skip copying specific fields
+                    if k in skip_duplicate_fields:
+                        continue
+                    data[0][k] = value
+
         # use local image if available
+        image = data[0].pop("image", None)
         if image:
             # maybe use already saved image with same url
             if image in self.part_images and isinstance(self.part_images[image], str):
@@ -438,7 +463,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             data[0]["image"] = image
 
         # create part
-        part = super().create_object(
+        part: Part = super().create_object(
             data,
             category=self.category,
             creation_user=self.request.user,
@@ -464,6 +489,9 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             self.part_images[image] = part.image.name
 
         # create parameters
+        if parent:
+            part.copy_parameters_from(parent)
+
         for parameter in parameters:
             template = get_model_instance(PartParameterTemplate, parameter["template"], {}, f"for {part.name}")
             PartParameter.objects.create(part=part, template=template, data=parameter['value'])
@@ -540,7 +568,18 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
         parent_id = self.request.query_params.get("parent_id", None)
         self.category = None
 
-        ctx = super().get_context()
+        # no super call is invoked here, because we handle the parent fetching a bit different in this function
+        ctx = {}
+        self.parent = None
+
+        # try to add template part (of which this part is a variant of) as 'par.gen.<...>' context
+        schema = self.request.data.get("template", None)
+        if not isinstance(schema, dict):
+            schema = json.loads(schema)
+        if variant_of := schema["output"]["generate"].get("variant_of", None):
+            template_part = get_model_instance(Part, variant_of, {"is_template": True}, "for variant_of field")
+            self.parent = template_part  # set parent, used in self.create_objects(...) later
+            ctx["gen"] = {key: getattr(template_part, key) for key in self.fields.keys() if hasattr(template_part, key)}
 
         if not parent_id:
             return ctx
