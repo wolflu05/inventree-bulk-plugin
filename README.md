@@ -283,7 +283,7 @@ Normal objects are objects that don't have a tree structure and therefore don't 
 
 ##### Parts
 
-Parts use the tree generation feature for part variant. You can either generate variants for an already created template part by using the "variants of" attribute, or create a template part with variants by using the childs feature. The "variant of" field then gets automatically assigned the parent part if its not set for the child. The only thing you need to make sure is that the parent part has set the `is_template: true` option, otherwise creation will fail. The plugin then tries to copy unset fields from the template part if they are not set for the child. Parameters get copied too, even there are parameters defined for the child.
+Parts use the tree generation feature for part variant. You can either generate variants for an already created template part by using the "variants of" attribute (note that for the root generate element, templating is not supported in this field), or create a template part with variants by using the childs feature. The "variant of" field then gets automatically assigned the parent part if its not set for the child. The only thing you need to make sure is that the parent part has set the `is_template: true` option, otherwise creation will fail. The plugin then tries to copy unset fields from the template part if they are not set for the child. Parameters get copied too, even there are parameters defined for the child.
 
 Example:
 
