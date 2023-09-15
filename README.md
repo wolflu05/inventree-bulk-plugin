@@ -253,30 +253,45 @@ Child's are a way to add some nesting to your bulk creation tree. You can use th
 
 ### Generation types
 
-You can bulk create sub-stocklocations, sub-partcategories and parts with there different options. These objects can be categorized into two different generation groups, [Tree objects](#tree-objects) and [normal objects](#normal-objects). For all of those, the following context is available.
+You can bulk create sub-stocklocations, sub-partcategories and parts with there different options. All of those are tree objects, that means objects that can have childs and extend from templates that can be defined.
 
-| Key           | Description                                                                |
-| ------------- | -------------------------------------------------------------------------- |
-| `len`         | count of elements this child will generate                                 |
-| `dim.<x>`     | x-th dimension, one-based (e.g. `{{dim.1}}` to access the first dimension) |
-| `dim.<x>.len` | count of items the x-th dimension has                                      |
+<!-- These objects can be categorized into two different generation groups, [Tree objects](#tree-objects) and [normal objects](#normal-objects).  -->
 
-#### Tree objects
-
-Tree objects are objects that can have childs and use templates. Currently "stock locations" and "part categories" are supported. In addition to the default context, the following attributes are also available in the context.
+For all of those, the following context is available.
 
 | Key              | Description                                                                   |
 | ---------------- | ----------------------------------------------------------------------------- |
+| `len`            | count of elements this child will generate                                    |
+| `dim.<x>`        | x-th dimension, one-based (e.g. `{{dim.1}}` to access the first dimension)    |
+| `dim.<x>.len`    | count of items the x-th dimension has                                         |
 | `par.<...>`      | parent's context                                                              |
 | `par.dim.<x>`    | parents's dimensions                                                          |
 | `par.gen.<name>` | parent's generated fields (e.g. to reuse the parents name `{{par.gen.name}}`) |
 | `par.par.<...>`  | parent's parent context, can be nested deeply                                 |
 
+<!--
+Currently there is only one type
+#### Tree objects
+Tree objects are objects that can have childs and use templates. Currently "stock locations" and "part categories" are supported. In addition to the default context, the following attributes are also available in the context.
+| Key              | Description                                                                   |
+| ---------------- | ----------------------------------------------------------------------------- |
+
 #### Normal objects
 
 Normal objects are objects that don't have a tree structure and therefore don't need childs and templates. Currently "parts" is the only supported object. There is no additional context.
+-->
 
 ##### Parts
+
+Parts use the tree generation feature for part variant. You can either generate variants for an already created template part by using the "variants of" attribute, or create a template part with variants by using the childs feature. The "variant of" field then gets automatically assigned the parent part if its not set for the child. The only thing you need to make sure is that the parent part has set the `is_template: true` option, otherwise creation will fail. The plugin then tries to copy unset fields from the template part if they are not set for the child. Parameters get copied too, even there are parameters defined for the child.
+
+Example:
+
+<!-- prettier-ignore-start -->
+```json
+{"name":"","template_type":"PART","template":{"version":"1.0.0","input":{},"templates":[],"output":{"parent_name_match":"true","dimensions":[],"count":[],"generate":{"name":"Wall paint","description":"This is awesome paint","is_template":true},"childs":[{"parent_name_match":"true","dimensions":["red,blue,green"],"count":[""],"generate":{"name":"{{par.gen.name}} - {{dim.1}}"}}]}}}
+```
+<!-- prettier-ignore-end -->
 
 Parts have an additional context:
 
