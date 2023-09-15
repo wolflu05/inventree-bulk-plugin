@@ -13,6 +13,7 @@ export interface FieldDefinitionText extends FieldDefinitionBase {
 export interface FieldDefinitionModel extends FieldDefinitionBase {
   field_type: "model";
   model: { model: string; limit_choices_to: Record<string, string>; api_url: string };
+  allow_multiple: boolean;
 }
 
 export interface FieldDefinitionSelect extends FieldDefinitionBase {

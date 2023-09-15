@@ -173,10 +173,9 @@ The bulk creation editor helps you to define the generation schema.
 
 You can use [Jinja2 templating](https://jinja.palletsprojects.com/en/3.1.x/templates/) in every field (except in the `input` section). You can also use filters to manipulate the dimension output.
 
-##### Global context
+##### Global jinja2 context
 
 - `inp.<key>` - Access [input variables](#input), e.g. (`{{inp.drawer_count|int / 2}}`)
-- `global.<...>` - Access any variable defined in [global context](#global-context)
 
 ##### Extra useful filters
 
@@ -213,7 +212,7 @@ Select a template to extend from
 
 ##### Global context
 
-Global context can be used to set up some more complex variables and reuse them between fields. Under the hood this template gets imported as `global` by prepending `{% import global_context_template as global with context %}` to every generate field. Therefore you can also use the dimensions and every available context variable there too.
+Global context can be used to set up some more complex variables and reuse them between fields. Under the hood this template gets imported as `global` by prepending `{% import global_context_template as global with context %}` to every generate field. Therefore you can also use the dimensions and every available context variable there too. But note that the defined variables are only valid in that parent they are defined in, not in their childs. This is a limitation of the import function of jinja2 templates.
 
 ##### Dimensions/Count
 
@@ -253,30 +252,46 @@ Child's are a way to add some nesting to your bulk creation tree. You can use th
 
 ### Generation types
 
-You can bulk create sub-stocklocations, sub-partcategories and parts with there different options. These objects can be categorized into two different generation groups, [Tree objects](#tree-objects) and [normal objects](#normal-objects). For all of those, the following context is available.
+You can bulk create sub-stocklocations, sub-partcategories and [parts](#parts) with there different options. All of those are tree objects, that means objects that can have childs and extend from templates that can be defined.
 
-| Key           | Description                                                                |
-| ------------- | -------------------------------------------------------------------------- |
-| `len`         | count of elements this child will generate                                 |
-| `dim.<x>`     | x-th dimension, one-based (e.g. `{{dim.1}}` to access the first dimension) |
-| `dim.<x>.len` | count of items the x-th dimension has                                      |
+<!-- These objects can be categorized into two different generation groups, [Tree objects](#tree-objects) and [normal objects](#normal-objects).  -->
 
-#### Tree objects
-
-Tree objects are objects that can have childs and use templates. Currently "stock locations" and "part categories" are supported. In addition to the default context, the following attributes are also available in the context.
+For all of those, the following context is available.
 
 | Key              | Description                                                                   |
 | ---------------- | ----------------------------------------------------------------------------- |
+| `len`            | count of elements this child will generate                                    |
+| `dim.<x>`        | x-th dimension, one-based (e.g. `{{dim.1}}` to access the first dimension)    |
+| `dim.<x>.len`    | count of items the x-th dimension has                                         |
 | `par.<...>`      | parent's context                                                              |
 | `par.dim.<x>`    | parents's dimensions                                                          |
 | `par.gen.<name>` | parent's generated fields (e.g. to reuse the parents name `{{par.gen.name}}`) |
 | `par.par.<...>`  | parent's parent context, can be nested deeply                                 |
+| `global.<...>`   | Access any variable defined in [global context](#global-context)              |
+
+<!--
+Currently there is only one type
+#### Tree objects
+Tree objects are objects that can have childs and use templates. Currently "stock locations" and "part categories" are supported. In addition to the default context, the following attributes are also available in the context.
+| Key              | Description                                                                   |
+| ---------------- | ----------------------------------------------------------------------------- |
 
 #### Normal objects
 
 Normal objects are objects that don't have a tree structure and therefore don't need childs and templates. Currently "parts" is the only supported object. There is no additional context.
+-->
 
 ##### Parts
+
+Parts use the tree generation feature for part variant. You can either generate variants for an already created template part by using the "variants of" attribute (note that for the root generate element, templating is not supported in this field), or create a template part with variants by using the childs feature. The "variant of" field then gets automatically assigned the parent part if its not set for the child. The only thing you need to make sure is that the parent part has set the `is_template: true` option, otherwise creation will fail. The plugin then tries to copy unset fields from the template part if they are not set for the child. Parameters get copied too, even there are parameters defined for the child.
+
+Example:
+
+<!-- prettier-ignore-start -->
+```json
+{"name":"","template_type":"PART","template":{"version":"1.0.0","input":{},"templates":[],"output":{"parent_name_match":"true","dimensions":[],"count":[],"generate":{"name":"Wall paint","description":"This is awesome paint","is_template":true},"childs":[{"parent_name_match":"true","dimensions":["red,blue,green"],"count":[""],"generate":{"name":"{{par.gen.name}} - {{dim.1}}"}}]}}}
+```
+<!-- prettier-ignore-end -->
 
 Parts have an additional context:
 
