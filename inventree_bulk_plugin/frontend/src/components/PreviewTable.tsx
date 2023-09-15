@@ -6,6 +6,7 @@ import { URLS, fetchAPI } from "../utils/api";
 import { customModelProcessors } from "../utils/customModelProcessors";
 import { BulkGenerateInfo, FieldDefinition, FieldType, TemplateModel } from "../utils/types";
 
+const MODEL_LIMIT = 10;
 interface PreviewTableProps {
   template: TemplateModel;
   height?: number;
@@ -75,8 +76,23 @@ export const PreviewTable = ({ template, height, parentId, bulkGenerateInfo }: P
                 return `${renderModelData("", modelName, f, {})} <span>(${f.pk})</span>`;
               };
 
+              const count = field.count;
+              if (fieldDefinition.allow_multiple && field.results) field = field.results;
               if (fieldDefinition.allow_multiple && Array.isArray(field)) {
-                return `<li>${field.map(renderOne).join("</li><li>")}</li>`;
+                // render ... if there are more fields available
+                let hasMore = false;
+                let extraText = "";
+                if (count === undefined) {
+                  hasMore = count > field.length;
+                  extraText = `${count - field.length} more elements`;
+                } else if (field.length >= MODEL_LIMIT) {
+                  field.pop(); // remove one element so that the ... is real
+                  hasMore = true;
+                  extraText = `at least one more element`;
+                }
+
+                const renderedElements = `<li>${field.map(renderOne).join("</li><li>")}</li>`;
+                return `${renderedElements}${hasMore ? `<li>... ${extraText}</li>` : ""}`;
               }
               return renderOne(field);
             })();
@@ -99,7 +115,6 @@ export const PreviewTable = ({ template, height, parentId, bulkGenerateInfo }: P
             }
             cache[cacheKey].push(handleSuccess);
           } else {
-            const cacheKey = `~get-api-${JSON.stringify(value)}`;
             let urlPath = `${value}/`;
             let filters = { ...fieldDefinition.model.limit_choices_to };
 
@@ -112,7 +127,8 @@ export const PreviewTable = ({ template, height, parentId, bulkGenerateInfo }: P
               if ("name" in filters) filters.search = filters.name;
             }
 
-            const url = `${fieldDefinition.model.api_url}/${urlPath}`.replace("//", "/");
+            const url = `${fieldDefinition.model.api_url}/${urlPath}?limit=${MODEL_LIMIT}`.replace("//", "/");
+            const cacheKey = `~get-api-${url}-${JSON.stringify(value)}`;
 
             if (!cache[cacheKey]) {
               cache[cacheKey] = [];

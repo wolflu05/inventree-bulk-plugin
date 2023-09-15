@@ -116,7 +116,7 @@ export const TemplateForm = ({
   }, [loadTemplate]);
 
   const saveOrUpdate = useCallback(async () => {
-    if (!template) return;
+    if (!template) return false;
 
     const res = await fetchAPI(URLS.templates({ id: isCreate ? null : template.id }), {
       method: isCreate ? "POST" : "PUT",
@@ -125,13 +125,14 @@ export const TemplateForm = ({
     const data = await res.json();
 
     if (!res.ok) {
-      return showNotification({
+      showNotification({
         type: "danger",
         message: `An error occurred. ${Object.entries(data as Record<string, string[]>)
           .map(([key, v]) => `${key}: ${v.join(", ")}`)
           .join(", ")}`,
         autoHide: false,
       });
+      return false;
     }
 
     if (isCreate) {
@@ -143,6 +144,7 @@ export const TemplateForm = ({
     }
 
     setInitialTemplate(structuredClone(template));
+    return true;
   }, [isCreate, showNotification, template]);
 
   const handleReset = useCallback(() => setTemplate(structuredClone(initialTemplate)), [initialTemplate]);
@@ -211,6 +213,8 @@ export const TemplateForm = ({
       );
   }, [showNotification, template?.name, template?.template, template?.template_type]);
 
+  const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
+
   return (
     <div>
       <h5>
@@ -248,9 +252,8 @@ export const TemplateForm = ({
 
       <div class="d-flex mt-2" style="gap: 5px">
         <button
-          class={`btn ${hasChanged && !isCreate ? "btn-outline-secondary" : "btn-outline-primary"}`}
-          onClick={handleBack}
-          disabled={hasChanged && !isCreate}
+          class={`btn btn-outline-primary`}
+          onClick={() => (hasChanged ? setShowSaveTemplateDialog(true) : handleBack())}
         >
           Back
         </button>
@@ -314,6 +317,33 @@ export const TemplateForm = ({
       >
         Are you sure you want to bulk generate{" "}
         {bulkGenerateInfoDict[template?.template_type || ""]?.name || template?.template_type}s here?
+      </Dialog>
+
+      <Dialog
+        title="Save the template"
+        show={showSaveTemplateDialog}
+        onClose={() => setShowSaveTemplateDialog(false)}
+        actions={[
+          {
+            label: "Don't save",
+            type: "outline-danger",
+            onClick: handleBack,
+          },
+          {
+            label: "Save",
+            type: "primary",
+            onClick: () => {
+              saveOrUpdate().then((r) => {
+                setShowSaveTemplateDialog(false);
+                if (r === true) {
+                  handleBack();
+                }
+              });
+            },
+          },
+        ]}
+      >
+        Do you want to save the template?
       </Dialog>
     </div>
   );
