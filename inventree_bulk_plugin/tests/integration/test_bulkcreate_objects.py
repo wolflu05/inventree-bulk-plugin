@@ -60,8 +60,8 @@ class BulkCreateObjectsUtilsTestCase(TestCase):
         self.assertEqual(get_model_instance(Company, supplier_company, {"is_supplier": True}), supplier_company)
 
         # test with allow_multiple
-        self.assertEqual(list(get_model_instance(Company, '{"name__endswith": "company"}', {}, allow_multiple=True)), [
-                         supplier_company, customer_company])
+        self.assertCountEqual(list(get_model_instance(Company, '{"name__endswith": "company"}', {}, allow_multiple=True)), [
+            supplier_company, customer_company])
 
         # test with invalid filter
         with self.assertRaisesRegex(ValueError, "Cannot parse json query string at XXX"):
@@ -655,8 +655,8 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         self.assertEqual(created.description, template_part.description)
         self.assertEqual(created.is_template, False)
         self.assertEqual(created.variant_of, template_part)
-        self.assertEqual(list((p.part.name, p.template.name, p.data) for p in created.get_parameters()), [
-                         ('Test 1_9', 'Test 1', '10'), ('Test 1_9', 'Test 2', '13')])
+        self.assertCountEqual(list((p.part.name, p.template.name, p.data) for p in created.get_parameters()), [
+            ('Test 1_9', 'Test 1', '10'), ('Test 1_9', 'Test 2', '13')])
         self.assertEqual(created.image.name, template_part.image.name)
         self.assertEqual(created.IPN, template_part.IPN)
 
