@@ -431,7 +431,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
 
         # define fields that should be skipped for duplicating
         skip_duplicate_fields = ["parameters", "attachments", "supplier",
-                                 "manufacturer", "stock", "related_parts", "default_supplier"]
+                                 "manufacturer", "stock", "related_parts", "default_supplier", "category", "variant_of", "is_template"]
         if not InvenTreeSetting.get_setting("PART_ALLOW_DUPLICATE_IPN"):
             skip_duplicate_fields.append("IPN")
 
@@ -448,7 +448,11 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                     # skip copying specific fields
                     if k in skip_duplicate_fields:
                         continue
-                    data[0][k] = value
+
+                    if k == "image":
+                        data[0][k] = value.name
+                    else:
+                        data[0][k] = value
 
         # use local image if available
         image = data[0].pop("image", None)
