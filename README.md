@@ -173,7 +173,7 @@ The bulk creation editor helps you to define the generation schema.
 
 You can use [Jinja2 templating](https://jinja.palletsprojects.com/en/3.1.x/templates/) in every field (except in the `input` section). You can also use filters to manipulate the dimension output.
 
-##### Global context
+##### Global jinja2 context
 
 - `inp.<key>` - Access [input variables](#input), e.g. (`{{inp.drawer_count|int / 2}}`)
 
