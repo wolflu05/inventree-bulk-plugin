@@ -17,7 +17,7 @@ from ...bulkcreate_objects import get_model, get_model_instance, cast_model, cas
 # custom request factory, used to patch query_params which were not defined by default
 class CustomRequestFactory(RequestFactory):
     def request(self, **request):
-        data = request.pop("data", None)
+        data = request.pop("data", {})
         r = super().request(**request)
         r.query_params = r.GET or r.POST
         r.data = data
