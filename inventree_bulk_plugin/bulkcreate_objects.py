@@ -577,10 +577,10 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
         self.parent = None
 
         # try to add template part (of which this part is a variant of) as 'par.gen.<...>' context
-        schema = self.request.data.get("template", None)
+        schema = self.request.data.get("template", {})
         if not isinstance(schema, dict):
             schema = json.loads(schema)
-        if variant_of := schema["output"]["generate"].get("variant_of", None):
+        if variant_of := schema.get("output", {}).get("generate", {}).get("variant_of", None):
             template_part = get_model_instance(Part, variant_of, {"is_template": True}, "for variant_of field")
             self.parent = template_part  # set parent, used in self.create_objects(...) later
             ctx["gen"] = {key: getattr(template_part, key) for key in self.fields.keys() if hasattr(template_part, key)}
