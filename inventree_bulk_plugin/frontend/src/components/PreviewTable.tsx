@@ -168,8 +168,8 @@ export const PreviewTable = ({ template, height, parentId, bulkGenerateInfo }: P
             .map(([key, f]) => ({
               field: key,
               title: f.name,
-              formatter: (value: FieldType, _row: Record<string, FieldType>, index: number) =>
-                format(f, value, `table-${id}-field-${index}`),
+              formatter: (value: FieldType, _row: Record<string, FieldType>, index: number, cellName: string) =>
+                format(f, value, `table-${id}-field-${index}-${cellName}`),
             })),
           { field: "path", title: "Path" },
         ],
