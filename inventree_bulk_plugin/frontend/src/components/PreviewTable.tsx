@@ -6,6 +6,7 @@ import { URLS, fetchAPI } from "../utils/api";
 import { customModelProcessors } from "../utils/customModelProcessors";
 import { BulkGenerateInfo, FieldDefinition, FieldType, TemplateModel } from "../utils/types";
 
+const MODEL_LIMIT = 10;
 interface PreviewTableProps {
   template: TemplateModel;
   height?: number;
@@ -63,14 +64,37 @@ export const PreviewTable = ({ template, height, parentId, bulkGenerateInfo }: P
                 return customModelProcessors[fieldDefinition.model.model].render(field);
               }
 
-              if (!field.pk) {
-                return "";
-              }
-              const modelName = fieldDefinition.model.model.toLowerCase().split(".").at(-1);
+              // eslint-disable-next-line @typescript-eslint/no-explicit-any
+              const renderOne = (f: any) => {
+                if (!f.pk) {
+                  return "";
+                }
+                const modelName = fieldDefinition.model.model.toLowerCase().split(".").at(-1);
 
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore
-              return `${renderModelData("", modelName, field, {})} <span>(${field.pk})</span>`;
+                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+                // @ts-ignore
+                return `${renderModelData("", modelName, f, {})} <span>(${f.pk})</span>`;
+              };
+
+              const count = field.count;
+              if (fieldDefinition.allow_multiple && field.results) field = field.results;
+              if (fieldDefinition.allow_multiple && Array.isArray(field)) {
+                // render ... if there are more fields available
+                let hasMore = false;
+                let extraText = "";
+                if (count === undefined) {
+                  hasMore = count > field.length;
+                  extraText = `${count - field.length} more elements`;
+                } else if (field.length >= MODEL_LIMIT) {
+                  field.pop(); // remove one element so that the ... is real
+                  hasMore = true;
+                  extraText = `at least one more element`;
+                }
+
+                const renderedElements = `<li>${field.map(renderOne).join("</li><li>")}</li>`;
+                return `${renderedElements}${hasMore ? `<li>... ${extraText}</li>` : ""}`;
+              }
+              return renderOne(field);
             })();
 
             const cell = document.getElementById(cellId);
@@ -91,20 +115,37 @@ export const PreviewTable = ({ template, height, parentId, bulkGenerateInfo }: P
             }
             cache[cacheKey].push(handleSuccess);
           } else {
-            const url = `${fieldDefinition.model.api_url}/${value}/`.replace("//", "/");
+            let urlPath = `${value}/`;
+            let filters = { ...fieldDefinition.model.limit_choices_to };
 
-            if (!cache[url]) {
-              cache[url] = [];
+            // use json filters
+            if (Number.isNaN(parseInt(value as string, 10))) {
+              urlPath = "";
+              filters = { ...JSON.parse(value as string), ...filters };
+
+              // name is mostly not there, use search instead
+              if ("name" in filters) filters.search = filters.name;
+            }
+
+            const url = `${fieldDefinition.model.api_url}/${urlPath}?limit=${MODEL_LIMIT}`.replace("//", "/");
+            const cacheKey = `~get-api-${url}-${JSON.stringify(value)}`;
+
+            if (!cache[cacheKey]) {
+              cache[cacheKey] = [];
               // eslint-disable-next-line @typescript-eslint/ban-ts-comment
               // @ts-ignore
               inventreeGet(
                 url,
-                { ...fieldDefinition.model.limit_choices_to },
-                // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                { success: (d: any) => cache[url].forEach((handler) => handler(d)) },
+                { ...filters },
+                {
+                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                  success: (item: any) => {
+                    cache[cacheKey].forEach((handler) => handler(item));
+                  },
+                },
               );
             }
-            cache[url].push(handleSuccess);
+            cache[cacheKey].push(handleSuccess);
           }
 
           return `<span id=${cellId} class="placeholder placeholder-glow col-4">${value}</span>`;
@@ -143,8 +184,8 @@ export const PreviewTable = ({ template, height, parentId, bulkGenerateInfo }: P
             .map(([key, f]) => ({
               field: key,
               title: f.name,
-              formatter: (value: FieldType, _row: Record<string, FieldType>, index: number) =>
-                format(f, value, `table-${id}-field-${index}`),
+              formatter: (value: FieldType, _row: Record<string, FieldType>, index: number, cellName: string) =>
+                format(f, value, `table-${id}-field-${index}-${cellName}`),
             })),
           { field: "path", title: "Path" },
         ],

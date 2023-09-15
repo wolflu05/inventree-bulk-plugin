@@ -16,7 +16,7 @@ from rest_framework.request import Request
 from djmoney.contrib.exchange.models import Rate
 
 from stock.models import StockLocation
-from part.models import PartCategory, Part, PartParameter, PartParameterTemplate, PartCategoryParameterTemplate, PartAttachment
+from part.models import PartCategory, Part, PartParameter, PartParameterTemplate, PartCategoryParameterTemplate, PartAttachment, PartRelated
 from company.models import Company, ManufacturerPart, SupplierPart
 from stock.models import StockItem
 from common.models import InvenTreeSetting
@@ -44,11 +44,28 @@ def get_model(model_name: str):
     return model
 
 
-def get_model_instance(model: Model, pk, limit_choices={}, error_msg=""):
+def get_model_instance(model: Model, pk: str, limit_choices={}, error_msg="", allow_multiple=False):
+    if isinstance(pk, Model):
+        return pk
+
     try:
-        return model.objects.get(pk=pk, **limit_choices)
+        filters = {"pk": int(pk)}
+    except ValueError:
+        # value is not an pk, try casting it from json to a python dict
+        try:
+            filters = json.loads(pk)
+        except Exception:
+            raise ValueError(f"Cannot parse json query string {error_msg}")
+
+    try:
+        if allow_multiple:
+            return model.objects.filter(**filters, **limit_choices)
+        return model.objects.get(**filters, **limit_choices)
     except model.DoesNotExist:
-        raise ValueError(f"Model '{model._meta}' where {({'pk': pk,**limit_choices})} not found {error_msg}")
+        raise ValueError(f"Model '{model._meta}' where {({**filters, **limit_choices})} not found {error_msg}")
+    except model.MultipleObjectsReturned:
+        raise ValueError(
+            f"Model '{model._meta}' where {({**filters, **limit_choices})} returned multiple models {error_msg}")
 
 
 def cast_model(value: str, *, field: "FieldDefinition" = None):
@@ -58,7 +75,7 @@ def cast_model(value: str, *, field: "FieldDefinition" = None):
     _, limit_choices, model = field.model
 
     # raises value error if object with pk=value doesn't exist
-    get_model_instance(model, value, limit_choices)
+    get_model_instance(model, value, limit_choices, allow_multiple=field.allow_multiple)
 
     return value
 
@@ -79,6 +96,7 @@ class FieldDefinition(BaseFieldDefinition):
     description: Optional[str] = None
     required: bool = False
     model: Union[str, tuple[str, dict], tuple[str, dict, Model], None] = None
+    allow_multiple: Optional[bool] = False
     api_url: Optional[str] = None
     items_type: Optional["FieldDefinition"] = None
     fields: Optional[dict[str, "FieldDefinition"]] = None
@@ -154,6 +172,7 @@ class BulkCreateObject(Generic[ModelType]):
             self.fields = self.get_fields()
 
     def create_object(self, data: ParseChildReturnElement, **kwargs):
+        """Create an objects, the properties from data can override the kwargs."""
         properties = {}
         for k, v in data[0].items():
             if field := self.fields.get(k, None):
@@ -245,7 +264,7 @@ class PartCategoryBulkCreateObject(BulkCreateObject[PartCategory]):
 class PartBulkCreateObject(BulkCreateObject[Part]):
     name = "Part"
     template_type = "PART"
-    generate_type = "single"
+    generate_type = "tree"
     model = Part
 
     def get_fields(self):
@@ -343,6 +362,17 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                     "purchase_price_currency": FieldDefinition("Currency", field_type="select", get_options=self.get_currencies_options, get_default=self.get_currency_default),
                 }
             ),
+            "related_parts": FieldDefinition(
+                "Related parts",
+                field_type="list",
+                items_type=FieldDefinition(
+                    "",
+                    field_type="model",
+                    required=True,
+                    model="part.part",
+                    allow_multiple=True,
+                )
+            )
         }
 
     def create_objects(self, objects: ParseChildReturnType) -> list[Part]:
@@ -390,16 +420,42 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
 
         return super().create_objects(objects)
 
-    def create_object(self, data: ParseChildReturnElement):
+    def create_object(self, data: ParseChildReturnElement, *, parent: Optional[Part] = None):
         # remove relations from data to create them separately
         parameters = data[0].pop("parameters", [])
         attachments = data[0].pop("attachments", [])
         supplier_data = data[0].pop("supplier", None)
         manufacturer_data = data[0].pop("manufacturer", None)
         stock_data = data[0].pop("stock", None)
-        image = data[0].pop("image", None)
+        related_parts = data[0].pop("related_parts", None)
+
+        # define fields that should be skipped for duplicating
+        skip_duplicate_fields = ["parameters", "attachments", "supplier",
+                                 "manufacturer", "stock", "related_parts", "default_supplier", "category", "variant_of", "is_template"]
+        if not InvenTreeSetting.get_setting("PART_ALLOW_DUPLICATE_IPN"):
+            skip_duplicate_fields.append("IPN")
+
+        # check variant_of
+        if parent:
+            if not parent.is_template:
+                raise ValueError(
+                    f"Part '{data[0]['name']}' cannot be a variant of '{parent.name}' because the parent is not a template part.")
+            data[0]["variant_of"] = parent
+
+            # copy everything from parent if not set
+            for k in self.fields:
+                if k not in data[0] and (value := getattr(parent, k, None)):
+                    # skip copying specific fields
+                    if k in skip_duplicate_fields:
+                        continue
+
+                    if k == "image":
+                        data[0][k] = value.name
+                    else:
+                        data[0][k] = value
 
         # use local image if available
+        image = data[0].pop("image", None)
         if image:
             # maybe use already saved image with same url
             if image in self.part_images and isinstance(self.part_images[image], str):
@@ -411,7 +467,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             data[0]["image"] = image
 
         # create part
-        part = super().create_object(
+        part: Part = super().create_object(
             data,
             category=self.category,
             creation_user=self.request.user,
@@ -437,6 +493,9 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             self.part_images[image] = part.image.name
 
         # create parameters
+        if parent:
+            part.copy_parameters_from(parent)
+
         for parameter in parameters:
             template = get_model_instance(PartParameterTemplate, parameter["template"], {}, f"for {part.name}")
             PartParameter.objects.create(part=part, template=template, data=parameter['value'])
@@ -495,13 +554,36 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             )
             stock_item.save(user=self.request.user)
 
+        # create related parts
+        if related_parts:
+            # use set to filter out parts that are selected by multiple filters
+            related_parts_set = set()
+            for related_part in related_parts:
+                related_parts_query = get_model_instance(
+                    Part, related_part, {}, f"for {part.name}", allow_multiple=True).exclude(pk=part.pk)
+                related_parts_set.update(related_parts_query)
+
+            for related_part in related_parts_set:
+                PartRelated.objects.create(part_1=part, part_2=related_part)
+
         return part
 
     def get_context(self) -> dict:
         parent_id = self.request.query_params.get("parent_id", None)
         self.category = None
 
-        ctx = super().get_context()
+        # no super call is invoked here, because we handle the parent fetching a bit different in this function
+        ctx = {}
+        self.parent = None
+
+        # try to add template part (of which this part is a variant of) as 'par.gen.<...>' context
+        schema = self.request.data.get("template", {})
+        if not isinstance(schema, dict):
+            schema = json.loads(schema)
+        if variant_of := schema.get("output", {}).get("generate", {}).get("variant_of", None):
+            template_part = get_model_instance(Part, variant_of, {"is_template": True}, "for variant_of field")
+            self.parent = template_part  # set parent, used in self.create_objects(...) later
+            ctx["gen"] = {key: getattr(template_part, key) for key in self.fields.keys() if hasattr(template_part, key)}
 
         if not parent_id:
             return ctx

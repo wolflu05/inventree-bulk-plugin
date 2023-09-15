@@ -1,3 +1,4 @@
+import json
 from typing import Type
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
@@ -7,7 +8,7 @@ from django.db.models import Model, IntegerField, DecimalField, FloatField, Bool
 from mptt.models import MPTTModel
 
 from company.models import Company, ManufacturerPart, SupplierPart
-from part.models import Part, PartCategory, PartParameterTemplate, PartParameter, PartAttachment
+from part.models import Part, PartCategory, PartParameterTemplate, PartParameter, PartAttachment, PartRelated
 from stock.models import StockLocation, StockItem
 from common.models import InvenTreeSetting
 
@@ -17,8 +18,10 @@ from ...bulkcreate_objects import get_model, get_model_instance, cast_model, cas
 # custom request factory, used to patch query_params which were not defined by default
 class CustomRequestFactory(RequestFactory):
     def request(self, **request):
+        data = request.pop("data", {})
         r = super().request(**request)
         r.query_params = r.GET or r.POST
+        r.data = data
         return r
 
 
@@ -52,6 +55,21 @@ class BulkCreateObjectsUtilsTestCase(TestCase):
         # test limit_choices without result
         with self.assertRaisesRegex(ValueError, "Model 'company.company' where {'pk': " + str(customer_company.pk) + ", 'is_supplier': True} not found at XXX"):
             get_model_instance(Company, customer_company.pk, {"is_supplier": True}, "at XXX")
+
+        # test with an already passed model
+        self.assertEqual(get_model_instance(Company, supplier_company, {"is_supplier": True}), supplier_company)
+
+        # test with allow_multiple
+        self.assertCountEqual(list(get_model_instance(Company, '{"name__endswith": "company"}', {}, allow_multiple=True)), [
+            supplier_company, customer_company])
+
+        # test with invalid filter
+        with self.assertRaisesRegex(ValueError, "Cannot parse json query string at XXX"):
+            get_model_instance(Company, '{"a""b"}', {}, "at XXX")
+
+        # test without allow_multiple
+        with self.assertRaisesRegex(ValueError, "Model 'company.company' where {'name__endswith': 'company'} returned multiple models at XXX"):
+            get_model_instance(Company, '{"name__endswith": "company"}', {}, "at XXX")
 
     def test_cast_model(self):
         # shouldn't change anything if field is no model field or uses custom processor
@@ -357,7 +375,7 @@ class PartCategoryBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
 
 class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
     bulk_create_object = PartBulkCreateObject
-    ignore_fields = ["parameters", "attachments"]
+    ignore_fields = ["parameters", "attachments", "related_parts"]
     model_object_fields = [
         ("supplier", SupplierPart, ["_make_default"], ["part"]),
         ("manufacturer", ManufacturerPart, [], ["part"]),
@@ -386,6 +404,13 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
             f"{obj.template_type}.attachments.[x]",
             ignore_fields=["file_url", "file_name", "file_headers"],
             ignore_model_required_fields=["part"],
+        ))
+
+        issues.extend(self.model_test(
+            PartRelated,
+            {"part_2": obj.fields["related_parts"].items_type},
+            f"{obj.template_type}.related_parts.[x]",
+            ignore_model_required_fields=["part_1"],
         ))
 
         return issues
@@ -442,7 +467,7 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         req.user = self.user
         obj = PartBulkCreateObject(req)
         obj.get_context()
-        obj.create_objects(data)
+        part, = obj.create_objects(data)
 
         expected_objs = [
             (Part, 1),
@@ -530,6 +555,24 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
                     "image": "__not_existing.png"
                 }, [])
             ])
+
+        # try with non template part as parent
+        with self.assertRaisesRegex(ValueError, "Part 'Test 1_8_1' cannot be a variant of 'Test 1_8' because the parent is not a template part."):
+            req = self.request.get(f"/abc?parent_id={category.pk}")
+            req.user = self.user
+            obj = PartBulkCreateObject(req)
+            obj.get_context()
+            obj.create_objects([
+                ({
+                    "name": "Test 1_8",
+                    "description": "Test Description",
+                }, [
+                    ({
+                        "name": "Test 1_8_1",
+                        "description": "Test Description",
+                    }, [])
+                ])
+            ])
         # --- end: Test all exceptions here
 
         # even there are errors thrown, there shouldn't be created anything, because of the transaction
@@ -569,6 +612,69 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
             }, [])
         ])
 
+        # test related parts
+        related_part = Part.objects.create(name="Test to relate this part",
+                                           description="Test to relate this part description")
+        req = self.request.get(f"/abc?parent_id={category.pk}")
+        req.user = self.user
+        obj = PartBulkCreateObject(req)
+        obj.get_context()
+        created = obj.create_objects([
+            ({
+                "name": "Test 1_7",
+                "description": "Test Description",
+                "related_parts": [str(related_part.pk)]
+            }, []),
+        ])
+        self.assertEqual(len(created), 1)
+        self.assertEqual(created[0].get_related_parts(), {related_part})
+
+        # test duplicate fields for variant parts
+        InvenTreeSetting.set_setting("PART_ALLOW_DUPLICATE_IPN", True, None)
+        template_part = Part.objects.create(
+            name="Test template part",
+            description="Test template part description",
+            is_template=True,
+            image=part.image.name,
+            IPN="TEST_IPN_123_FOR_TEMPLATE"
+        )
+        part_parameter_template1 = PartParameterTemplate.objects.create(name="Test 1", units="kg")
+        part_parameter_template2 = PartParameterTemplate.objects.create(name="Test 2", units="kg")
+        PartParameter.objects.create(part=template_part, template=part_parameter_template1, data="10")
+        req = self.request.get(f"/abc?parent_id={category.pk}")
+        req.user = self.user
+        req.data = {"template": {"output": {"generate": {"variant_of": str(template_part.pk)}}}}
+        obj = PartBulkCreateObject(req)
+        obj.get_context()
+        created, = obj.create_objects([
+            ({
+                "name": "Test 1_9",
+                "parameters": [{"template": str(part_parameter_template2.pk), "value": "13"}]
+            }, []),
+        ])
+        self.assertEqual(created.description, template_part.description)
+        self.assertEqual(created.is_template, False)
+        self.assertEqual(created.variant_of, template_part)
+        self.assertCountEqual(list((p.part.name, p.template.name, p.data) for p in created.get_parameters()), [
+            ('Test 1_9', 'Test 1', '10'), ('Test 1_9', 'Test 2', '13')])
+        self.assertEqual(created.image.name, template_part.image.name)
+        self.assertEqual(created.IPN, template_part.IPN)
+
+        # test duplicate fields for variant parts without IPN duplication
+        InvenTreeSetting.set_setting("PART_ALLOW_DUPLICATE_IPN", False, None)
+        req = self.request.get(f"/abc?parent_id={category.pk}")
+        req.user = self.user
+        req.data = {"template": {"output": {"generate": {"variant_of": str(template_part.pk)}}}}
+        obj = PartBulkCreateObject(req)
+        obj.get_context()
+        created, = obj.create_objects([
+            ({
+                "name": "Test 1_10",
+            }, []),
+        ])
+        self.assertEqual(created.IPN, None)
+        InvenTreeSetting.set_setting("PART_ALLOW_DUPLICATE_IPN", True, None)
+
     def test_get_context(self):
         # test without category id
         obj = PartBulkCreateObject(self.request.get("/abc"))
@@ -586,3 +692,23 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         ctx = obj.get_context()
         self.assertTrue("category" in ctx)
         self.assertEqual(ctx["category"]["name"], "Test category 123")
+
+        # test with invalid variant_of id
+        data = {"output": {"generate": {"variant_of": "999999"}}}
+
+        for d in [data, json.dumps(data)]:
+            r = self.request.get(f"/abc?parent_id={category.pk}")
+            r.data = {"template": d}
+            obj = PartBulkCreateObject(r)
+            with self.assertRaisesRegex(ValueError, "Model 'part.part' where {'pk': 999999, 'is_template': True} not found for variant_of field"):
+                obj.get_context()
+
+        # test with valid variant_of id
+        part = Part.objects.create(name="Test part", description="Test part desc", is_template=True)
+        r = self.request.get(f"/abc?parent_id={category.pk}")
+        r.data = {"template": {"output": {"generate": {"variant_of": str(part.pk)}}}}
+        obj = PartBulkCreateObject(r)
+        ctx = obj.get_context()
+        self.assertDictContainsSubset(
+            {"name": "Test part", "description": "Test part desc", "is_template": True}, ctx["gen"])
+        self.assertEqual(obj.parent, part)
