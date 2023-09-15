@@ -176,7 +176,6 @@ You can use [Jinja2 templating](https://jinja.palletsprojects.com/en/3.1.x/templ
 ##### Global context
 
 - `inp.<key>` - Access [input variables](#input), e.g. (`{{inp.drawer_count|int / 2}}`)
-- `global.<...>` - Access any variable defined in [global context](#global-context)
 
 ##### Extra useful filters
 
@@ -213,7 +212,7 @@ Select a template to extend from
 
 ##### Global context
 
-Global context can be used to set up some more complex variables and reuse them between fields. Under the hood this template gets imported as `global` by prepending `{% import global_context_template as global with context %}` to every generate field. Therefore you can also use the dimensions and every available context variable there too.
+Global context can be used to set up some more complex variables and reuse them between fields. Under the hood this template gets imported as `global` by prepending `{% import global_context_template as global with context %}` to every generate field. Therefore you can also use the dimensions and every available context variable there too. But note that the defined variables are only valid in that parent they are defined in, not in their childs. This is a limitation of the import function of jinja2 templates.
 
 ##### Dimensions/Count
 
@@ -253,7 +252,7 @@ Child's are a way to add some nesting to your bulk creation tree. You can use th
 
 ### Generation types
 
-You can bulk create sub-stocklocations, sub-partcategories and parts with there different options. All of those are tree objects, that means objects that can have childs and extend from templates that can be defined.
+You can bulk create sub-stocklocations, sub-partcategories and [parts](#parts) with there different options. All of those are tree objects, that means objects that can have childs and extend from templates that can be defined.
 
 <!-- These objects can be categorized into two different generation groups, [Tree objects](#tree-objects) and [normal objects](#normal-objects).  -->
 
@@ -268,6 +267,7 @@ For all of those, the following context is available.
 | `par.dim.<x>`    | parents's dimensions                                                          |
 | `par.gen.<name>` | parent's generated fields (e.g. to reuse the parents name `{{par.gen.name}}`) |
 | `par.par.<...>`  | parent's parent context, can be nested deeply                                 |
+| `global.<...>`   | Access any variable defined in [global context](#global-context)              |
 
 <!--
 Currently there is only one type
