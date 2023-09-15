@@ -252,8 +252,10 @@ const getTemplateHelpTexts = (fieldDefinition: FieldDefinition): string => {
     return "Use a template that evaluates to something float like (e.g. '3.1415').";
   }
   if (fieldDefinition.field_type === "model") {
-    const extraString = fieldDefinition.allow_multiple ? ` The filters can also return multiple objects.` : "";
-    return `Use a template that evaluates to a valid id for this model (e.g. '42') or a json string containing django model filters (e.g. {"name": "R_10k_0808_10%"}).${extraString}`;
+    const extraString = fieldDefinition.allow_multiple
+      ? "The filters can also return multiple objects."
+      : "The filters must return only one object.";
+    return `Use a template that evaluates to a valid id for this model (e.g. '42') or a json string containing django model filters (e.g. {"name": "R_10k_0808_10%"} or {"name__startswith": "R_"}), but be aware that the preview table may not work correctly due to API limitations, but bulk create will work correctly then. ${extraString}`;
   }
   if (fieldDefinition.field_type === "select") {
     return `Use a template that evaluates to a valid option from the select field. Available options: ${Object.keys(
