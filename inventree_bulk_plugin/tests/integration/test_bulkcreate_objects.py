@@ -1,3 +1,4 @@
+import json
 from typing import Type
 from django.test import RequestFactory, TestCase
 from django.urls import reverse
@@ -466,7 +467,7 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         req.user = self.user
         obj = PartBulkCreateObject(req)
         obj.get_context()
-        obj.create_objects(data)
+        part, = obj.create_objects(data)
 
         expected_objs = [
             (Part, 1),
@@ -554,6 +555,24 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
                     "image": "__not_existing.png"
                 }, [])
             ])
+
+        # try with non template part as parent
+        with self.assertRaisesRegex(ValueError, "Part 'Test 1_8_1' cannot be a variant of 'Test 1_8' because the parent is not a template part."):
+            req = self.request.get(f"/abc?parent_id={category.pk}")
+            req.user = self.user
+            obj = PartBulkCreateObject(req)
+            obj.get_context()
+            obj.create_objects([
+                ({
+                    "name": "Test 1_8",
+                    "description": "Test Description",
+                }, [
+                    ({
+                        "name": "Test 1_8_1",
+                        "description": "Test Description",
+                    }, [])
+                ])
+            ])
         # --- end: Test all exceptions here
 
         # even there are errors thrown, there shouldn't be created anything, because of the transaction
@@ -610,6 +629,52 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         self.assertEqual(len(created), 1)
         self.assertEqual(created[0].get_related_parts(), {related_part})
 
+        # test duplicate fields for variant parts
+        InvenTreeSetting.set_setting("PART_ALLOW_DUPLICATE_IPN", True, None)
+        template_part = Part.objects.create(
+            name="Test template part",
+            description="Test template part description",
+            is_template=True,
+            image=part.image.name,
+            IPN="TEST_IPN_123_FOR_TEMPLATE"
+        )
+        part_parameter_template1 = PartParameterTemplate.objects.create(name="Test 1", units="kg")
+        part_parameter_template2 = PartParameterTemplate.objects.create(name="Test 2", units="kg")
+        PartParameter.objects.create(part=template_part, template=part_parameter_template1, data="10")
+        req = self.request.get(f"/abc?parent_id={category.pk}")
+        req.user = self.user
+        req.data = {"template": {"output": {"generate": {"variant_of": str(template_part.pk)}}}}
+        obj = PartBulkCreateObject(req)
+        obj.get_context()
+        created, = obj.create_objects([
+            ({
+                "name": "Test 1_9",
+                "parameters": [{"template": str(part_parameter_template2.pk), "value": "13"}]
+            }, []),
+        ])
+        self.assertEqual(created.description, template_part.description)
+        self.assertEqual(created.is_template, False)
+        self.assertEqual(created.variant_of, template_part)
+        self.assertEqual(list((p.part.name, p.template.name, p.data) for p in created.get_parameters()), [
+                         ('Test 1_9', 'Test 1', '10'), ('Test 1_9', 'Test 2', '13')])
+        self.assertEqual(created.image.name, template_part.image.name)
+        self.assertEqual(created.IPN, template_part.IPN)
+
+        # test duplicate fields for variant parts without IPN duplication
+        InvenTreeSetting.set_setting("PART_ALLOW_DUPLICATE_IPN", False, None)
+        req = self.request.get(f"/abc?parent_id={category.pk}")
+        req.user = self.user
+        req.data = {"template": {"output": {"generate": {"variant_of": str(template_part.pk)}}}}
+        obj = PartBulkCreateObject(req)
+        obj.get_context()
+        created, = obj.create_objects([
+            ({
+                "name": "Test 1_10",
+            }, []),
+        ])
+        self.assertEqual(created.IPN, None)
+        InvenTreeSetting.set_setting("PART_ALLOW_DUPLICATE_IPN", True, None)
+
     def test_get_context(self):
         # test without category id
         obj = PartBulkCreateObject(self.request.get("/abc"))
@@ -627,3 +692,23 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         ctx = obj.get_context()
         self.assertTrue("category" in ctx)
         self.assertEqual(ctx["category"]["name"], "Test category 123")
+
+        # test with invalid variant_of id
+        data = {"output": {"generate": {"variant_of": "999999"}}}
+
+        for d in [data, json.dumps(data)]:
+            r = self.request.get(f"/abc?parent_id={category.pk}")
+            r.data = {"template": d}
+            obj = PartBulkCreateObject(r)
+            with self.assertRaisesRegex(ValueError, "Model 'part.part' where {'pk': 999999, 'is_template': True} not found for variant_of field"):
+                obj.get_context()
+
+        # test with valid variant_of id
+        part = Part.objects.create(name="Test part", description="Test part desc", is_template=True)
+        r = self.request.get(f"/abc?parent_id={category.pk}")
+        r.data = {"template": {"output": {"generate": {"variant_of": str(part.pk)}}}}
+        obj = PartBulkCreateObject(r)
+        ctx = obj.get_context()
+        self.assertDictContainsSubset(
+            {"name": "Test part", "description": "Test part desc", "is_template": True}, ctx["gen"])
+        self.assertEqual(obj.parent, part)
