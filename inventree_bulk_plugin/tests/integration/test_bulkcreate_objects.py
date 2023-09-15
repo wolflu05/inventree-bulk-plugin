@@ -55,6 +55,21 @@ class BulkCreateObjectsUtilsTestCase(TestCase):
         with self.assertRaisesRegex(ValueError, "Model 'company.company' where {'pk': " + str(customer_company.pk) + ", 'is_supplier': True} not found at XXX"):
             get_model_instance(Company, customer_company.pk, {"is_supplier": True}, "at XXX")
 
+        # test with an already passed model
+        self.assertEqual(get_model_instance(Company, supplier_company, {"is_supplier": True}), supplier_company)
+
+        # test with allow_multiple
+        self.assertEqual(list(get_model_instance(Company, '{"name__endswith": "company"}', {}, allow_multiple=True)), [
+                         supplier_company, customer_company])
+
+        # test with invalid filter
+        with self.assertRaisesRegex(ValueError, "Cannot parse json query string at XXX"):
+            get_model_instance(Company, '{"a""b"}', {}, "at XXX")
+
+        # test without allow_multiple
+        with self.assertRaisesRegex(ValueError, "Model 'company.company' where {'name__endswith': 'company'} returned multiple models at XXX"):
+            get_model_instance(Company, '{"name__endswith": "company"}', {}, "at XXX")
+
     def test_cast_model(self):
         # shouldn't change anything if field is no model field or uses custom processor
         self.assertEqual(cast_model("10", field=FieldDefinition("A")), "10")
