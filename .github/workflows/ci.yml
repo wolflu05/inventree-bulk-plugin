@@ -118,13 +118,18 @@ jobs:
       - name: Setup inventree
         run: |
           cd /home/inventree
+          echo "=============================="
+          pip freeze
+          echo "=============================="
           cat requirements.txt
+          echo "=============================="
           pip3 install --no-cache-dir --disable-pip-version-check -U -r requirements.txt
 
       - name: Update
         if: always()
         run: |
           cd /home/inventree
+          pip freeze
           invoke update
 
       - name: Setup inventree-bulk-plugin
