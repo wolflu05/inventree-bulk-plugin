@@ -83,13 +83,18 @@ jobs:
             coverage_info
 
   tests-integration-python:
-    name: "🧪 Integration tests: python"
+    name: "🧪 Integration tests: python (inventree/inventree:${{ matrix.inventree-tag }})"
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
     needs: style-python
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        inventree-tag: [latest, stable]
+
     container:
-      image: inventree/inventree:latest
+      image: inventree/inventree:${{ matrix.inventree-tag }}
       options: --user root
       env:
         INVENTREE_DB_ENGINE: postgresql
@@ -140,6 +145,7 @@ jobs:
           echo $GITHUB_WORKSPACE > coverage_info
 
       - name: Upload coverage
+        if: ${{ matrix.inventree-tag == 'latest' }}
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
           name: integration-coverage
