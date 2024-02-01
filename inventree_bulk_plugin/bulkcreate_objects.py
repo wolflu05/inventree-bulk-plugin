@@ -241,7 +241,7 @@ class StockLocationBulkCreateObject(BulkCreateObject[StockLocation]):
         "description": FieldDefinition("Description"),
         "structural": FieldDefinition("Structural", field_type="boolean"),
         "external": FieldDefinition("External", field_type="boolean"),
-        "icon": FieldDefinition("Icon"),
+        "custom_icon": FieldDefinition("Icon"),
     }
 
 
@@ -280,7 +280,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             "link": FieldDefinition("Link"),
             "default_location": FieldDefinition("Default Location", field_type="model", model=("stock.StockLocation", {"structural": False})),
             "default_expiry": FieldDefinition("Default Expiry", field_type="number", description="Expiry time (in days) for stock items of this part"),
-            "minimum_stock": FieldDefinition("Minimum Stock", field_type="number", description="Minimum allowed stock level"),
+            "minimum_stock": FieldDefinition("Minimum Stock", field_type="float", description="Minimum allowed stock level"),
             "units": FieldDefinition("Units", description="Units of measure for this part"),
             "salable": FieldDefinition("Salable", field_type="boolean"),
             "assembly": FieldDefinition("Assembly", field_type="boolean"),
@@ -290,7 +290,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             "active": FieldDefinition("Active", field_type="boolean"),
             "virtual": FieldDefinition("Virtual", field_type="boolean"),
             "notes": FieldDefinition("Notes"),
-            "responsible": FieldDefinition("Responsible", field_type="model", model="auth.user"),
+            "responsible_owner": FieldDefinition("Responsible", field_type="model", model="users.owner"),
             # model does not exist, so a custom processor will be used in the frontend
             "image": FieldDefinition("Image", field_type="model", api_url="/api/part/thumbs/", model=("_part.part_image", {}, None), description="You can use any already uploaded part picture here, or reference an external URL."),
             "parameters": FieldDefinition(

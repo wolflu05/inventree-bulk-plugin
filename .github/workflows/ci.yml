@@ -83,13 +83,19 @@ jobs:
             coverage_info
 
   tests-integration-python:
-    name: "🧪 Integration tests: python"
+    name: "🧪 Integration tests: python (${{ matrix.inventree-tag }})"
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
     needs: style-python
     runs-on: ubuntu-latest
 
+    strategy:
+      fail-fast: false
+      matrix:
+        inventree-tag: [latest, stable]
+
     container:
-      image: inventree/inventree:latest
+      image: inventree/inventree:${{ matrix.inventree-tag }}
+      options: --user root
       env:
         INVENTREE_DB_ENGINE: postgresql
         INVENTREE_DB_NAME: inventree
@@ -118,24 +124,28 @@ jobs:
       - name: Setup inventree
         run: |
           cd /home/inventree
-          pip3 install --no-cache-dir --disable-pip-version-check -U -r requirements.txt
+          HOME=/root pip3 install --no-cache-dir --disable-pip-version-check -U -r requirements.txt
 
       - name: Setup inventree-bulk-plugin
         run: |
           cd /home/inventree
-          pip3 install -e $GITHUB_WORKSPACE
+          HOME=/root pip3 install -e $GITHUB_WORKSPACE
 
           # install additional dependencies required for testing
           # and newer coverage version due to https://github.com/nedbat/coveragepy/issues/1150
-          pip3 install django-test-migrations==1.2.0 coverage==6.0 django_slowtests==1.1.1
+          HOME=/root pip3 install django-test-migrations==1.2.0 coverage==6.0 django_slowtests==1.1.1
+
+          # migrate db
+          HOME=/root invoke migrate
 
       - name: Run tests
         run: |
           cd /home/inventree
-          coverage run --omit="InvenTree/**" InvenTree/manage.py test inventree_bulk_plugin.tests.integration
+          HOME=/root coverage run --omit="InvenTree/**" InvenTree/manage.py test inventree_bulk_plugin.tests.integration
           echo $GITHUB_WORKSPACE > coverage_info
 
       - name: Upload coverage
+        if: ${{ matrix.inventree-tag == 'latest' }}
         uses: actions/upload-artifact@0b7f8abb1508181956e8e162db84b466c27e18ce # pin@v3.1.2
         with:
           name: integration-coverage

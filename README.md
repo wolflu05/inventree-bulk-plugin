@@ -304,7 +304,7 @@ Parts have an additional context:
 1. Install as editable install to your inventree installation via `pip install -e /path/to/inventree-bulk-plugin`
 2. Enable the plugin and run `invoke migrate` to run the migration
 3. Install js dependencies via `cd inventree_bulk_plugin/frontend && npm ci`
-4. Configure the base url of your vite dev server (that you need to start via `npm run dev`) in the InvenTree `config.yml` as e.g. `customize.inventree_bulk_plugin_dev_url: http://localhost:5173`
+4. Configure the base url of your vite dev server (that you need to start via `npm run dev`) in the InvenTree `config.yml` as e.g. `customize.inventree_bulk_plugin_dev_url: http://localhost:5210`
 5. Restart InvenTree and start vite dev server via `npm run dev`
 
 ## ❓ FAQ
