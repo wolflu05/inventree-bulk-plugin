@@ -242,6 +242,7 @@ class StockLocationBulkCreateObject(BulkCreateObject[StockLocation]):
         "structural": FieldDefinition("Structural", field_type="boolean"),
         "external": FieldDefinition("External", field_type="boolean"),
         "custom_icon": FieldDefinition("Icon"),
+        "location_type": FieldDefinition("Location type", field_type="model", model="stock.StockLocationType"),
     }
 
 
