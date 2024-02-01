@@ -5,6 +5,7 @@ from django.urls import reverse
 from InvenTree.unit_test import InvenTreeAPITestCase
 from stock.models import StockLocation
 from part.models import PartCategory, PartParameterTemplate, PartCategoryParameterTemplate
+from common.models import InvenTreeSetting
 
 from ...models import BulkCreationTemplate
 
@@ -12,6 +13,8 @@ from ...models import BulkCreationTemplate
 class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
     def setUp(self):
         super().setUp()
+
+        InvenTreeSetting.set_setting("ENABLE_PLUGINS_URL", True, None)
 
         self.simple_valid_generation_template = {
             "name": "Test template",
