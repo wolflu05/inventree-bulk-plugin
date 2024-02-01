@@ -115,10 +115,17 @@ jobs:
       - name: Checkout
         uses: actions/checkout@c85c95e3d7251135ab7dc9ce3241c5835cc595a9 # pin@v3.5.3
 
-      # - name: Setup inventree
-      #   run: |
-      #     cd /home/inventree
-      #     pip3 install --no-cache-dir --disable-pip-version-check -U -r requirements.txt
+      - name: Setup inventree
+        run: |
+          cd /home/inventree
+          cat requirements.txt
+          pip3 install --no-cache-dir --disable-pip-version-check -U -r requirements.txt
+
+      - name: Update
+        if: always()
+        run: |
+          cd /home/inventree
+          invoke update
 
       - name: Setup inventree-bulk-plugin
         run: |
