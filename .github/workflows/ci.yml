@@ -119,17 +119,6 @@ jobs:
       - name: Setup inventree
         run: |
           cd /home/inventree
-          echo "=ID============================="
-          id
-          echo "=ENV============================="
-          env
-          echo "=SET============================="
-          set
-          echo "=FREEZE============================="
-          pip3 freeze
-          echo "=============================="
-          cat requirements.txt
-          echo "=============================="
           HOME=/root pip3 install --no-cache-dir --disable-pip-version-check -U -r requirements.txt
 
       - name: Setup inventree-bulk-plugin
@@ -144,7 +133,7 @@ jobs:
       - name: Run tests
         run: |
           cd /home/inventree
-          coverage run --omit="InvenTree/**" InvenTree/manage.py test inventree_bulk_plugin.tests.integration
+          HOME=/root coverage run --omit="InvenTree/**" InvenTree/manage.py test inventree_bulk_plugin.tests.integration
           echo $GITHUB_WORKSPACE > coverage_info
 
       - name: Upload coverage
