@@ -132,18 +132,18 @@ jobs:
           echo "=============================="
           cat requirements.txt
           echo "=============================="
-          pip3 install --no-cache-dir --disable-pip-version-check -U -r requirements.txt
+          HOME=/root pip3 install --no-cache-dir --disable-pip-version-check -U -r requirements.txt
 
       - name: Setup inventree-bulk-plugin
         env:
           HOME: /root
         run: |
           cd /home/inventree
-          pip3 install -e $GITHUB_WORKSPACE
+          HOME=/root pip3 install -e $GITHUB_WORKSPACE
 
           # install additional dependencies required for testing
           # and newer coverage version due to https://github.com/nedbat/coveragepy/issues/1150
-          pip3 install django-test-migrations==1.2.0 coverage==6.0 django_slowtests==1.1.1
+          HOME=/root pip3 install django-test-migrations==1.2.0 coverage==6.0 django_slowtests==1.1.1
 
       - name: Run tests
         env:
