@@ -5,6 +5,8 @@ on:
   pull_request:
   release:
     types: [published]
+  schedule: # run every week to see if there are any upstream issues
+    - cron: '0 12 * * 6'
 
 jobs:
   style-python:
