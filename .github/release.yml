@@ -11,6 +11,7 @@ changelog:
         - Semver-Minor
         - type/feature
         - type/enhancement
+        - type/fields
     - title: ":bug: Bug Fixes"
       labels:
         - Semver-Patch
@@ -19,6 +20,7 @@ changelog:
       labels:
         - type/setup
         - type/documentation
+        - type/dependencies
     - title: ":memo: Other Changes"
       labels:
         - "*"
