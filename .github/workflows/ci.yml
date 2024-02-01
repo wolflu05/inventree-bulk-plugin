@@ -83,7 +83,7 @@ jobs:
             coverage_info
 
   tests-integration-python:
-    name: "🧪 Integration tests: python (inventree/inventree:${{ matrix.inventree-tag }})"
+    name: "🧪 Integration tests: python (${{ matrix.inventree-tag }})"
     if: ${{ !(github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository) }}
     needs: style-python
     runs-on: ubuntu-latest
