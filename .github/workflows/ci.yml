@@ -90,6 +90,7 @@ jobs:
 
     container:
       image: inventree/inventree:latest
+      options: --user root
       env:
         INVENTREE_DB_ENGINE: postgresql
         INVENTREE_DB_NAME: inventree
@@ -119,18 +120,11 @@ jobs:
         run: |
           cd /home/inventree
           echo "=============================="
-          pip freeze
+          pip3 freeze
           echo "=============================="
           cat requirements.txt
           echo "=============================="
           pip3 install --no-cache-dir --disable-pip-version-check -U -r requirements.txt
-
-      - name: Update
-        if: always()
-        run: |
-          cd /home/inventree
-          pip freeze
-          invoke update
 
       - name: Setup inventree-bulk-plugin
         run: |
