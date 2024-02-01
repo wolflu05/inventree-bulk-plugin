@@ -119,7 +119,13 @@ jobs:
       - name: Setup inventree
         run: |
           cd /home/inventree
-          echo "=============================="
+          echo "=ID============================="
+          id
+          echo "=ENV============================="
+          env
+          echo "=SET============================="
+          set
+          echo "=FREEZE============================="
           pip3 freeze
           echo "=============================="
           cat requirements.txt
