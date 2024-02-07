@@ -1,6 +1,6 @@
 import { BulkDefinitionSchema } from "./types";
 
-export const schemaVersion = "1.2.0";
+export const schemaVersion = "1.2.1";
 
 export const defaultSchema: BulkDefinitionSchema = {
   version: schemaVersion,
