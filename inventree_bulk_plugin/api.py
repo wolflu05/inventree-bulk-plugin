@@ -1,6 +1,6 @@
 import json
 
-from django.conf.urls import url
+from django.urls import path
 from rest_framework import permissions, status
 from rest_framework.authentication import SessionAuthentication, BasicAuthentication, TokenAuthentication
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
@@ -143,7 +143,7 @@ class BulkCreate(APIView):
 
 
 api_urls = [
-    url(r"templates/(?P<pk>\d+)", TemplateDetail.as_view(), name="api-detail-templates"),
-    url(r"templates", TemplateList.as_view(), name="api-list-templates"),
-    url(r"bulkcreate", BulkCreate.as_view(), name="api-bulk-create"),
+    path("templates/<int:pk>", TemplateDetail.as_view(), name="api-detail-templates"),
+    path("templates", TemplateList.as_view(), name="api-list-templates"),
+    path("bulkcreate", BulkCreate.as_view(), name="api-bulk-create"),
 ]
