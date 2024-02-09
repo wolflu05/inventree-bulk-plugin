@@ -261,7 +261,9 @@ For all of those, the following context is available.
 | Key              | Description                                                                   |
 | ---------------- | ----------------------------------------------------------------------------- |
 | `len`            | count of elements this child will generate                                    |
+| `idx`            | current global index of the generated item                                    |
 | `dim.<x>`        | x-th dimension, one-based (e.g. `{{dim.1}}` to access the first dimension)    |
+| `dim.<x>.idx`    | current index in the x-th dimension                                           |
 | `dim.<x>.len`    | count of items the x-th dimension has                                         |
 | `par.<...>`      | parent's context                                                              |
 | `par.dim.<x>`    | parents's dimensions                                                          |

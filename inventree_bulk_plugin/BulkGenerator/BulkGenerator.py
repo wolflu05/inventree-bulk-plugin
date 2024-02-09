@@ -52,8 +52,9 @@ class DimStr(str):
     def __new__(cls, value, *args, **kwargs) -> None:
         return super(DimStr, cls).__new__(cls, value)
 
-    def __init__(self, value, length):
+    def __init__(self, value, length, idx):
         self.len = length
+        self.idx = idx
 
 
 @dataclass
@@ -115,19 +116,20 @@ class BulkGenerator:
         dimensions = []
         if len(child.dimensions) > 0:
             dimensions = self.get_dimensions(child.dimensions, child.count)
+            dimensions = [list(enumerate(x)) for x in dimensions]
             product = list(itertools.product(*dimensions, repeat=1))
         else:
             # no dimensions
             product = [()]
 
         # get length from dimensions
-        dimensions = list(map(len, dimensions))
+        dimension_lens = list(map(len, dimensions))
 
         default_context = self.get_default_context()
         ctx = {'par': parent_ctx, 'len': len(product)}
-        for p in product:
-            dim = {(i + 1): DimStr(x, dimensions[i]) for i, x in enumerate(p)}
-            product_ctx = {**default_context, **ctx, 'dim': dim}
+        for idx, p in enumerate(product):
+            dim = {(i + 1): DimStr(x, length=dimension_lens[i], idx=dim_idx) for i, (dim_idx, x) in enumerate(p)}
+            product_ctx = {**default_context, **ctx, 'dim': dim, 'idx': idx}
             generate_values = render(**product_ctx)
             res.append((generate_values, []))
             child_ctx.append({**ctx, 'dim': dim, 'gen': generate_values})

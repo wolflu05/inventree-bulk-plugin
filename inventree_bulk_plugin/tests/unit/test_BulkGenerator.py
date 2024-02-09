@@ -349,6 +349,27 @@ class BulkGeneratorTestCase(unittest.TestCase):
             self.assertEqual("10", e['dim1len'])
             self.assertEqual("2", e['dim2len'])
 
+    def test_idx_context_variable(self):
+        res = BulkGenerator({
+            "version": "1.0.0",
+            "input": {},
+            "templates": [],
+            "output": {
+                "dimensions": ["*NUMERIC", "*ALPHA"],
+                "count": [5, 2],
+                "generate": {"value": "{{idx}}-{{dim.1}}[{{dim.1.idx}}]-{{dim.2}}[{{dim.2.idx}}]"},
+            }
+        }, fields={
+            "value": BaseFieldDefinition("value"),
+        }).generate()
+
+        data = ["1-a", "1-b", "2-a", "2-b", "3-a", "3-b", "4-a", "4-b", "5-a", "5-b"]
+        ab_map = {"a": 0, "b": 1}
+        self.assertEqual(10, len(res))
+        for idx, (e, _) in enumerate(res):
+            a, b = data[idx].split("-")
+            self.assertEqual(f"{idx}-{a}[{int(a)-1}]-{b}[{ab_map[b]}]", e['value'])
+
     def test_not_allowed_field(self):
         gen = BulkGenerator({
             "version": "1.0.0",
