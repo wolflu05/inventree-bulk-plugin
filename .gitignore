@@ -129,3 +129,4 @@ dmypy.json
 .pyre/
 
 inventree_bulk_plugin/test.py
+.vscode/
