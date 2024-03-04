@@ -8,7 +8,7 @@ from .generators.generator import Generator, GeneratorTypes
 
 def parse_dimension(dimension: str) -> list[tuple[GeneratorTypes, Union[str, tuple[str, str]], dict, str]]:
     res = []
-    for gen_match in re.finditer(r"(?:(?:(\w+)-(\w+))|(\*?\w+))(?:\((.*?)\))?(?:,|$)", dimension):
+    for gen_match in re.finditer(r"(?:(?:(\w+)-(\w+))|(\*?.+?))(?:\((.*?)\))?(?:,|$)", dimension):
         settings = {}
         if gen_match.group(4):
             for setting_match in re.finditer(r"([A-Za-z_]+?)(?:=)([^=]+)(?:,|$)", gen_match.group(4)):

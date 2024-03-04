@@ -21,6 +21,14 @@ class DimensionsTestCase(unittest.TestCase):
                 (GeneratorTypes.INFINITY, "abc", {"a": "1", "b": "'(2,3)'", "c": "4"}, "*abc(a=1,b='(2,3)',c=4)"),
                 (GeneratorTypes.RANGE, ("1", "3"), {"a": "1"}, "1-3(a=1)")
             ]),
+            ("hello world,1-3,0.1,0.2,*TEST(a=1),0.3", [
+                (GeneratorTypes.WORD, "hello world", {}, "hello world"),
+                (GeneratorTypes.RANGE, ("1", "3"), {}, "1-3"),
+                (GeneratorTypes.WORD, "0.1", {}, "0.1"),
+                (GeneratorTypes.WORD, "0.2", {}, "0.2"),
+                (GeneratorTypes.INFINITY, "TEST", {"a": "1"}, "*TEST(a=1)"),
+                (GeneratorTypes.WORD, "0.3", {}, "0.3"),
+            ]),
         ]
 
         for test_str, expected_generators in cases:
