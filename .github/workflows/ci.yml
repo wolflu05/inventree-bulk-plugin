@@ -126,7 +126,7 @@ jobs:
 
       - name: Setup inventree
         run: |
-          cd /home/inventree
+          cd /home/inventree${{ matrix.inventree-tag == 'latest' && '/src/backend' || ''  }}
           HOME=/root pip3 install --no-cache-dir --disable-pip-version-check -U -r requirements.txt
 
       - name: Setup inventree-bulk-plugin
@@ -143,9 +143,9 @@ jobs:
 
       - name: Run tests
         run: |
-          cd /home/inventree
+          cd /home/inventree${{ matrix.inventree-tag == 'latest' && '/src/backend' || ''  }}
           HOME=/root coverage run --omit="InvenTree/**" InvenTree/manage.py test inventree_bulk_plugin.tests.integration
-          echo $GITHUB_WORKSPACE > coverage_info
+          echo $GITHUB_WORKSPACE${{ matrix.inventree-tag == 'latest' && '"/src/backend"' || ''  }} > coverage_info
 
       - name: Upload coverage
         if: ${{ matrix.inventree-tag == 'latest' }}
