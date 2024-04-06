@@ -145,7 +145,7 @@ jobs:
         run: |
           cd /home/inventree${{ matrix.inventree-tag == 'latest' && '/src/backend' || ''  }}
           HOME=/root coverage run --omit="InvenTree/**" InvenTree/manage.py test inventree_bulk_plugin.tests.integration
-          echo $GITHUB_WORKSPACE > /home/inventree${{ matrix.inventree-tag == 'latest' && '/src/backend' || ''  }}/coverage_info
+          echo $GITHUB_WORKSPACE > /home/inventree/coverage_info
 
       - name: Upload coverage
         if: ${{ matrix.inventree-tag == 'latest' }}
