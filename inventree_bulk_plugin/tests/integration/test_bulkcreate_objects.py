@@ -709,6 +709,5 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         r.data = {"template": {"output": {"generate": {"variant_of": str(part.pk)}}}}
         obj = PartBulkCreateObject(r)
         ctx = obj.get_context()
-        self.assertDictContainsSubset(
-            {"name": "Test part", "description": "Test part desc", "is_template": True}, ctx["gen"])
+        self.assertEqual(ctx["gen"] | {"name": "Test part", "description": "Test part desc", "is_template": True}, ctx["gen"])
         self.assertEqual(obj.parent, part)
