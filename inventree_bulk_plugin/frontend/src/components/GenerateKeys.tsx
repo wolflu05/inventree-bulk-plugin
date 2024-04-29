@@ -1,5 +1,5 @@
 import { JSX } from "preact";
-import { StateUpdater, useCallback, useId, useMemo, useState } from "preact/hooks";
+import { Dispatch, StateUpdater, useCallback, useId, useMemo, useState } from "preact/hooks";
 
 import { Input } from "./Input";
 import { Tooltip } from "./Tooltip";
@@ -40,7 +40,7 @@ const getDefaultValue = (fieldDefinition: FieldDefinition): FieldType => {
 interface GenerateKeysProps {
   fieldDefinition: FieldDefinition;
   field: FieldType;
-  setField: StateUpdater<FieldType>;
+  setField: Dispatch<StateUpdater<FieldType>>;
   onDelete?: () => void;
 }
 
@@ -50,7 +50,7 @@ export const GenerateKeys = ({ fieldDefinition, field, setField, onDelete }: Gen
       <GenerateKeysObject
         fieldsDefinition={fieldDefinition}
         fields={field as Record<string, FieldType>}
-        setFields={setField as StateUpdater<Record<string, FieldType>>}
+        setFields={setField as Dispatch<StateUpdater<Record<string, FieldType>>>}
         onDelete={onDelete}
       />
     );
@@ -60,7 +60,7 @@ export const GenerateKeys = ({ fieldDefinition, field, setField, onDelete }: Gen
       <GenerateKeysList
         fieldsDefinition={fieldDefinition}
         fields={field as FieldType[]}
-        setFields={setField as StateUpdater<FieldType[]>}
+        setFields={setField as Dispatch<StateUpdater<FieldType[]>>}
         onDelete={onDelete}
       />
     );
@@ -72,7 +72,7 @@ export const GenerateKeys = ({ fieldDefinition, field, setField, onDelete }: Gen
 interface GenerateKeysListProps {
   fieldsDefinition: FieldDefinitionList;
   fields: FieldType[];
-  setFields: StateUpdater<FieldType[]>;
+  setFields: Dispatch<StateUpdater<FieldType[]>>;
   onDelete?: () => void;
 }
 export const GenerateKeysList = ({ fieldsDefinition, fields, setFields, onDelete }: GenerateKeysListProps) => {
@@ -140,7 +140,7 @@ export const GenerateKeysList = ({ fieldsDefinition, fields, setFields, onDelete
 interface GenerateKeysObjectProps {
   fieldsDefinition: FieldDefinitionObject;
   fields: Record<string, FieldType>;
-  setFields: StateUpdater<Record<string, FieldType>>;
+  setFields: Dispatch<StateUpdater<Record<string, FieldType>>>;
   onDelete?: () => void;
   showCard?: boolean;
 }
@@ -281,7 +281,7 @@ const detectUseTemplate = (
 interface GenerateKeysSingleProps {
   fieldDefinition: FieldDefinitionText | FieldDefinitionModel | FieldDefinitionSelect;
   field: FieldType;
-  setField: StateUpdater<FieldType>;
+  setField: Dispatch<StateUpdater<FieldType>>;
   onDelete?: () => void;
 }
 const GenerateKeysSingle = ({ fieldDefinition, field, setField, onDelete }: GenerateKeysSingleProps) => {

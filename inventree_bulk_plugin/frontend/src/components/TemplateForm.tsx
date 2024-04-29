@@ -1,5 +1,5 @@
 import { JSX } from "preact";
-import { StateUpdater, useCallback, useEffect, useMemo, useState } from "preact/hooks";
+import { Dispatch, StateUpdater, useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
 import { BulkDefinitionSchemaBuilder } from "./BulkDefinitionSchemaBuilder";
 import { Dialog } from "./Dialog";
@@ -38,7 +38,7 @@ export const TemplateForm = ({
       setTemplate((t) => (t ? { ...t, [k]: e.currentTarget.value } : null)),
     [],
   );
-  const updateTemplate: StateUpdater<BulkDefinitionSchema> = useCallback((v) => {
+  const updateTemplate: Dispatch<StateUpdater<BulkDefinitionSchema>> = useCallback((v) => {
     setTemplate((t) => {
       if (t === null) return t;
       return {
