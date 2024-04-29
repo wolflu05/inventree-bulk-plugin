@@ -1,5 +1,5 @@
 import { JSX } from "preact";
-import { useState, useCallback, useEffect, useMemo, useId, useRef, StateUpdater } from "preact/hooks";
+import { useState, useCallback, useEffect, useMemo, useId, useRef, StateUpdater, Dispatch } from "preact/hooks";
 
 import { BulkDefinitionChildSchemaBuilder } from "./BulkDefinitionChildSchemaBuilder";
 import { Input } from "./Input";
@@ -13,14 +13,14 @@ import {
 
 interface BulkDefinitionSchemaBuilderProps {
   schema: BulkDefinitionSchema;
-  setSchema: StateUpdater<BulkDefinitionSchema>;
+  setSchema: Dispatch<StateUpdater<BulkDefinitionSchema>>;
   bulkGenerateInfo: BulkGenerateInfo;
 }
 
 export function BulkDefinitionSchemaBuilder({ schema, setSchema, bulkGenerateInfo }: BulkDefinitionSchemaBuilderProps) {
   const firstUpdate = useRef(true);
 
-  const setChildSchema: StateUpdater<BulkDefinitionChild> = useCallback(
+  const setChildSchema: Dispatch<StateUpdater<BulkDefinitionChild>> = useCallback(
     (newSchema) =>
       setSchema((s) => ({ ...s, output: typeof newSchema === "function" ? newSchema(s.output) : newSchema })),
     [setSchema],
@@ -54,7 +54,7 @@ export function BulkDefinitionSchemaBuilder({ schema, setSchema, bulkGenerateInf
   }, [schema?.input, input, setInput]);
 
   // template
-  const setTemplate: (i: number) => StateUpdater<BulkDefinitionChildTemplate> = useCallback(
+  const setTemplate: (i: number) => Dispatch<StateUpdater<BulkDefinitionChildTemplate>> = useCallback(
     (i: number) => (newTemplate) =>
       setSchema((s) => {
         s.templates[i] = typeof newTemplate === "function" ? newTemplate(s.templates[i]) : newTemplate;
@@ -154,7 +154,7 @@ export function BulkDefinitionSchemaBuilder({ schema, setSchema, bulkGenerateInf
                         )}
                         <BulkDefinitionChildSchemaBuilder
                           childSchema={template}
-                          setChildSchema={setTemplate(i) as unknown as StateUpdater<BulkDefinitionChild>}
+                          setChildSchema={setTemplate(i) as unknown as Dispatch<StateUpdater<BulkDefinitionChild>>}
                           bulkGenerateInfo={bulkGenerateInfo}
                           extendsKeys={extendsKeys}
                         />

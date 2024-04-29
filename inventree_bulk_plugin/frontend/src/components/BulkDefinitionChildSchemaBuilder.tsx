@@ -1,5 +1,5 @@
 import { JSX } from "preact";
-import { useState, useCallback, useEffect, useId, StateUpdater } from "preact/hooks";
+import { useState, useCallback, useEffect, useId, StateUpdater, Dispatch } from "preact/hooks";
 
 import { GenerateKeysObject } from "./GenerateKeys";
 import { Input } from "./Input";
@@ -11,7 +11,7 @@ import "./BulkDefinitionChildSchemaBuilder.css";
 
 interface BulkDefinitionChildSchemaBuilderProps {
   childSchema: BulkDefinitionChild;
-  setChildSchema: StateUpdater<BulkDefinitionChild>;
+  setChildSchema: Dispatch<StateUpdater<BulkDefinitionChild>>;
   bulkGenerateInfo: BulkGenerateInfo;
   extendsKeys: Record<string, string>;
 }
@@ -44,20 +44,21 @@ export function BulkDefinitionChildSchemaBuilder({
   );
 
   // set a generated value by key and event
-  const setGenerate: StateUpdater<Record<string, FieldType>> = useCallback(
+  const setGenerate: Dispatch<StateUpdater<Record<string, FieldType>>> = useCallback(
     (value) => setChildSchema((s) => ({ ...s, generate: typeof value === "function" ? value(s.generate) : value })),
     [setChildSchema],
   );
 
   // dimensions
-  const setDimension: (key: "dimensions" | "count") => (i: number) => StateUpdater<string | null> = useCallback(
-    (key) => (i) => (newValue) =>
-      setChildSchema((s) => {
-        s[key][i] = typeof newValue === "function" ? newValue(s[key][i]) : newValue;
-        return { ...s, [key]: s[key] };
-      }),
-    [setChildSchema],
-  );
+  const setDimension: (key: "dimensions" | "count") => (i: number) => Dispatch<StateUpdater<string | null>> =
+    useCallback(
+      (key) => (i) => (newValue) =>
+        setChildSchema((s) => {
+          s[key][i] = typeof newValue === "function" ? newValue(s[key][i]) : newValue;
+          return { ...s, [key]: s[key] };
+        }),
+      [setChildSchema],
+    );
   const addDimension = useCallback(
     () =>
       setChildSchema((s) => {
@@ -78,7 +79,7 @@ export function BulkDefinitionChildSchemaBuilder({
   );
 
   // child's childs schemas
-  const setChildChildSchema: (i: number) => StateUpdater<BulkDefinitionChild> = useCallback(
+  const setChildChildSchema: (i: number) => Dispatch<StateUpdater<BulkDefinitionChild>> = useCallback(
     (i) => (newValue) =>
       setChildSchema((s) => {
         if (!s.childs) s.childs = [];

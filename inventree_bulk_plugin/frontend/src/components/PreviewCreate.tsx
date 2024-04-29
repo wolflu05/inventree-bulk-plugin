@@ -1,5 +1,5 @@
 import { JSX } from "preact";
-import { StateUpdater, useCallback, useEffect, useState } from "preact/hooks";
+import { Dispatch, StateUpdater, useCallback, useEffect, useState } from "preact/hooks";
 
 import { Input } from "./Input";
 import { PreviewTable } from "./PreviewTable";
@@ -14,7 +14,7 @@ interface PreviewCreateProps {
   attachPreviewHandler?: (previewHandler: () => void) => void;
   attachCreateHandler?: (createHandler: () => void) => void;
   handleDoneCreate?: (ok: boolean) => void;
-  setIsBulkCreateLoading: StateUpdater<boolean>;
+  setIsBulkCreateLoading: Dispatch<StateUpdater<boolean>>;
 }
 
 interface InputType {
