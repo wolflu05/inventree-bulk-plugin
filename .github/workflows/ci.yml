@@ -93,10 +93,10 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        inventree-tag: [latest]
+        inventree-tag: [latest, stable]
 
     container:
-      image: ghcr.io/wolflu05/inventree:py-12
+      image: inventree/inventree:${{ matrix.inventree-tag }}
       options: --user root
       env:
         INVENTREE_DB_ENGINE: postgresql
