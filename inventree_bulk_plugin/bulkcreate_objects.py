@@ -655,6 +655,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
 
         PartAttachment.objects.create(
             part=part,
+            link=link,
             comment=comment,
             attachment=attachment,
             user=self.request.user,

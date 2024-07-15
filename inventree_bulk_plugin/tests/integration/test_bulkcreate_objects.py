@@ -408,8 +408,8 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
             Attachment,
             obj.fields["attachments"].items_type.fields,
             f"{obj.template_type}.attachments.[x]",
-            ignore_fields=["file_url", "file_name", "file_headers", "model_type", "model_id"],
-            ignore_model_required_fields=["part"],
+            ignore_fields=["file_url", "file_name", "file_headers"],
+            ignore_model_required_fields=["part", "model_type", "model_id"],
         ))
 
         issues.extend(self.model_test(
