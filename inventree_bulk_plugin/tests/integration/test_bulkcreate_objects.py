@@ -14,7 +14,7 @@ from common.models import InvenTreeSetting
 
 from ...bulkcreate_objects import get_model, get_model_instance, cast_model, cast_select, FieldDefinition, BulkCreateObject, StockLocationBulkCreateObject, PartCategoryBulkCreateObject, PartBulkCreateObject
 
-# import modern Attachment model, if it exists otherwise fallback to the legacy attachment system 
+# import modern Attachment model, if it exists otherwise fallback to the legacy attachment system
 try:
     from common.models import Attachment
 except ImportError:
