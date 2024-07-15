@@ -8,11 +8,17 @@ from django.db.models import Model, IntegerField, DecimalField, FloatField, Bool
 from mptt.models import MPTTModel
 
 from company.models import Company, ManufacturerPart, SupplierPart
-from part.models import Part, PartCategory, PartParameterTemplate, PartParameter, PartAttachment, PartRelated
+from part.models import Part, PartCategory, PartParameterTemplate, PartParameter, PartRelated
 from stock.models import StockLocation, StockItem
 from common.models import InvenTreeSetting
 
 from ...bulkcreate_objects import get_model, get_model_instance, cast_model, cast_select, FieldDefinition, BulkCreateObject, StockLocationBulkCreateObject, PartCategoryBulkCreateObject, PartBulkCreateObject
+
+# import modern Attachment model, if it exists otherwise fallback to the legacy attachment system 
+try:
+    from common.models import Attachment
+except ImportError:
+    from InvenTree.models import PartAttachment as Attachment
 
 
 # custom request factory, used to patch query_params which were not defined by default
@@ -399,7 +405,7 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         ))
 
         issues.extend(self.model_test(
-            PartAttachment,
+            Attachment,
             obj.fields["attachments"].items_type.fields,
             f"{obj.template_type}.attachments.[x]",
             ignore_fields=["file_url", "file_name", "file_headers"],
@@ -475,7 +481,7 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
             (ManufacturerPart, 1),
             (SupplierPart, 1),
             (StockItem, 1),
-            (PartAttachment, 3)
+            (Attachment, 3)
         ]
 
         for model, count in expected_objs:
