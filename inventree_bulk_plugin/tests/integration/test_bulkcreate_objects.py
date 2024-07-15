@@ -18,7 +18,7 @@ from ...bulkcreate_objects import get_model, get_model_instance, cast_model, cas
 try:
     from common.models import Attachment
 except ImportError:
-    from InvenTree.models import PartAttachment as Attachment
+    from part.models import PartAttachment as Attachment
 
 
 # custom request factory, used to patch query_params which were not defined by default
@@ -408,7 +408,7 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
             Attachment,
             obj.fields["attachments"].items_type.fields,
             f"{obj.template_type}.attachments.[x]",
-            ignore_fields=["file_url", "file_name", "file_headers"],
+            ignore_fields=["file_url", "file_name", "file_headers", "model_type", "model_id"],
             ignore_model_required_fields=["part"],
         ))
 
