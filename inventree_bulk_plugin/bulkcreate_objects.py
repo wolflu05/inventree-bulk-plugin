@@ -16,7 +16,7 @@ from rest_framework.request import Request
 from djmoney.contrib.exchange.models import Rate
 
 from stock.models import StockLocation
-from part.models import PartCategory, Part, PartParameter, PartParameterTemplate, PartCategoryParameterTemplate, PartAttachment, PartRelated
+from part.models import PartCategory, Part, PartParameter, PartParameterTemplate, PartCategoryParameterTemplate, PartRelated
 from company.models import Company, ManufacturerPart, SupplierPart
 from stock.models import StockItem
 from common.models import InvenTreeSetting
@@ -503,12 +503,11 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
 
         # create attachments
         for attachment in attachments:
-            PartAttachment.objects.create(
+            self.add_attachment(
                 part=part,
                 link=attachment.get("link", None),
                 comment=attachment["comment"],
                 attachment=self.attachments.get(attachment.get("file_url", None), None),
-                user=self.request.user,
             )
 
         # create manufacturer part
@@ -625,6 +624,40 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
 
     def get_currency_default(self):
         return InvenTreeSetting.get_setting('INVENTREE_DEFAULT_CURRENCY', 'USD')
+    
+    def add_attachment(self, part: Part, *, comment: str, link: str, attachment: File):
+        """Add an attachment to a part.
+        
+        Note: This supports the 'legacy' and 'modern' attachment system.
+        Ref: https://github.com/inventree/InvenTree/pull/7420
+        """
+
+        # first try the modern attachment system
+        try:
+            from common.models import Attachment
+
+            Attachment.objects.create(
+                model_type="part",
+                model_id=part.pk,
+                comment=comment,
+                link=link,
+                attachment=attachment,
+                upload_user=self.request.user,
+            )
+            return
+        except ImportError:  # pragma: no cover
+            # fallback to the legacy attachment system
+            from part.models import PartAttachment
+
+            PartAttachment.objects.create(
+                part=part,
+                link=link,
+                comment=comment,
+                attachment=attachment,
+                user=self.request.user,
+            )
+        except Exception as e:  # pragma: no cover
+            raise e
 
 
 bulkcreate_objects: dict[str, type[BulkCreateObject]] = {
