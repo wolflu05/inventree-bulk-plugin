@@ -645,21 +645,19 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                 upload_user=self.request.user,
             )
             return
-        except ImportError:
-            pass
-        except Exception as e:
-            raise e
-        
-        # fallback to the legacy attachment system
-        from part.models import PartAttachment
+        except ImportError:  # pragma: no cover
+            # fallback to the legacy attachment system
+            from part.models import PartAttachment
 
-        PartAttachment.objects.create(
-            part=part,
-            link=link,
-            comment=comment,
-            attachment=attachment,
-            user=self.request.user,
-        )
+            PartAttachment.objects.create(
+                part=part,
+                link=link,
+                comment=comment,
+                attachment=attachment,
+                user=self.request.user,
+            )
+        except Exception as e:  # pragma: no cover
+            raise e
 
 
 bulkcreate_objects: dict[str, type[BulkCreateObject]] = {
