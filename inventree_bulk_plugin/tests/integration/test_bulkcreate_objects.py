@@ -377,6 +377,7 @@ class StockLocationBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase)
 
 class PartCategoryBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
     bulk_create_object = PartCategoryBulkCreateObject
+    ignore_fields = ["icon"]  # icon is only a getter/setter mapped to the underlying model field _icon
 
 
 class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
