@@ -133,16 +133,16 @@ You can use the global context for some more complex things like generating resi
 
 Install this plugin as follows:
 
-1. Make sure you allow the use of the url integration and app integration (see [Why does this plugin needs the app mixin?](#why-does-this-plugin-needs-the-app-mixin))
+1. Goto the Admin Center > Plugins > Plugin Settings and make sure to enable the "Enable URL Integration" and "Enable App Integration" switches. (see [Why does this plugin needs the app mixin?](#why-does-this-plugin-needs-the-app-mixin))
 
-2. Goto Settings > Plugins > Install Plugin, enter `inventree-bulk-plugin` as package name. Enable the confirm switch and click submit.
+2. Click on "Install Plugin" at the top of the Plugins table on that page and enter `inventree-bulk-plugin` as package name. Enable the "Confirm plugin installation" switch and click "Install".
 
-3. Restart your server and activate the plugin.
+3. Search for the plugin in the table and activate it
 
-4. Stop your server and run `invoke update` (for docker installs it is `docker-compose inventree-server invoke update`). This ensures that all migrations run and the static files get collected. You can now start your server again and start using the plugin.
+4. Stop your server and run `invoke update` (for docker installs it is `docker-compose inventree-server invoke update`). This ensures that all migrations run and the static files get collected. You can now start your server again and start using the plugin by navigating to any stock location or part category (the root level location/category is not available for bulk creation)
 
 > [!IMPORTANT]
-> At least InvenTree v0.12.7 is required to use this plugin.
+> At least InvenTree v0.15.8 is required to use this plugin.
 
 ## 🏃 Usage
 

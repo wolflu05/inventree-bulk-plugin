@@ -46,7 +46,8 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, SettingsMixin, InvenT
     # 0.9.1 - due to "invoke update" doesn't run collectstatic (see inventree/InvenTree#4077)
     # 0.12.6 - Settings do not work in combination with api views (see inventree/InvenTree#5408)
     # 0.12.7 - Fix missing filters for get settings validator (see inventree/InvenTree#5480)
-    MIN_VERSION = "0.12.7"
+    # 0.15.8 - plugin_static template tag was added (see inventree/InvenTree#7764)
+    MIN_VERSION = "0.15.8"
 
     TITLE = "InvenTree Bulk Plugin"
     SLUG = "inventree-bulk-plugin"
