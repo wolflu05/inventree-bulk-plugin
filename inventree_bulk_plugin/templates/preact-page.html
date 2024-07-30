@@ -1,5 +1,5 @@
-{% load static %}
 {% load inventree_extras %}
+{% load plugin_extras %}
 
 {% define "bulk-create-preact-root__"|add:page|add:id as dom_root %}
 
@@ -18,12 +18,12 @@
   </script>
 {% else %}
   <script type="module">
-    import { render } from "{% static 'inventree-bulk-plugin/dist/'|add:page|add:'.js' %}";
+    import { render } from "{% plugin_static 'inventree-bulk-plugin/dist/'|add:page|add:'.js' %}";
     render({ 
       target: document.getElementById("{{ dom_root }}"),
       objectId: "{{ objectId }}",
       objectType: "{{ objectType }}"
     });
   </script>
-  <link rel="stylesheet" href="{% static 'inventree-bulk-plugin/dist/assets/style.css' %}">
+  <link rel="stylesheet" href="{% plugin_static 'inventree-bulk-plugin/dist/assets/style.css' %}">
 {% endif %}

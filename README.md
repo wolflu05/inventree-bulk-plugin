@@ -142,7 +142,7 @@ Install this plugin as follows:
 4. Stop your server and run `invoke update` (for docker installs it is `docker-compose inventree-server invoke update`). This ensures that all migrations run and the static files get collected. You can now start your server again and start using the plugin.
 
 > [!IMPORTANT]
-> At least InvenTree v0.12.7 is required to use this plugin.
+> At least InvenTree v0.15.8 is required to use this plugin.
 
 ## 🏃 Usage
 
