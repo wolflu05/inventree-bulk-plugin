@@ -220,6 +220,7 @@ export const GenerateKeysObject = ({ fieldsDefinition, fields, setFields, onDele
                 defaultValue={""}
                 onChange={(v) => handleAddGenerateKey(v as string)}
                 size="xs"
+                searchable
                 placeholder="Add key"
                 data={remainingGenerateKeys.map(([key, { name }]) => ({ value: key, label: name }))}
               />

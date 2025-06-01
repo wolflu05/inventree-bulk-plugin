@@ -15,7 +15,9 @@
     "@mantine/hooks": "^8.0.1",
     "@mantine/notifications": "^8.0.1",
     "@tabler/icons-preact": "^3.33.0",
-    "preact": "^10.20.2"
+    "@tanstack/react-query": "^5.79.0",
+    "preact": "^10.20.2",
+    "react-select": "^5.10.1"
   },
   "devDependencies": {
     "@preact/preset-vite": "^2.8.2",
