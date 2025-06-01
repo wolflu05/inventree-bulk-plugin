@@ -201,7 +201,8 @@ interface ModelInputComponentProps extends ModelInputProps {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-const ModelInput = ({ model, extraFormGroup, id, onInput, value }: ModelInputComponentProps) => {
+// const ModelInput = ({ model, extraFormGroup, id, onInput, value }: ModelInputComponentProps) => {
+const ModelInput = ({ extraFormGroup, id }: ModelInputComponentProps) => {
   // console.log(model, id, value, onInput);
   // useEffect(() => {
   // @ts-ignore
