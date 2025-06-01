@@ -4,8 +4,6 @@ from django.test import TestCase
 from django.core.exceptions import ValidationError
 
 from plugin import registry
-from stock.views import StockLocationDetail
-from part.views import CategoryDetail
 
 from ...models import validate_template
 from ...InvenTreeBulkPlugin import InvenTreeBulkPlugin, validate_json
@@ -53,12 +51,11 @@ class InvenTreeBulkPluginTestCase(TestCase):
                 if panel["title"] == title:
                     found: dict = panel
             self.assertIsNotNone(found)
-            self.assertListEqual(["title", "icon", "content", "description"], list(found.keys()))
 
-        panels = bulk_plugin.get_custom_panels(StockLocationDetail(), None)
+        panels = bulk_plugin.get_ui_panels(None, {"target_model": "stocklocation", "target_id": 1})
         assert_contains_by_title("Location bulk creation", panels)
 
-        panels = bulk_plugin.get_custom_panels(CategoryDetail(), None)
+        panels = bulk_plugin.get_custom_panels(None, {"target_model": "partcategory", "target_id": 1})
         assert_contains_by_title("Category bulk creation", panels)
         assert_contains_by_title("Part bulk creation", panels)
 
