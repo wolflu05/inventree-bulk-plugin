@@ -80,6 +80,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # pin@v4.6.2
         with:
           name: unit-coverage
+          include-hidden-files: true
           path: |
             .coverage
             coverage_info
@@ -152,6 +153,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # pin@v4.6.2
         with:
           name: integration-coverage
+          include-hidden-files: true
           path: |
             /home/inventree/src/backend/.coverage
             /home/inventree/src/backend/coverage_info
@@ -204,6 +206,7 @@ jobs:
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # pin@v4.6.2
         with:
           name: coverage
+          include-hidden-files: true
           path: |
             .coverage
             htmlcov
@@ -249,6 +252,7 @@ jobs:
       - name: Upload frontend artifact
         uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # pin@v4.6.2
         with:
+          include-hidden-files: true
           name: frontend
           path: inventree_bulk_plugin/static/inventree-bulk-plugin/dist
 
