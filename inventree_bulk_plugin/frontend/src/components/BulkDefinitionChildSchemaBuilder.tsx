@@ -1,13 +1,14 @@
 import { JSX } from "preact";
-import { useState, useCallback, useEffect, useId, StateUpdater, Dispatch } from "preact/hooks";
+import { useCallback, useEffect, StateUpdater, Dispatch } from "preact/hooks";
+
+import { Accordion, ActionIcon, Group, Paper, Stack, Title } from "@mantine/core";
+import { IconPlus, IconTrash } from "@tabler/icons-preact";
 
 import { GenerateKeysObject } from "./GenerateKeys";
-import { Input } from "./Input";
-import { Tooltip } from "./Tooltip";
+import { Input } from "./ui/Input";
+import { Tooltip } from "./ui/Tooltip";
 import { defaultSchema } from "../utils/constants";
 import { BulkDefinitionChild, BulkGenerateInfo, FieldType } from "../utils/types";
-
-import "./BulkDefinitionChildSchemaBuilder.css";
 
 interface BulkDefinitionChildSchemaBuilderProps {
   childSchema: BulkDefinitionChild;
@@ -106,22 +107,8 @@ export function BulkDefinitionChildSchemaBuilder({
     [setChildSchema],
   );
 
-  // collapsable handling for advanced child options
-  const id = useId();
-  const outputAdvancedId = `bulk-child-schema-editor-${id}`;
-  const [outputAdvancedState, setOutputAdvancedState] = useState(false);
-
-  const onOutputAdvanceToggle = useCallback(() => {
-    setOutputAdvancedState((oldState) => {
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore: correct types for bootstrap table are not available
-      $(`#${outputAdvancedId}`).collapse(!oldState ? "show" : "hide");
-      return !oldState;
-    });
-  }, [outputAdvancedId]);
-
   return (
-    <div class="">
+    <Stack>
       <Input
         label="Dimensions"
         tooltip="A childs naming convention could have multiple dimensions where it is counting in"
@@ -139,51 +126,49 @@ export function BulkDefinitionChildSchemaBuilder({
         onInput={setDimension("count")}
       />
 
-      <h6
-        class={`user-select-none collapsable-heading ${outputAdvancedState ? "active" : ""}`}
-        role="button"
-        onClick={onOutputAdvanceToggle}
-      >
-        Advanced
-      </h6>
-      <div class="collapse" id={outputAdvancedId}>
-        {bulkGenerateInfo.generate_type === "tree" && (
-          <>
-            <Input
-              label="Parent name match"
-              tooltip="First child that matches the parent name matcher will be chosen for generating the childs for a specific parent. Must evaluate to something that can be casted to a boolean."
-              type="text"
-              value={childSchema.parent_name_match || ""}
-              onInput={setValue("parent_name_match")}
-            />
-            {extendsKeys && (
-              <Input
-                label="Extends"
-                tooltip="Choose to extend from a template"
-                type="select"
-                options={extendsKeys}
-                value={childSchema.extends || ""}
-                onInput={setValue("extends")}
-              />
+      <Accordion variant="contained" chevronPosition="left">
+        <Accordion.Item value="advanced">
+          <Accordion.Control>
+            <Title order={6}>Advanced Options</Title>
+          </Accordion.Control>
+          <Accordion.Panel>
+            {bulkGenerateInfo.generate_type === "tree" && (
+              <>
+                <Input
+                  label="Parent name match"
+                  tooltip="First child that matches the parent name matcher will be chosen for generating the childs for a specific parent. Must evaluate to something that can be casted to a boolean."
+                  type="text"
+                  value={childSchema.parent_name_match || ""}
+                  onInput={setValue("parent_name_match")}
+                />
+                {extendsKeys && (
+                  <Input
+                    label="Extends"
+                    tooltip="Choose to extend from a template"
+                    type="select"
+                    options={extendsKeys}
+                    value={childSchema.extends || ""}
+                    onInput={setValue("extends")}
+                  />
+                )}
+              </>
             )}
-          </>
-        )}
-        <Input
-          label="Global context"
-          tooltip="This template gets imported under the 'global' namespace to all generate fields. Use this to setup variables via the set keyword ('{% set hello = 'world' %}')which can be accessed as 'global.<x>' ('{{ global.hello }}')."
-          type="textarea"
-          value={childSchema.global_context || ""}
-          onInput={setValue("global_context")}
-        />
-      </div>
+            <Input
+              label="Global context"
+              tooltip="This template gets imported under the 'global' namespace to all generate fields. Use this to setup variables via the set keyword ('{% set hello = 'world' %}')which can be accessed as 'global.<x>' ('{{ global.hello }}')."
+              type="textarea"
+              value={childSchema.global_context || ""}
+              onInput={setValue("global_context")}
+            />
+          </Accordion.Panel>
+        </Accordion.Item>
+      </Accordion>
 
-      <div class="mt-3">
-        <Tooltip
-          text={`You can use {{dim.x}} as a placeholder for the generated output of the dimension. For more info see the Readme.`}
-        >
-          <h5>Generate</h5>
-        </Tooltip>
-      </div>
+      <Tooltip
+        text={`You can use {{dim.x}} as a placeholder for the generated output of the dimension. For more info see the Readme.`}
+      >
+        <Title order={6}>Generate</Title>
+      </Tooltip>
       <GenerateKeysObject
         fieldsDefinition={{
           name: "",
@@ -194,38 +179,39 @@ export function BulkDefinitionChildSchemaBuilder({
         }}
         fields={childSchema.generate}
         setFields={setGenerate}
-        showCard={false}
       />
 
       {bulkGenerateInfo.generate_type === "tree" && (
         <>
-          <h5 class="mt-3">Childs</h5>
-          <div class="ms-3">
+          <Group>
+            <Title order={6}>Childs</Title>
+            <ActionIcon size="xs">
+              <IconPlus size={16} onClick={addChild} />
+            </ActionIcon>
+          </Group>
+
+          <Stack>
             {childSchema.childs?.map((child, i) => (
-              <div class="card mb-2">
-                <div class="d-flex justify-content-between">
-                  <div class="col p-3">
+              <Paper withBorder p={10} ml={20}>
+                <Group justify={"space-between"} align="flex-start" wrap="nowrap">
+                  <Stack maw="calc(100% - 60px)" flex={1}>
                     <BulkDefinitionChildSchemaBuilder
                       childSchema={child}
                       setChildSchema={setChildChildSchema(i)}
                       bulkGenerateInfo={bulkGenerateInfo}
                       extendsKeys={extendsKeys}
                     />
-                  </div>
-                  <div class="p-1">
-                    <button onClick={removeChild(i)} class="btn btn-sm btn-outline-danger">
-                      <i class="fa fa-trash"></i>
-                    </button>
-                  </div>
-                </div>
-              </div>
+                  </Stack>
+
+                  <ActionIcon color="red" size="input-xs" variant="outline">
+                    <IconTrash size={16} onClick={removeChild(i)} />
+                  </ActionIcon>
+                </Group>
+              </Paper>
             ))}
-          </div>
-          <button onClick={addChild} class="btn btn-outline-primary btn-sm">
-            Add child
-          </button>
+          </Stack>
         </>
       )}
-    </div>
+    </Stack>
   );
 }

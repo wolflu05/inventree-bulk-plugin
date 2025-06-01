@@ -10,6 +10,11 @@
     "lint": "eslint . && tsc"
   },
   "dependencies": {
+    "@inventreedb/ui": "^0.0.7",
+    "@mantine/core": "^8.0.1",
+    "@mantine/hooks": "^8.0.1",
+    "@mantine/notifications": "^8.0.1",
+    "@tabler/icons-preact": "^3.33.0",
     "preact": "^10.20.2"
   },
   "devDependencies": {

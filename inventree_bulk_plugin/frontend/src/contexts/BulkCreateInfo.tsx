@@ -1,8 +1,11 @@
-import { ComponentChildren, createContext } from "preact";
+import { createContext } from "preact";
+import { ReactNode } from "preact/compat";
 import { useCallback, useContext, useEffect, useState } from "preact/hooks";
 
-import { useNotifications } from "./Notification";
-import { URLS, fetchAPI } from "../utils/api";
+import { showNotification } from "@mantine/notifications";
+
+import { useApi } from "./InvenTreeContext";
+import { AxiosError, URLS } from "../utils/api";
 import { BulkGenerateInfo } from "../utils/types";
 
 interface BulkGenerateInfoContextType {
@@ -23,26 +26,31 @@ export const useBulkGenerateInfo = () => {
 };
 
 interface BulkGenerateInfoWrapperProps {
-  children: ComponentChildren;
+  children: ReactNode;
 }
 
 export const BulkGenerateInfoWrapper = ({ children }: BulkGenerateInfoWrapperProps) => {
   const [bulkGenerateInfoDict, setBulkGenerateInfoDict] = useState<Record<string, BulkGenerateInfo>>({});
 
-  const { showNotification } = useNotifications();
+  const api = useApi();
 
   const reload = useCallback(async () => {
-    const res = await fetchAPI(URLS.bulkcreate());
-
-    if (!res.ok) {
-      return showNotification({ type: "danger", message: `Could not load bulk generate info, ${res.statusText}` });
+    let res;
+    try {
+      res = await api.get(URLS.bulkcreate());
+    } catch (err) {
+      showNotification({
+        color: "red",
+        message: `Could not load bulk generate info, ${(err as AxiosError).response?.statusText}`,
+      });
+      return;
     }
 
     const bulkGenerateInfo: Record<string, BulkGenerateInfo> = Object.fromEntries(
-      (await res.json()).map((x: BulkGenerateInfo) => [x.template_type, x]),
+      res.data.map((x: BulkGenerateInfo) => [x.template_type, x]),
     );
     setBulkGenerateInfoDict(bulkGenerateInfo);
-  }, [showNotification]);
+  }, [api]);
 
   useEffect(() => {
     reload();

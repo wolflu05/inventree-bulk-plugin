@@ -1,8 +1,10 @@
 import { useEffect, useId, useMemo } from "preact/hooks";
 
-import { useNotifications } from "../contexts/Notification";
+import { showNotification } from "@mantine/notifications";
+
+import { useApi } from "../contexts/InvenTreeContext";
 import { beautifySchema, escapeHtml, getCounter, getUsedGenerateKeys, toFlat } from "../utils";
-import { URLS, fetchAPI } from "../utils/api";
+import { AxiosError, URLS } from "../utils/api";
 import { customModelProcessors } from "../utils/customModelProcessors";
 import { BulkGenerateInfo, FieldDefinition, FieldType, TemplateModel } from "../utils/types";
 
@@ -15,30 +17,35 @@ interface PreviewTableProps {
 }
 
 export const PreviewTable = ({ template, height, parentId, bulkGenerateInfo }: PreviewTableProps) => {
-  const { showNotification } = useNotifications();
   const id = useId();
   const tableId = useMemo(() => `preview-table-${id}`, [id]);
+  const api = useApi();
 
   useEffect(() => {
     (async () => {
-      const res = await fetchAPI(URLS.bulkcreate({ parentId, create: false }), {
-        method: "POST",
-        body: JSON.stringify({
+      let res;
+      try {
+        res = await api.post(URLS.bulkcreate({ parentId, create: false }), {
           ...template,
           template: JSON.stringify(beautifySchema(template.template)),
-        }),
-      });
-      const json = await res.json();
-
-      if (!res.ok) {
-        return showNotification({ type: "danger", message: `An error occurred, ${json.error}` });
+        });
+      } catch (err) {
+        showNotification({ color: "red", message: `An error occurred, ${(err as AxiosError).response?.data?.error}` });
+        return;
       }
 
-      const data = toFlat(json, getCounter());
+      const data = toFlat(res.data, getCounter());
 
-      showNotification({ type: "success", message: `Successfully parsed. This will generate ${data.length} items.` });
+      showNotification({ color: "green", message: `Successfully parsed. This will generate ${data.length} items.` });
 
       const usedGenerateKeys = getUsedGenerateKeys(template.template);
+
+      // TODO
+      document.getElementById(tableId)!.innerHTML = data
+        .map((d) => `<tr><td>${d.id}  - ${d.path} - ${d.pid}</td></tr>`)
+        .join("");
+
+      return;
 
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const $table = $(`#${tableId}`) as any;
@@ -210,7 +217,7 @@ export const PreviewTable = ({ template, height, parentId, bulkGenerateInfo }: P
         }),
       });
     })();
-  }, [bulkGenerateInfo.fields, height, id, parentId, showNotification, tableId, template]);
+  }, [api, bulkGenerateInfo.fields, height, id, parentId, tableId, template]);
 
   return (
     <div class="mt-3">
