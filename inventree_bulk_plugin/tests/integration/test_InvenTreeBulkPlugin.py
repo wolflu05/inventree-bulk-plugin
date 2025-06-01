@@ -55,7 +55,7 @@ class InvenTreeBulkPluginTestCase(TestCase):
         panels = bulk_plugin.get_ui_panels(None, {"target_model": "stocklocation", "target_id": 1})
         assert_contains_by_title("Location bulk creation", panels)
 
-        panels = bulk_plugin.get_custom_panels(None, {"target_model": "partcategory", "target_id": 1})
+        panels = bulk_plugin.get_ui_panels(None, {"target_model": "partcategory", "target_id": 1})
         assert_contains_by_title("Category bulk creation", panels)
         assert_contains_by_title("Part bulk creation", panels)
 
