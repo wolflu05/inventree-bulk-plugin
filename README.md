@@ -13,7 +13,7 @@ This plugin helps you bulk create storage locations and part categories in [Inve
 <details open>
 <summary>This will generate the previous mentioned example:</summary>
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/c1ad6ccd-bc27-445b-a3fc-ae5ce74390b5)
+![image](https://github.com/user-attachments/assets/700440bc-f844-4abe-a4b6-9dc71f3e1aa1)
 
 If you want to try out the templates on you're own, you can just copy the below json to your clipboard and use the "New untitled schema from clipboard" button to import them (see [import/export](#import-export)).
 
@@ -30,7 +30,7 @@ If you want to try out the templates on you're own, you can just copy the below 
 <details>
 <summary>But even nested generations don't stop you.</summary>
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/07d688da-b9e3-47ba-bf5b-ab44685c888a)
+![image](https://github.com/user-attachments/assets/7d6f16b6-9ba7-4fbf-9842-97408388eb6d)
 
 <!-- prettier-ignore-start -->
 ```json
@@ -43,8 +43,8 @@ If you want to try out the templates on you're own, you can just copy the below 
 <details>
 <summary>And with parent name match, you can even generate different sub-locations depending of the name of the parent.</summary>
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/83d8422f-d600-4bd3-991a-cdf2775b471b)
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/2dace3ea-a629-4a3b-b52e-9103ccffca50)
+![image](https://github.com/user-attachments/assets/fae0a49f-842b-4d40-be22-03d60dd39ba2)
+![image](https://github.com/user-attachments/assets/025d1a7e-97be-4840-a5de-07e269714a3e)
 
 <!-- prettier-ignore-start -->
 ```json
@@ -57,7 +57,7 @@ If you want to try out the templates on you're own, you can just copy the below 
 <details>
 <summary>Pad your numeric dimensions with zeros.</summary>
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/5cf35065-33c8-4e71-b04c-6fa541b2d821)
+![image](https://github.com/user-attachments/assets/6b720b4b-fe48-4aa0-b230-77debf8cb876)
 
 <!-- prettier-ignore-start -->
 ```json
@@ -70,8 +70,8 @@ If you want to try out the templates on you're own, you can just copy the below 
 <details>
 <summary>Extend from a template.</summary>
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/cd23b6af-995f-4220-bb54-d539af1a41ad)
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/8e303f31-2890-4cbe-87f7-9c02a453445e)
+![image](https://github.com/user-attachments/assets/5e0e96a3-f87b-422d-b78a-db2a48380a36)
+![image](https://github.com/user-attachments/assets/d9486844-ada6-44bd-b63b-76fec58ab393)
 
 <!-- prettier-ignore-start -->
 ```json
@@ -84,7 +84,7 @@ If you want to try out the templates on you're own, you can just copy the below 
 <details>
 <summary>Use more generate keys.</summary>
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/6d6f2105-b565-4aaf-aa31-723dc542d40f)
+![image](https://github.com/user-attachments/assets/cc6ece30-4d46-4b65-b0d5-2cc1e99c0db4)
 
 <!-- prettier-ignore-start -->
 ```json
@@ -97,7 +97,7 @@ If you want to try out the templates on you're own, you can just copy the below 
 <details>
 <summary>Using input to reuse a saved template.</summary>
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/d547a6b5-7d26-40bf-ad49-085eb7d283b0)
+![image](https://github.com/user-attachments/assets/a423107f-3a4c-4853-905e-12888ddf25cd)
 
 <!-- prettier-ignore-start -->
 ```json
@@ -110,7 +110,7 @@ If you want to try out the templates on you're own, you can just copy the below 
 <details>
 <summary>And then use the preview/bulk create form</summary>
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/0d799bcd-585e-4f7e-a30a-e0070a57a776)
+![image](https://github.com/user-attachments/assets/b008c377-f165-4134-91d0-e10f1b751b34)
 
 </details>
 
@@ -118,8 +118,8 @@ If you want to try out the templates on you're own, you can just copy the below 
 <summary>Use the global context</summary>
 
 You can use the global context for some more complex things like generating resistor values in e.g. the E12 row.
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/6e2ddf3d-ea9c-4479-ac53-5bad88b79dcf)
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/a3cc5a60-229e-4509-8d54-eef8563fa922)
+![image](https://github.com/user-attachments/assets/f4e90104-53ab-4be9-b9e1-eca36dc4559b)
+![image](https://github.com/user-attachments/assets/705c25c6-edb7-473c-81c4-1ec29033e8b3)
 
 <!-- prettier-ignore-start -->
 ```json
@@ -133,7 +133,7 @@ You can use the global context for some more complex things like generating resi
 
 Install this plugin as follows:
 
-1. Goto the Admin Center > Plugins > Plugin Settings and make sure to enable the "Enable URL Integration" and "Enable App Integration" switches. (see [Why does this plugin needs the app mixin?](#why-does-this-plugin-needs-the-app-mixin))
+1. Goto the Admin Center > Plugins > Plugin Settings and make sure to enable the "Enable URL integration", "Enable interface integration" and "Enable App integration" switches. (see [Why does this plugin needs the app mixin?](#why-does-this-plugin-needs-the-app-mixin))
 
 2. Click on "Install Plugin" at the top of the Plugins table on that page and enter `inventree-bulk-plugin` as package name. Enable the "Confirm plugin installation" switch and click "Install".
 
@@ -142,13 +142,13 @@ Install this plugin as follows:
 4. Stop your server and run `invoke update` (for docker installs it is `docker-compose inventree-server invoke update`). This ensures that all migrations run and the static files get collected. You can now start your server again and start using the plugin by navigating to any stock location or part category (the root level location/category is not available for bulk creation)
 
 > [!IMPORTANT]
-> At least InvenTree v0.15.8 is required to use this plugin.
+> At least InvenTree v0.18.0 is required to use this plugin.
 
 ## 🏃 Usage
 
 You can bulk create sub-stocklocations, sub-partcategories and parts (See [generate types](#generation-types)). Go to one and use the bulk creation panel on the side for the type you want to generate. Edit a [saved template](#saved-templates) with the [bulk creation editor](#bulk-creation-editor) or create a new untitled to setup a generation quickly. Use ["Preview/Bulk create"](#previewbulk-create) to bulkcreate using a saved template in combination with inputs. Templates can als be [imported and exported](#import-export) from clipboard or a file which is useful if you want to follow along with the documentation. On most places this documentation shows the template in a codeblock with a copy button.
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/a28ededb-72a8-499c-be55-e23f9557a2fa)
+![image](https://github.com/user-attachments/assets/ab048377-e111-42ff-bc80-205ffc633013)
 
 ### Saved templates
 
@@ -244,7 +244,7 @@ Generate fields can be added with just one click from a list of available fields
 - Number fields then must evaluate to a number
 - Model reference fields then must evaluate to a valid id
 
-![image](https://github.com/wolflu05/inventree-bulk-plugin/assets/76838159/ed4f5a16-2beb-4a63-8626-a833d6f0084b)
+![image](https://github.com/user-attachments/assets/904a5082-0299-49f8-8580-5587673794ff)
 
 ##### Child's
 
