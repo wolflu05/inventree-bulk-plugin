@@ -6,11 +6,11 @@ import { IconChevronRight } from "@tabler/icons-preact";
 import clsx from "clsx";
 import { DataTable } from "mantine-datatable";
 
-import { InstanceFromUrl } from "./inventree/render/InstanceFromUrl";
 import { useApi } from "../contexts/InvenTreeContext";
 import { beautifySchema, getCounter, getUsedGenerateKeys, mapNestedObject, NestedObjectType, toFlat } from "../utils";
 import { AxiosError, URLS } from "../utils/api";
 import { BulkGenerateInfo, FieldDefinition, TemplateModel } from "../utils/types";
+import { InstanceFromUrl } from "./inventree/render/InstanceFromUrl";
 
 import classes from "./PreviewTable.module.css";
 interface PreviewTableProps {
@@ -127,7 +127,7 @@ const NestedDataTable = ({
         render: (record: Record<string, unknown>) => {
           if (key === "name") {
             return (
-              <Box ml={level * 40} component="span" align="center" display="flex">
+              <Box ml={level * 40} component="span" display="flex">
                 {(record.childs as Array<unknown>).length > 0 && (
                   <IconChevronRight
                     size={16}

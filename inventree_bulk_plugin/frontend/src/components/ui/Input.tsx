@@ -59,7 +59,7 @@ type InputProps =
 
 export function Input(props: InputProps) {
   return (
-    <Grid align="center" gap={4}>
+    <Grid align="center">
       <Grid.Col span={2}>
         <Tooltip text={props.tooltip}>
           <Text>{props.label}</Text>
