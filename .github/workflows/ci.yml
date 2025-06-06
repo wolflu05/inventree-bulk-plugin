@@ -254,7 +254,7 @@ jobs:
         with:
           include-hidden-files: true
           name: frontend
-          path: inventree_bulk_plugin/static/inventree-bulk-plugin/dist
+          path: inventree_bulk_plugin/static/dist
 
   publish:
     if: github.event_name == 'release' && github.event.action == 'published'
@@ -283,7 +283,7 @@ jobs:
         uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # pin@v4.3.0
         with:
           name: frontend
-          path: inventree_bulk_plugin/static/inventree-bulk-plugin/dist
+          path: inventree_bulk_plugin/static/dist
 
       - name: Build pip package
         run: python3 -m build
