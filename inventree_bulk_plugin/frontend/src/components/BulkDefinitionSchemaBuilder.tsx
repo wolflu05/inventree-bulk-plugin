@@ -1,8 +1,11 @@
 import { JSX } from "preact";
-import { useState, useCallback, useEffect, useMemo, useId, useRef, StateUpdater, Dispatch } from "preact/hooks";
+import { useState, useCallback, useEffect, useMemo, useRef, StateUpdater, Dispatch } from "preact/hooks";
+
+import { Accordion, ActionIcon, Group, Paper, Stack, TextInput, Title } from "@mantine/core";
+import { IconPlus, IconTrash } from "@tabler/icons-preact";
 
 import { BulkDefinitionChildSchemaBuilder } from "./BulkDefinitionChildSchemaBuilder";
-import { Input } from "./Input";
+import { Input } from "./ui/Input";
 import { defaultSchema } from "../utils/constants";
 import {
   BulkDefinitionChild,
@@ -84,121 +87,87 @@ export function BulkDefinitionSchemaBuilder({ schema, setSchema, bulkGenerateInf
     [schema],
   );
 
-  // unique identifier if BulkDefinitionSchemaBuilder is used multiple times on same DOM
-  const accordionId = useId();
-
   return (
-    <div>
-      <div class="card">
-        <div class="card-header">
-          <h5
-            class="mb-0 user-select-none"
-            role="button"
-            data-bs-toggle="collapse"
-            data-bs-target={`#accordion-${accordionId}-input`}
-          >
-            Input
-          </h5>
-        </div>
+    <Accordion variant="contained" multiple defaultValue={["output"]}>
+      <Accordion.Item value="input">
+        <Accordion.Control>
+          <Title order={5}>Input</Title>
+        </Accordion.Control>
+        <Accordion.Panel>
+          {input.map((inp, i) => (
+            <Group align="flex-end">
+              <TextInput value={inp.key} onInput={setInputKey(i, "key")} label="Key" flex={1} size="xs" />
+              <TextInput value={inp.value} onInput={setInputKey(i, "value")} label="Value" flex={1} size="xs" />
 
-        <div id={`accordion-${accordionId}-input`} class="collapse">
-          <div class="card-body">
-            {input.map((inp, i) => (
-              <div class="input-group input-group-sm mb-2">
-                <span class="input-group-text">Key</span>
-                <input type="text" value={inp.key} onInput={setInputKey(i, "key")} />
-                <span class="input-group-text">Value</span>
-                <input type="text" style="flex: 1;" value={inp.value} onInput={setInputKey(i, "value")} />
-                <button class="btn btn-outline-danger btn-sm" onClick={removeInput(i)}>
-                  <i class="fa fa-trash"></i>
-                </button>
-              </div>
-            ))}
+              <ActionIcon color="red" size="input-xs" variant="outline">
+                <IconTrash size={16} onClick={removeInput(i)} />
+              </ActionIcon>
+            </Group>
+          ))}
 
-            <button onClick={addInput} class="btn btn-outline-primary btn-sm">
-              Add input
-            </button>
-          </div>
-        </div>
-      </div>
+          <ActionIcon size="input-xs" mt={10}>
+            <IconPlus size={16} onClick={addInput} />
+          </ActionIcon>
+        </Accordion.Panel>
+      </Accordion.Item>
 
       {bulkGenerateInfo.generate_type === "tree" && (
-        <>
-          <div class="card mt-2">
-            <div class="card-header">
-              <h5
-                class="mb-0 user-select-none"
-                role="button"
-                data-bs-toggle="collapse"
-                data-bs-target={`#accordion-${accordionId}-templates`}
-              >
-                Templates
-              </h5>
-            </div>
-
-            <div id={`accordion-${accordionId}-templates`} class="collapse">
-              <div class="card-body">
-                {schema.templates.map((template, i) => (
-                  <div class="card mb-2">
-                    <div class="d-flex justify-content-between">
-                      <div class="col p-3">
-                        {template !== null && (
-                          <Input
-                            label="Template name"
-                            type="text"
-                            value={template.name}
-                            onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) =>
-                              setTemplate(i)((t) => ({ ...t, name: e.currentTarget.value }))
-                            }
-                          />
-                        )}
-                        <BulkDefinitionChildSchemaBuilder
-                          childSchema={template}
-                          setChildSchema={setTemplate(i) as unknown as Dispatch<StateUpdater<BulkDefinitionChild>>}
-                          bulkGenerateInfo={bulkGenerateInfo}
-                          extendsKeys={extendsKeys}
+        <Accordion.Item value="templates">
+          <Accordion.Control>
+            <Title order={5}>Templates</Title>
+          </Accordion.Control>
+          <Accordion.Panel>
+            <Stack>
+              {schema.templates.map((template, i) => (
+                <Paper p={10}>
+                  <Group justify={"space-between"} align="flex-start" wrap="nowrap">
+                    <Stack>
+                      {template !== null && (
+                        <Input
+                          label="Template name"
+                          type="text"
+                          value={template.name}
+                          onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) =>
+                            setTemplate(i)((t) => ({ ...t, name: e.currentTarget.value }))
+                          }
                         />
-                      </div>
-                      <div class="p-1">
-                        <button onClick={removeTemplate(i)} class="btn btn-sm btn-outline-danger">
-                          <i class="fa fa-trash"></i>
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-                <button onClick={addTemplate} class="btn btn-outline-primary btn-sm">
-                  Add template
-                </button>
-              </div>
-            </div>
-          </div>
-        </>
+                      )}
+                      <BulkDefinitionChildSchemaBuilder
+                        childSchema={template}
+                        setChildSchema={setTemplate(i) as unknown as Dispatch<StateUpdater<BulkDefinitionChild>>}
+                        bulkGenerateInfo={bulkGenerateInfo}
+                        extendsKeys={extendsKeys}
+                      />
+                    </Stack>
+
+                    <ActionIcon color="red" size="input-xs" variant="outline">
+                      <IconTrash size={16} onClick={removeTemplate(i)} />
+                    </ActionIcon>
+                  </Group>
+                </Paper>
+              ))}
+
+              <ActionIcon size="input-xs">
+                <IconPlus size={16} onClick={addTemplate} />
+              </ActionIcon>
+            </Stack>
+          </Accordion.Panel>
+        </Accordion.Item>
       )}
 
-      <div class="card mt-2">
-        <div class="card-header">
-          <h5
-            class="mb-0 user-select-none"
-            role="button"
-            data-bs-toggle="collapse"
-            data-bs-target={`#accordion-${accordionId}-output`}
-          >
-            Output
-          </h5>
-        </div>
-
-        <div id={`accordion-${accordionId}-output`} class="collapse show">
-          <div class="card-body">
-            <BulkDefinitionChildSchemaBuilder
-              childSchema={schema.output}
-              setChildSchema={setChildSchema}
-              bulkGenerateInfo={bulkGenerateInfo}
-              extendsKeys={extendsKeys}
-            />
-          </div>
-        </div>
-      </div>
-    </div>
+      <Accordion.Item value="output">
+        <Accordion.Control>
+          <Title order={5}>Output</Title>
+        </Accordion.Control>
+        <Accordion.Panel>
+          <BulkDefinitionChildSchemaBuilder
+            childSchema={schema.output}
+            setChildSchema={setChildSchema}
+            bulkGenerateInfo={bulkGenerateInfo}
+            extendsKeys={extendsKeys}
+          />
+        </Accordion.Panel>
+      </Accordion.Item>
+    </Accordion>
   );
 }

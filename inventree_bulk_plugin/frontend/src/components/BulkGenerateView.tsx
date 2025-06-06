@@ -1,10 +1,14 @@
 import { useCallback, useEffect, useRef, useState } from "preact/hooks";
 
-import { Dialog } from "./Dialog";
+import { ActionIcon, Flex, Group, Loader, Stack, Table, Tooltip } from "@mantine/core";
+import { showNotification } from "@mantine/notifications";
+import { IconClipboard, IconEdit, IconEye, IconFile, IconPlus, IconTrash } from "@tabler/icons-preact";
+
 import { PreviewCreate } from "./PreviewCreate";
 import { TemplateForm } from "./TemplateForm";
-import { useNotifications } from "../contexts/Notification";
-import { URLS, fetchAPI } from "../utils/api";
+import { Dialog } from "./ui/Dialog";
+import { useApi } from "../contexts/InvenTreeContext";
+import { AxiosError, URLS } from "../utils/api";
 import { TemplateModel } from "../utils/types";
 
 interface BulkGenerateViewProps {
@@ -21,28 +25,30 @@ export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewPro
   const [currentTemplate, setCurrentTemplate] = useState<TemplateModel | null>(null);
   const [currentMode, setCurrentMode] = useState<BulkGenerateViewMode>("OVERVIEW");
 
-  const { showNotification } = useNotifications();
+  const api = useApi();
 
-  const reloadSavedTemplates = useCallback(async () => {
+  const reloadSavedTemplates = useCallback(() => {
     setIsLoading(true);
-
-    const res = await fetchAPI(URLS.templates({ templateType }));
-
-    if (!res.ok) {
-      setIsLoading(false);
-      return showNotification({ type: "danger", message: `Fetching templates failed,\n${res.statusText}` });
-    }
-
-    const data = await res.json();
-
-    setSavedTemplates(
-      data.map((t: Record<string, unknown>) => ({
-        ...t,
-        template: JSON.parse(t.template as string),
-      })) as TemplateModel[],
-    );
-    setIsLoading(false);
-  }, [showNotification, templateType]);
+    api
+      .get(URLS.templates({ templateType }))
+      .then((res) => {
+        setSavedTemplates(
+          res.data.map((t: Record<string, unknown>) => ({
+            ...t,
+            template: JSON.parse(t.template as string),
+          })) as TemplateModel[],
+        );
+        setIsLoading(false);
+      })
+      .catch((err) => {
+        setIsLoading(false);
+        showNotification({
+          message: `Fetching templates failed,\n${err.statusText}`,
+          color: "red",
+        });
+        return;
+      });
+  }, [templateType, api]);
 
   useEffect(() => {
     reloadSavedTemplates();
@@ -65,20 +71,22 @@ export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewPro
   const handleDelete = useCallback(async () => {
     if (currentTemplate === null) return;
 
-    const res = await fetchAPI(URLS.templates({ id: currentTemplate.id }), {
-      method: "DELETE",
-    });
-
-    if (!res.ok) {
-      return showNotification({ type: "danger", message: `Deleting template failed,\n${res.statusText}` });
+    try {
+      await api.delete(URLS.templates({ id: currentTemplate.id }));
+    } catch (err) {
+      showNotification({
+        color: "red",
+        message: `Deleting template failed,\n${(err as AxiosError).response?.statusText}`,
+      });
+      return;
     }
 
     setCurrentTemplate(null);
     setCurrentMode("OVERVIEW");
     setSavedTemplates((s) => [...s.filter((t) => t.id !== currentTemplate.id)]);
 
-    showNotification({ type: "success", message: "Template successfully deleted." });
-  }, [currentTemplate, showNotification]);
+    showNotification({ color: "green", message: "Template successfully deleted." });
+  }, [api, currentTemplate]);
 
   const previewHandler = useRef(() => {
     //
@@ -125,14 +133,14 @@ export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewPro
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           if ((fileInputRef as any).current?.value) (fileInputRef as any).current.value = "";
         } catch (err) {
-          showNotification({ type: "danger", message: `Cannot import from file. ${err}` });
+          showNotification({ color: "red", message: `Cannot import from file. ${err}` });
         }
       };
       fr.readAsText(file, "UTF-8");
     } catch (err) {
-      showNotification({ type: "danger", message: `Cannot import from file. ${err}` });
+      showNotification({ color: "red", message: `Cannot import from file. ${err}` });
     }
-  }, [importTemplate, showNotification]);
+  }, [importTemplate]);
 
   if (currentMode === "EDITING") {
     return (
@@ -149,87 +157,79 @@ export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewPro
   }
 
   return (
-    <div>
-      <table class="table table-bordered" style="max-width: 500px">
-        <thead>
-          <tr>
-            <th>Name</th>
-            <th>Actions</th>
-          </tr>
-        </thead>
-        <tbody>
+    <Stack>
+      <Group gap="xs" justify="flex-end">
+        <Tooltip label="Import schema from clipboard">
+          <ActionIcon
+            variant="outline"
+            onClick={() =>
+              navigator.clipboard
+                .readText()
+                .then((t) => importTemplate(t))
+                .catch((err) => {
+                  showNotification({ color: "red", message: `Error importing from clipboard, ${err}` });
+                })
+            }
+          >
+            <IconClipboard size={18} />
+          </ActionIcon>
+        </Tooltip>
+
+        <Tooltip label="Import schema from file">
+          <ActionIcon variant="outline" onClick={() => switchModeWithTemplate("IMPORT_TEMPLATE", null)()}>
+            <IconFile size={18} />
+          </ActionIcon>
+        </Tooltip>
+
+        <Tooltip label="Create new untitled schema">
+          <ActionIcon variant="outline" onClick={switchModeWithTemplate("EDITING", null)}>
+            <IconPlus size={18} />
+          </ActionIcon>
+        </Tooltip>
+      </Group>
+
+      <Table striped withTableBorder>
+        <Table.Thead>
+          <Table.Tr>
+            <Table.Th>Name</Table.Th>
+            <Table.Th>Actions</Table.Th>
+          </Table.Tr>
+        </Table.Thead>
+        <Table.Tbody>
           {isLoading ? (
-            <tr>
-              <td colSpan={2}>
-                <div class="d-flex justify-content-center">
-                  <div class="spinner-border" role="status">
-                    <span class="visually-hidden">Loading...</span>
-                  </div>
-                </div>
-              </td>
-            </tr>
+            <Table.Tr>
+              <Table.Td colSpan={2}>
+                <Flex justify={"center"}>
+                  <Loader />
+                </Flex>
+              </Table.Td>
+            </Table.Tr>
           ) : (
             savedTemplates.map((template) => (
-              <tr>
-                <td>{template.name}</td>
-                <td>
-                  <button
-                    class="btn btn-sm btn-outline-danger me-1"
-                    onClick={switchModeWithTemplate("DELETING", template)}
-                  >
-                    Delete
-                  </button>
-                  <button
-                    class="btn btn-sm btn-outline-success me-1"
-                    onClick={switchModeWithTemplate("EDITING", template)}
-                  >
-                    Edit
-                  </button>
-                  <button
-                    class="btn btn-sm btn-outline-primary"
-                    onClick={switchModeWithTemplate("PREVIEWING", template)}
-                  >
-                    Preview/Bulk create
-                  </button>
-                </td>
-              </tr>
+              <Table.Tr>
+                <Table.Td w="100%">{template.name}</Table.Td>
+                <Table.Td style={{ display: "flex", gap: 8 }}>
+                  <Tooltip label="Delete">
+                    <ActionIcon color="red" onClick={switchModeWithTemplate("DELETING", template)} variant="outline">
+                      <IconTrash size={18} />
+                    </ActionIcon>
+                  </Tooltip>
+                  <Tooltip label="Edit">
+                    <ActionIcon color="green" onClick={switchModeWithTemplate("EDITING", template)} variant="outline">
+                      <IconEdit size={18} />
+                    </ActionIcon>
+                  </Tooltip>
+                  <Tooltip label="Preview/Bulk create">
+                    <ActionIcon onClick={switchModeWithTemplate("PREVIEWING", template)} variant="outline">
+                      <IconEye size={18} />
+                    </ActionIcon>
+                  </Tooltip>
+                </Table.Td>
+              </Table.Tr>
             ))
           )}
-        </tbody>
-      </table>
-
-      <div class="btn-group">
-        <button type="button" class="btn btn-outline-primary" onClick={switchModeWithTemplate("EDITING", null)}>
-          New untitled schema
-        </button>
-        <button
-          class="btn btn-outline-primary dropdown-toggle dropdown-toggle-split"
-          data-bs-toggle="dropdown"
-          aria-expanded="false"
-        ></button>
-        <ul class="dropdown-menu">
-          <li>
-            <button
-              class="dropdown-item"
-              onClick={() =>
-                navigator.clipboard
-                  .readText()
-                  .then((t) => importTemplate(t))
-                  .catch((err) =>
-                    showNotification({ type: "danger", message: `Error importing from clipboard, ${err}` }),
-                  )
-              }
-            >
-              From clipboard
-            </button>
-          </li>
-          <li>
-            <button class="dropdown-item" onClick={() => switchModeWithTemplate("IMPORT_TEMPLATE", null)()}>
-              From file
-            </button>
-          </li>
-        </ul>
-      </div>
+        </Table.Tbody>
+      </Table>
 
       <Dialog
         title="Delete template"
@@ -238,19 +238,19 @@ export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewPro
           setCurrentTemplate(null);
           setCurrentMode("OVERVIEW");
         }}
-        actions={[{ label: "Delete", type: "danger", onClick: handleDelete }]}
+        actions={[{ label: "Delete", variant: "filled", color: "red", onClick: handleDelete }]}
       >
         Are you sure you want to delete the template "{currentTemplate?.name}"?
       </Dialog>
 
       <Dialog
         title="Preview/bulk create from template"
+        size="xl"
         show={currentMode === "PREVIEWING"}
         onClose={handleClosePreviewDialog}
         actions={[
           {
             label: "Preview",
-            type: "primary",
             onClick: () => {
               previewHandler.current();
               setHasPreviewed(true);
@@ -258,7 +258,7 @@ export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewPro
           },
           {
             label: "Bulk create",
-            type: "outline-primary",
+            variant: "outline",
             onClick: () => createHandler.current(),
             disabled: isBulkCreateLoading || !hasPreviewed,
             loading: isBulkCreateLoading,
@@ -283,7 +283,7 @@ export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewPro
               }}
               setIsBulkCreateLoading={setIsBulkCreateLoading}
             />
-            {!hasPreviewed && <i>You need to preview the items first.</i>}
+            {!hasPreviewed && <i>You need to preview the generated items first.</i>}
           </>
         )}
       </Dialog>
@@ -297,7 +297,7 @@ export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewPro
           // eslint-disable-next-line @typescript-eslint/no-explicit-any
           if ((fileInputRef as any).current?.value) (fileInputRef as any).current.value = "";
         }}
-        actions={[{ label: "Import", type: "outline-primary", onClick: handleFileImport, disabled: !fileUploaded }]}
+        actions={[{ label: "Import", variant: "outline", onClick: handleFileImport, disabled: !fileUploaded }]}
       >
         <input
           type="file"
@@ -306,6 +306,6 @@ export const BulkGenerateView = ({ templateType, parentId }: BulkGenerateViewPro
           ref={fileInputRef}
         />
       </Dialog>
-    </div>
+    </Stack>
   );
 };

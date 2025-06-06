@@ -1,15 +1,19 @@
 import { JSX } from "preact";
 import { Dispatch, StateUpdater, useCallback, useEffect, useMemo, useState } from "preact/hooks";
 
+import { ActionIcon, Button, Center, Group, Loader, Stack, Title } from "@mantine/core";
+import { showNotification } from "@mantine/notifications";
+import { IconClipboard, IconFileDownload } from "@tabler/icons-preact";
+
 import { BulkDefinitionSchemaBuilder } from "./BulkDefinitionSchemaBuilder";
-import { Dialog } from "./Dialog";
-import { Input } from "./Input";
 import { PreviewTable } from "./PreviewTable";
-import { Tooltip } from "./Tooltip";
+import { Dialog } from "./ui/Dialog";
+import { Input } from "./ui/Input";
+import { Tooltip } from "./ui/Tooltip";
 import { useBulkGenerateInfo } from "../contexts/BulkCreateInfo";
-import { useNotifications } from "../contexts/Notification";
+import { useApi } from "../contexts/InvenTreeContext";
 import { beautifySchema, downloadFile, isEqual } from "../utils";
-import { URLS, fetchAPI } from "../utils/api";
+import { AxiosError, URLS } from "../utils/api";
 import { defaultSchema } from "../utils/constants";
 import { BulkDefinitionSchema, BulkGenerateInfo, TemplateModel } from "../utils/types";
 
@@ -51,30 +55,33 @@ export const TemplateForm = ({
   const [isLoading, setIsLoading] = useState(true);
   const [isBulkGenerateInfoLoading, setIsBulkGenerateInfoLoading] = useState(true);
   const [bulkGenerateInfo, setBulkGenerateInfo] = useState<BulkGenerateInfo>();
-  const { showNotification } = useNotifications();
   const { bulkGenerateInfoDict } = useBulkGenerateInfo();
   const templateTypeOptions = useMemo(
     () => Object.fromEntries(Object.values(bulkGenerateInfoDict).map((v) => [v.template_type, v.name])),
     [bulkGenerateInfoDict],
   );
 
+  const api = useApi();
+
   useEffect(() => {
     if (!template?.template_type || !parentId) return;
 
     setIsBulkGenerateInfoLoading(true);
 
-    (async () => {
-      const res = await fetchAPI(URLS.bulkcreate({ parentId, templateType: template.template_type }));
-      if (!res.ok) {
+    api
+      .get(URLS.bulkcreate({ parentId, templateType: template.template_type }))
+      .then((res) => {
+        setBulkGenerateInfo(res.data);
         setIsBulkGenerateInfoLoading(false);
-        return showNotification({ type: "danger", message: `Failed to load bulk generate info,\n${res.statusText}` });
-      }
-
-      const data = await res.json();
-      setBulkGenerateInfo(data);
-      setIsBulkGenerateInfoLoading(false);
-    })();
-  }, [parentId, showNotification, template?.template_type]);
+      })
+      .catch((err) => {
+        setIsBulkGenerateInfoLoading(false);
+        showNotification({
+          color: "red",
+          message: `Failed to load bulk generate info,\n${(err as AxiosError).response?.statusText}`,
+        });
+      });
+  }, [api, parentId, template?.template_type]);
 
   const isCreate = useMemo(() => !templateId && !template?.id, [template?.id, templateId]);
 
@@ -85,17 +92,21 @@ export const TemplateForm = ({
     if (initialTemplateModel) {
       template = structuredClone(initialTemplateModel);
     } else if (templateId) {
-      const res = await fetchAPI(URLS.templates({ id: templateId }));
-      if (!res.ok) {
+      let res;
+      try {
+        res = await api.get(URLS.templates({ id: templateId }));
+      } catch (err) {
         setIsLoading(false);
-        return showNotification({ type: "danger", message: `Fetching template failed,\n${res.statusText}` });
+        showNotification({
+          color: "red",
+          message: `Fetching template failed,\n${(err as AxiosError).response?.statusText}`,
+        });
+        return;
       }
 
-      const data = await res.json();
-
       template = {
-        ...data,
-        template: JSON.parse(data.template as string),
+        ...res.data,
+        template: JSON.parse(res.data.template as string),
       } as TemplateModel;
     } else {
       template = {
@@ -109,7 +120,7 @@ export const TemplateForm = ({
     setInitialTemplate(structuredClone(template));
     setTemplate(structuredClone(template));
     setIsLoading(false);
-  }, [initialTemplateModel, showNotification, templateId, templateType]);
+  }, [api, initialTemplateModel, templateId, templateType]);
 
   useEffect(() => {
     loadTemplate();
@@ -118,34 +129,37 @@ export const TemplateForm = ({
   const saveOrUpdate = useCallback(async () => {
     if (!template) return false;
 
-    const res = await fetchAPI(URLS.templates({ id: isCreate ? null : template.id }), {
-      method: isCreate ? "POST" : "PUT",
-      body: JSON.stringify({ ...template, template: JSON.stringify(beautifySchema(template.template)) }),
-    });
-    const data = await res.json();
-
-    if (!res.ok) {
+    let res;
+    try {
+      res = await api(URLS.templates({ id: isCreate ? null : template.id }), {
+        method: isCreate ? "POST" : "PUT",
+        data: {
+          ...template,
+          template: JSON.stringify(beautifySchema(template.template)),
+        },
+      });
+    } catch (err) {
       showNotification({
-        type: "danger",
-        message: `An error occurred. ${Object.entries(data as Record<string, string[]>)
+        color: "red",
+        message: `An error occurred. ${Object.entries((err as AxiosError).response?.data as Record<string, string[]>)
           .map(([key, v]) => `${key}: ${v.join(", ")}`)
           .join(", ")}`,
-        autoHide: false,
+        autoClose: false,
       });
       return false;
     }
 
     if (isCreate) {
-      template.id = data.id;
+      template.id = res.data.id;
       setTemplate({ ...template });
-      showNotification({ type: "success", message: "Template successfully created." });
+      showNotification({ color: "green", message: "Template successfully created." });
     } else {
-      showNotification({ type: "success", message: "Template successfully updated." });
+      showNotification({ color: "green", message: "Template successfully updated." });
     }
 
     setInitialTemplate(structuredClone(template));
     return true;
-  }, [isCreate, showNotification, template]);
+  }, [api, isCreate, template]);
 
   const handleReset = useCallback(() => setTemplate(structuredClone(initialTemplate)), [initialTemplate]);
 
@@ -160,27 +174,25 @@ export const TemplateForm = ({
 
     setIsBulkCreateLoading(true);
 
-    const res = await fetchAPI(URLS.bulkcreate({ parentId, create: true }), {
-      method: "POST",
-      body: JSON.stringify({
+    let res;
+    try {
+      res = await api.post(URLS.bulkcreate({ parentId, create: true }), {
         ...template,
         template: JSON.stringify(beautifySchema(template.template)),
-      }),
-    });
-    const json = await res.json();
-
-    setIsBulkCreateLoading(false);
-    setShowBulkCreateDialog(false);
-
-    if (!res.ok) {
-      return showNotification({ type: "danger", message: `An error occurred, ${json.error}` });
+      });
+    } catch (err) {
+      showNotification({ color: "red", message: `An error occurred, ${(err as AxiosError)?.response?.data}` });
+      return;
+    } finally {
+      setIsBulkCreateLoading(false);
+      setShowBulkCreateDialog(false);
     }
 
     showNotification({
-      type: "success",
-      message: `Successfully bulk created ${json.length} ${bulkGenerateInfoDict[template.template_type]?.name}s.`,
+      color: "green",
+      message: `Successfully bulk created ${res.data.length} ${template.template_type}s.`,
     });
-  }, [bulkGenerateInfoDict, parentId, showNotification, template]);
+  }, [api, bulkGenerateInfoDict, parentId, template]);
 
   const downloadAsFile = useCallback(() => {
     const filename = `${Date.now()}_${template?.name}.json`;
@@ -189,10 +201,10 @@ export const TemplateForm = ({
       JSON.stringify({ name: template?.name, template_type: template?.template_type, template: template?.template }),
     );
     showNotification({
-      type: "success",
+      color: "green",
       message: `Successfully downloaded template '${template?.name}' as '${filename}'.`,
     });
-  }, [showNotification, template?.name, template?.template, template?.template_type]);
+  }, [template?.name, template?.template, template?.template_type]);
 
   const saveToClipboard = useCallback(() => {
     navigator.clipboard
@@ -201,36 +213,34 @@ export const TemplateForm = ({
       )
       .then(() =>
         showNotification({
-          type: "success",
+          color: "green",
           message: `Successfully copied template '${template?.name}' to clipboard.`,
         }),
       )
       .catch((err) =>
         showNotification({
-          type: "danger",
+          color: "red",
           message: `Error copying template '${template?.name}' to clipboard. ${err}`,
         }),
       );
-  }, [showNotification, template?.name, template?.template, template?.template_type]);
+  }, [template?.name, template?.template, template?.template_type]);
 
   const [showSaveTemplateDialog, setShowSaveTemplateDialog] = useState(false);
 
   return (
-    <div>
-      <h5>
+    <Stack>
+      <Title order={4}>
         {isCreate ? "Create" : "Edit"} {!isCreate ? `"${template?.name}" ` : ""}template
-      </h5>
+      </Title>
 
       {isLoading && (
-        <div class="d-flex justify-content-center">
-          <div class="spinner-border" role="status">
-            <span class="visually-hidden">Loading...</span>
-          </div>
-        </div>
+        <Center>
+          <Loader />
+        </Center>
       )}
 
       {!isLoading && !isBulkGenerateInfoLoading && bulkGenerateInfo && template && (
-        <div>
+        <Stack>
           <Input label="Name" type="text" value={template.name} onInput={updateField("name")} />
           {!templateType && (
             <Input
@@ -247,53 +257,59 @@ export const TemplateForm = ({
             setSchema={updateTemplate}
             bulkGenerateInfo={bulkGenerateInfo}
           />
-        </div>
+        </Stack>
       )}
 
-      <div class="d-flex mt-2" style="gap: 5px">
-        <button
-          class={`btn btn-outline-primary`}
+      <Group gap="xs">
+        <Button
+          size="xs"
+          variant="outline"
           onClick={() => (hasChanged ? setShowSaveTemplateDialog(true) : handleBack())}
         >
           Back
-        </button>
-        <button
-          class={`btn ${!hasChanged ? "btn-outline-secondary" : "btn-outline-success"}`}
+        </Button>
+        <Button
+          size="xs"
+          variant="outline"
+          color={!hasChanged ? "gray" : "green"}
           onClick={saveOrUpdate}
           disabled={!hasChanged}
         >
           {isCreate ? "Create" : "Update"}
-        </button>
+        </Button>
         {!isCreate && (
-          <button
-            class={`btn ${!hasChanged ? "btn-outline-secondary" : "btn-outline-danger"}`}
+          <Button
+            size="xs"
+            variant="outline"
+            color={!hasChanged ? "gray" : "red"}
             onClick={handleReset}
             disabled={!hasChanged}
           >
             Reset
-          </button>
+          </Button>
         )}
-        <button class="btn btn-outline-primary" onClick={handlePreview}>
+        <Button size="xs" variant="outline" onClick={handlePreview}>
           Preview
-        </button>
+        </Button>
         {parentId && (
-          <button class="btn btn-outline-primary" onClick={() => setShowBulkCreateDialog(true)}>
+          <Button size="xs" variant="outline" onClick={() => setShowBulkCreateDialog(true)}>
             Bulk create
-          </button>
+          </Button>
         )}
-        <div class="btn-group btn-group-sm">
-          <button class="btn btn-outline-primary px-3" onClick={saveToClipboard}>
-            <Tooltip text="Copy to clipboard" placement="top">
-              <i class="fas fa-clipboard"></i>
-            </Tooltip>
-          </button>
-          <button class="btn btn-outline-primary px-3" onClick={downloadAsFile} alt="Download as file">
-            <Tooltip text="Download as file" placement="top">
-              <i class="fas fa-download"></i>
-            </Tooltip>
-          </button>
-        </div>
-      </div>
+
+        <ActionIcon.Group variant="outline">
+          <Tooltip text="Copy to clipboard">
+            <ActionIcon onClick={saveToClipboard} variant="outline">
+              <IconClipboard size={16} />
+            </ActionIcon>
+          </Tooltip>
+          <Tooltip text="Download as file">
+            <ActionIcon onClick={downloadAsFile} variant="outline">
+              <IconFileDownload size={16} />
+            </ActionIcon>
+          </Tooltip>
+        </ActionIcon.Group>
+      </Group>
 
       {previewTemplate && bulkGenerateInfo && (
         <PreviewTable template={previewTemplate} parentId={parentId} bulkGenerateInfo={bulkGenerateInfo} />
@@ -308,7 +324,6 @@ export const TemplateForm = ({
         actions={[
           {
             label: "Bulk create",
-            type: "primary",
             onClick: handleBulkCreate,
             disabled: isBulkCreateLoading,
             loading: isBulkCreateLoading,
@@ -326,12 +341,12 @@ export const TemplateForm = ({
         actions={[
           {
             label: "Don't save",
-            type: "outline-danger",
+            variant: "outline",
+            color: "red",
             onClick: handleBack,
           },
           {
             label: "Save",
-            type: "primary",
             onClick: () => {
               saveOrUpdate().then((r) => {
                 setShowSaveTemplateDialog(false);
@@ -345,6 +360,6 @@ export const TemplateForm = ({
       >
         Do you want to save the template?
       </Dialog>
-    </div>
+    </Stack>
   );
 };

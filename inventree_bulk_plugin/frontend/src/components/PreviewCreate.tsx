@@ -1,11 +1,14 @@
 import { JSX } from "preact";
 import { Dispatch, StateUpdater, useCallback, useEffect, useState } from "preact/hooks";
 
-import { Input } from "./Input";
+import { Space, Stack, Title } from "@mantine/core";
+import { showNotification } from "@mantine/notifications";
+
 import { PreviewTable } from "./PreviewTable";
-import { useNotifications } from "../contexts/Notification";
+import { Input } from "./ui/Input";
+import { useApi } from "../contexts/InvenTreeContext";
 import { beautifySchema } from "../utils";
-import { URLS, fetchAPI } from "../utils/api";
+import { AxiosError, URLS } from "../utils/api";
 import { BulkGenerateInfo, TemplateModel } from "../utils/types";
 
 interface PreviewCreateProps {
@@ -45,21 +48,20 @@ export const PreviewCreate = ({
   const [initial, setInitial] = useState(true);
   const [bulkGenerateInfo, setBulkGenerateInfo] = useState<BulkGenerateInfo>();
 
-  const { showNotification } = useNotifications();
+  const api = useApi();
 
   useEffect(() => {
     if (!template?.template_type || !parentId) return;
 
-    (async () => {
-      const res = await fetchAPI(URLS.bulkcreate({ parentId, templateType: template.template_type }));
-      if (!res.ok) {
-        return showNotification({ type: "danger", message: `Failed to load bulk generate info,\n${res.statusText}` });
-      }
-
-      const data = await res.json();
-      setBulkGenerateInfo(data);
-    })();
-  }, [parentId, showNotification, template?.template_type]);
+    api
+      .get(URLS.bulkcreate({ parentId, templateType: template.template_type }))
+      .then((res) => {
+        setBulkGenerateInfo(res.data);
+      })
+      .catch((err) => {
+        showNotification({ color: "red", message: `Failed to load bulk generate info,\n${err.response.statusText}` });
+      });
+  }, [api, parentId, template.template_type]);
 
   useEffect(() => {
     setInputs(Object.entries(template.template.input).map(([k, v]) => ({ key: k, value: v })));
@@ -77,28 +79,29 @@ export const PreviewCreate = ({
 
     const final = getTemplateWithInputs(template, inputs);
 
-    const res = await fetchAPI(URLS.bulkcreate({ parentId, create: true }), {
-      method: "POST",
-      body: JSON.stringify({
+    let res;
+    try {
+      res = await api.post(URLS.bulkcreate({ parentId, create: true }), {
         ...final,
         template: JSON.stringify(beautifySchema(final.template)),
-      }),
-    });
-    const json = await res.json();
-
-    setIsBulkCreateLoading(false);
-
-    if (!res.ok) {
+      });
+    } catch (err) {
       handleDoneCreate?.(false);
-      return showNotification({ type: "danger", message: `An error occurred, ${json.error}` });
+      showNotification({
+        color: "red",
+        message: `An error occurred, ${(err as AxiosError).response?.data?.error}`,
+      });
+      return;
+    } finally {
+      setIsBulkCreateLoading(false);
     }
 
     showNotification({
-      type: "success",
-      message: `Successfully bulk created ${json.length} ${bulkGenerateInfo?.name}s.`,
+      color: "green",
+      message: `Successfully bulk created ${res.data.length} ${bulkGenerateInfo?.name}s.`,
     });
     handleDoneCreate?.(true);
-  }, [bulkGenerateInfo?.name, handleDoneCreate, inputs, parentId, setIsBulkCreateLoading, showNotification, template]);
+  }, [api, bulkGenerateInfo?.name, handleDoneCreate, inputs, parentId, setIsBulkCreateLoading, template]);
 
   const previewHandler = useCallback(() => {
     const final = structuredClone(getTemplateWithInputs(template, inputs));
@@ -114,27 +117,27 @@ export const PreviewCreate = ({
   useEffect(() => attachCreateHandler?.(createHandler), [attachCreateHandler, createHandler]);
 
   return (
-    <div>
-      <h5>Inputs</h5>
-      <div>
+    <Stack gap="xs">
+      <Title order={4}>Inputs</Title>
+
+      <Stack gap="xs">
         {inputs.map(({ key, value }) => (
           <Input key={key} type="text" label={key} value={value} onInput={setInput(key)} />
         ))}
-      </div>
+      </Stack>
 
       {previewTemplate && bulkGenerateInfo && (
         <>
-          <h5>Preview</h5>
-          <div class={initial ? "mb-4" : ""}>
-            <PreviewTable
-              template={previewTemplate}
-              height={350}
-              parentId={parentId}
-              bulkGenerateInfo={bulkGenerateInfo}
-            />
-          </div>
+          <Title order={5}>Preview</Title>
+          {initial && <Space h="15px" />}
+          <PreviewTable
+            template={previewTemplate}
+            height={350}
+            parentId={parentId}
+            bulkGenerateInfo={bulkGenerateInfo}
+          />
         </>
       )}
-    </div>
+    </Stack>
   );
 };

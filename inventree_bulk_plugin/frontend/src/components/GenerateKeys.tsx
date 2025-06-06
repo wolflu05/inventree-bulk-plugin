@@ -1,8 +1,11 @@
 import { JSX } from "preact";
-import { Dispatch, StateUpdater, useCallback, useId, useMemo, useState } from "preact/hooks";
+import { Dispatch, StateUpdater, useCallback, useMemo, useState } from "preact/hooks";
 
-import { Input } from "./Input";
-import { Tooltip } from "./Tooltip";
+import { ActionIcon, Box, Checkbox, Group, Paper, Select, Stack, Title } from "@mantine/core";
+import { IconCode, IconPlus, IconTrash } from "@tabler/icons-preact";
+
+import { Input } from "./ui/Input";
+import { Tooltip } from "./ui/Tooltip";
 import {
   FieldDefinition,
   FieldDefinitionList,
@@ -101,15 +104,16 @@ export const GenerateKeysList = ({ fieldsDefinition, fields, setFields, onDelete
   );
 
   return (
-    <div class="mb-1 card">
-      <div class="d-flex justify-content-between">
-        <div className="col p-2">
+    <Paper withBorder p={10}>
+      <Group justify={"space-between"} align="flex-start" wrap="nowrap">
+        <Stack flex={1}>
           {fieldsDefinition.name && (
             <Tooltip text={fieldsDefinition.description || ""}>
-              <h6>{fieldsDefinition.name}</h6>
+              <Title order={6}>{fieldsDefinition.name}</Title>
             </Tooltip>
           )}
-          <div class="ms-3">
+
+          <Stack gap="xs">
             {fields.map((field, i) => (
               <GenerateKeys
                 fieldDefinition={itemsFieldsDefinition}
@@ -118,22 +122,22 @@ export const GenerateKeysList = ({ fieldsDefinition, fields, setFields, onDelete
                 onDelete={handleDeleteGenerateKey(i)}
               />
             ))}
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <button class="btn btn-sm btn-outline-primary" onClick={handleAddGenerateKey}>
-                Add {fieldsDefinition.name}
-              </button>
-            </div>
-          </div>
-        </div>
+
+            <Tooltip text={`Add ${fieldsDefinition.name}`}>
+              <ActionIcon size="input-xs" onClick={handleAddGenerateKey}>
+                <IconPlus size={16} />
+              </ActionIcon>
+            </Tooltip>
+          </Stack>
+        </Stack>
+
         {onDelete && (
-          <div class="p-1">
-            <button onClick={onDelete} class="btn btn-sm btn-outline-danger">
-              <i class="fa fa-trash"></i>
-            </button>
-          </div>
+          <ActionIcon color="red" size="input-xs" variant="outline">
+            <IconTrash size={16} onClick={onDelete} />
+          </ActionIcon>
         )}
-      </div>
-    </div>
+      </Group>
+    </Paper>
   );
 };
 
@@ -142,15 +146,8 @@ interface GenerateKeysObjectProps {
   fields: Record<string, FieldType>;
   setFields: Dispatch<StateUpdater<Record<string, FieldType>>>;
   onDelete?: () => void;
-  showCard?: boolean;
 }
-export const GenerateKeysObject = ({
-  fieldsDefinition,
-  fields,
-  setFields,
-  onDelete,
-  showCard = true,
-}: GenerateKeysObjectProps) => {
+export const GenerateKeysObject = ({ fieldsDefinition, fields, setFields, onDelete }: GenerateKeysObjectProps) => {
   const subFieldsDefinition = fieldsDefinition.fields;
   const setGenerateValue = useCallback(
     (key: string) => (value: FieldType | ((prevState: FieldType) => FieldType)) =>
@@ -189,55 +186,55 @@ export const GenerateKeysObject = ({
   );
 
   return (
-    <div class={`${showCard ? "card mb-1" : ""}`}>
-      <div class="d-flex justify-content-between">
-        <div class={`col ${showCard ? "p-2" : ""}`}>
+    <Paper withBorder p={10}>
+      <Group justify={"space-between"} align="flex-start" wrap="nowrap">
+        <Stack flex={1}>
           {fieldsDefinition.name && (
             <Tooltip text={fieldsDefinition.description || ""}>
-              <h6>{fieldsDefinition.name}</h6>
+              <Title order={6}>{fieldsDefinition.name}</Title>
             </Tooltip>
           )}
-          {Object.entries(subFieldsDefinition)
-            .filter(([key]) => fields[key] !== undefined)
-            .map(([key, fieldDefinition]) => {
-              const value = fields[key];
 
-              return (
-                <GenerateKeys
-                  key={key}
-                  fieldDefinition={fieldDefinition}
-                  field={value}
-                  setField={setGenerateValue(key)}
-                  onDelete={fieldDefinition.required ? undefined : handleDeleteGenerateKey(key)}
-                />
-              );
-            })}
+          <Stack gap="xs">
+            {Object.entries(subFieldsDefinition)
+              .filter(([key]) => fields[key] !== undefined)
+              .map(([key, fieldDefinition]) => {
+                const value = fields[key];
+
+                return (
+                  <GenerateKeys
+                    key={key}
+                    fieldDefinition={fieldDefinition}
+                    field={value}
+                    setField={setGenerateValue(key)}
+                    onDelete={fieldDefinition.required ? undefined : handleDeleteGenerateKey(key)}
+                  />
+                );
+              })}
+          </Stack>
+
           {remainingGenerateKeys.length > 0 && (
-            <div style="display: flex; max-width: 200px;">
-              <select
-                class="form-select form-select-sm"
+            <Box flex={1} maw={"200px"}>
+              <Select
                 value={remainingGenerateKeysValue}
-                onInput={(e) => handleAddGenerateKey(e.currentTarget.value)}
-              >
-                <option selected value="">
-                  Add key
-                </option>
-                {remainingGenerateKeys.map(([key, { name }]) => (
-                  <option value={key}>{name}</option>
-                ))}
-              </select>
-            </div>
+                defaultValue={""}
+                onChange={(v) => handleAddGenerateKey(v as string)}
+                size="xs"
+                searchable
+                placeholder="Add key"
+                data={remainingGenerateKeys.map(([key, { name }]) => ({ value: key, label: name }))}
+              />
+            </Box>
           )}
-        </div>
+        </Stack>
+
         {onDelete && (
-          <div class="p-1">
-            <button onClick={onDelete} class="btn btn-sm btn-outline-danger">
-              <i class="fa fa-trash"></i>
-            </button>
-          </div>
+          <ActionIcon color="red" size="input-xs" variant="outline">
+            <IconTrash size={16} onClick={onDelete} />
+          </ActionIcon>
         )}
-      </div>
-    </div>
+      </Group>
+    </Paper>
   );
 };
 
@@ -287,7 +284,6 @@ interface GenerateKeysSingleProps {
 const GenerateKeysSingle = ({ fieldDefinition, field, setField, onDelete }: GenerateKeysSingleProps) => {
   const [useTemplate, setUseTemplate] = useState(() => detectUseTemplate(fieldDefinition, field));
   const showUseTemplate = useMemo(() => fieldDefinition.field_type !== "text", [fieldDefinition.field_type]);
-  const id = useId();
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const fieldType = useMemo<any>(() => {
@@ -302,7 +298,7 @@ const GenerateKeysSingle = ({ fieldDefinition, field, setField, onDelete }: Gene
       <Input
         label={fieldDefinition.name}
         tooltip={fieldDefinition.description || undefined}
-        type={fieldType}
+        type={fieldType as "text"}
         {...(fieldDefinition.field_type === "model" ? { model: fieldDefinition.model } : {})}
         {...(fieldDefinition.field_type === "select" ? { options: fieldDefinition.options } : {})}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -310,27 +306,22 @@ const GenerateKeysSingle = ({ fieldDefinition, field, setField, onDelete }: Gene
         onInput={(e: JSX.TargetedEvent<HTMLInputElement, Event>) => setField(e.currentTarget.value)}
         onDelete={onDelete}
         extraButtons={
-          showUseTemplate && (
+          showUseTemplate ? (
             <>
-              <input
-                type="checkbox"
-                class="btn-check"
-                id={`btn-check-${id}`}
-                checked={useTemplate}
-                onInput={() => setUseTemplate((v) => !v)}
-                autoComplete={"off"}
-              />
-              {/* eslint-disable-next-line jsx-a11y/label-has-associated-control */}
-              <label
-                class="btn btn-sm btn-outline-primary"
-                for={`btn-check-${id}`}
-                style="display: flex; align-items: center;"
-              >
-                <Tooltip text={getTemplateHelpTexts(fieldDefinition)}>
-                  <i class="fas fa-code"></i>
-                </Tooltip>
-              </label>
+              <Tooltip text={getTemplateHelpTexts(fieldDefinition)}>
+                <Checkbox
+                  size="lg"
+                  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+                  icon={({ indeterminate, ...others }) => <IconCode {...others} />}
+                  checked={useTemplate}
+                  indeterminate={!useTemplate}
+                  variant={useTemplate ? "filled" : "outline"}
+                  onInput={() => setUseTemplate((v) => !v)}
+                />
+              </Tooltip>
             </>
+          ) : (
+            <></>
           )
         }
       />

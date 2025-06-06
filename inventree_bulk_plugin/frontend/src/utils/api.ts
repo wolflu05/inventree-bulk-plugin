@@ -1,12 +1,7 @@
-export const fetchAPI = (input: RequestInfo | URL, init?: RequestInit) => {
-  return fetch(input, {
-    headers: {
-      "Content-Type": "application/json",
-      ...init?.headers,
-    },
-    ...init,
-  });
-};
+import type { AxiosError as AxiosError_ } from "axios";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type AxiosError = AxiosError_<any, any>;
 
 export const URLS = {
   bulkcreate: ({

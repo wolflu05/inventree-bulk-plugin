@@ -1,13 +1,13 @@
 import json
+import os
 from dataclasses import dataclass
 
-from django.views import View
 from django.core.exceptions import ValidationError
+from rest_framework.request import Request
 
 from plugin import InvenTreePlugin
-from plugin.mixins import PanelMixin, UrlsMixin, AppMixin, SettingsMixin
-from stock.views import StockLocationDetail
-from part.views import CategoryDetail
+from plugin.base.ui.mixins import UIFeature
+from plugin.mixins import UserInterfaceMixin, UrlsMixin, AppMixin, SettingsMixin
 
 from .api import api_urls
 from .version import BULK_PLUGIN_VERSION
@@ -16,19 +16,9 @@ from .version import BULK_PLUGIN_VERSION
 @dataclass
 class Panel:
     title: str
-    view: View
+    model: str
     icon: str
-    page: str
     args: dict
-    description: str = None
-
-    @property
-    def args_string(self):
-        return " ".join([f"{k}={json.dumps(v)}" for k, v in self.args.items()])
-
-    def __post_init__(self):
-        if self.description is None:
-            self.description = self.title
 
 
 def validate_json(value):
@@ -38,7 +28,7 @@ def validate_json(value):
         raise ValidationError(str(e))
 
 
-class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, SettingsMixin, InvenTreePlugin):
+class InvenTreeBulkPlugin(AppMixin, UserInterfaceMixin, UrlsMixin, SettingsMixin, InvenTreePlugin):
     AUTHOR = "wolflu05"
     DESCRIPTION = "InvenTree Bulk plugin"
     VERSION = BULK_PLUGIN_VERSION
@@ -47,7 +37,8 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, SettingsMixin, InvenT
     # 0.12.6 - Settings do not work in combination with api views (see inventree/InvenTree#5408)
     # 0.12.7 - Fix missing filters for get settings validator (see inventree/InvenTree#5480)
     # 0.15.8 - plugin_static template tag was added (see inventree/InvenTree#7764)
-    MIN_VERSION = "0.15.8"
+    # 0.18.0 - Migrate to PUI
+    MIN_VERSION = "0.18.0"
 
     TITLE = "InvenTree Bulk Plugin"
     SLUG = "inventree-bulk-plugin"
@@ -65,37 +56,40 @@ class InvenTreeBulkPlugin(AppMixin, PanelMixin, UrlsMixin, SettingsMixin, InvenT
     PREACT_PANELS: list[Panel] = [
         Panel(
             "Location bulk creation",
-            view=StockLocationDetail,
-            icon="fas fa-tools",
-            page="bulk-creation-panel",
+            model="stocklocation",
+            icon="ti:tools:outline",
             args={"objectType": "STOCK_LOCATION"}
         ),
         Panel(
             "Category bulk creation",
-            view=CategoryDetail,
-            icon="fas fa-tools",
-            page="bulk-creation-panel",
+            model="partcategory",
+            icon="ti:tools:outline",
             args={"objectType": "PART_CATEGORY"}
         ),
         Panel(
             "Part bulk creation",
-            view=CategoryDetail,
-            icon="fas fa-tools",
-            page="bulk-creation-panel",
+            model="partcategory",
+            icon="ti:tools:outline",
             args={"objectType": "PART"}
         ),
     ]
 
-    def get_custom_panels(self, view, request):
+    def get_ui_panels(self, request: Request, context: dict, **kwargs) -> list[UIFeature]:
         panels = []
 
-        for i, panel in enumerate(self.PREACT_PANELS):
-            if isinstance(view, panel.view):
+        target_model = context.get('target_model', None)
+        target_id = context.get('target_id', None)
+
+        for panel in self.PREACT_PANELS:
+            if target_model == panel.model and target_id is not None:
                 panels.append({
+                    'key': f'bulk-creation-panel-{panel.model}',
                     'title': panel.title,
+                    'source': self.plugin_static_file('bulk-creation-panel.dev.js:renderPanel' if os.environ.get('INVENTREE_REPORT_LSP_DEV', False) else 'dist/bulk-creation-panel.js:renderPanel'),
                     'icon': panel.icon,
-                    'content': '{% include "preact-page.html" with page="' + panel.page + '" id="' + str(i) + '" objectId=object.id ' + panel.args_string + ' %}',
-                    'description': panel.description,
+                    'context': {
+                        'args': panel.args,
+                    }
                 })
 
         return panels
