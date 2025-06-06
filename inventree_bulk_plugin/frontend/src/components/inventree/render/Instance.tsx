@@ -1,7 +1,7 @@
 import { type ReactElement, ReactNode, useCallback } from "preact/compat";
 
 import { ModelType, navigateToLink } from "@inventreedb/ui";
-import { Alert, Anchor, Group, Skeleton, Space, Text } from "@mantine/core";
+import { Alert, Anchor, Group, Space, Text } from "@mantine/core";
 
 import { RenderBuildItem, RenderBuildLine, RenderBuildOrder } from "./Build";
 import { RenderAddress, RenderCompany, RenderContact, RenderManufacturerPart, RenderSupplierPart } from "./Company";
@@ -124,47 +124,6 @@ export function RenderInstance(props: RenderInstanceProps): ReactElement {
   }
 
   return <RenderComponent {...props} />;
-}
-
-export function RenderRemoteInstance({
-  model,
-  pk,
-}: Readonly<{
-  model: ModelType;
-  pk: number;
-}>): ReactElement {
-  // TODO
-  // const api = useApi();
-  const isLoading = false; // Replace with actual loading state
-  const isFetching = false; // Replace with actual fetching state
-  const data = null; // Replace with actual data fetching logic
-
-  // const { data, isLoading, isFetching } = useQuery({
-  //   queryKey: ["model", model, pk],
-  //   queryFn: async () => {
-  //     const url = "";
-  //     // const url = apiUrl(ModelInformationDict[model].api_endpoint, pk);
-
-  //     return api
-  //       .get(url)
-  //       .then((response) => response.data)
-  //       .catch(() => null);
-  //   },
-  // });
-
-  if (isLoading || isFetching) {
-    return <Skeleton />;
-  }
-
-  if (!data) {
-    return (
-      <Text>
-        {model}: {pk}
-      </Text>
-    );
-  }
-
-  return <RenderInstance model={model} instance={data} />;
 }
 
 /**

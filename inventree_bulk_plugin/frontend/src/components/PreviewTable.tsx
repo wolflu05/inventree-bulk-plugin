@@ -1,14 +1,18 @@
-import { useEffect, useId, useMemo } from "preact/hooks";
+import { useEffect, useId, useMemo, useState } from "preact/hooks";
 
+import { Box, List } from "@mantine/core";
 import { showNotification } from "@mantine/notifications";
+import { IconChevronRight } from "@tabler/icons-preact";
+import clsx from "clsx";
+import { DataTable } from "mantine-datatable";
 
+import { InstanceFromUrl } from "./inventree/render/InstanceFromUrl";
 import { useApi } from "../contexts/InvenTreeContext";
-import { beautifySchema, escapeHtml, getCounter, getUsedGenerateKeys, toFlat } from "../utils";
+import { beautifySchema, getCounter, getUsedGenerateKeys, mapNestedObject, NestedObjectType, toFlat } from "../utils";
 import { AxiosError, URLS } from "../utils/api";
-import { customModelProcessors } from "../utils/customModelProcessors";
-import { BulkGenerateInfo, FieldDefinition, FieldType, TemplateModel } from "../utils/types";
+import { BulkGenerateInfo, FieldDefinition, TemplateModel } from "../utils/types";
 
-const MODEL_LIMIT = 10;
+import classes from "./PreviewTable.module.css";
 interface PreviewTableProps {
   template: TemplateModel;
   height?: number;
@@ -20,6 +24,9 @@ export const PreviewTable = ({ template, height, parentId, bulkGenerateInfo }: P
   const id = useId();
   const tableId = useMemo(() => `preview-table-${id}`, [id]);
   const api = useApi();
+
+  const [data, setData] = useState<NestedObjectType>([]);
+  const [headers, setHeaders] = useState<[string, FieldDefinition][]>([]);
 
   useEffect(() => {
     (async () => {
@@ -40,188 +47,127 @@ export const PreviewTable = ({ template, height, parentId, bulkGenerateInfo }: P
 
       const usedGenerateKeys = getUsedGenerateKeys(template.template);
 
-      // TODO
-      document.getElementById(tableId)!.innerHTML = data
-        .map((d) => `<tr><td>${d.id}  - ${d.path} - ${d.pid}</td></tr>`)
-        .join("");
+      const nestedData = mapNestedObject(res.data, getCounter());
 
-      return;
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const $table = $(`#${tableId}`) as any;
-
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const cache: Record<string, ((field: any) => void)[]> = {};
-
-      const format = (fieldDefinition: FieldDefinition, value: FieldType, cellId: string): string => {
-        if (value === undefined) return "";
-
-        if (fieldDefinition.field_type === "model") {
-          // eslint-disable-next-line @typescript-eslint/no-explicit-any
-          const handleSuccess = (field: any) => {
-            const fetchedValue = (() => {
-              if (customModelProcessors[fieldDefinition.model.model]) {
-                field = customModelProcessors[fieldDefinition.model.model].mapFunction(field);
-              }
-              if (field.element?.instance) {
-                field = field.element.instance;
-              }
-
-              if (customModelProcessors[fieldDefinition.model.model]) {
-                return customModelProcessors[fieldDefinition.model.model].render(field);
-              }
-
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              const renderOne = (f: any) => {
-                if (!f.pk) {
-                  return "";
-                }
-                const modelName = fieldDefinition.model.model.toLowerCase().split(".").at(-1);
-
-                // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-                // @ts-ignore
-                return `${renderModelData("", modelName, f, {})} <span>(${f.pk})</span>`;
-              };
-
-              const count = field.count;
-              if (fieldDefinition.allow_multiple && field.results) field = field.results;
-              if (fieldDefinition.allow_multiple && Array.isArray(field)) {
-                // render ... if there are more fields available
-                let hasMore = false;
-                let extraText = "";
-                if (count === undefined) {
-                  hasMore = count > field.length;
-                  extraText = `${count - field.length} more elements`;
-                } else if (field.length >= MODEL_LIMIT) {
-                  field.pop(); // remove one element so that the ... is real
-                  hasMore = true;
-                  extraText = `at least one more element`;
-                }
-
-                const renderedElements = `<li>${field.map(renderOne).join("</li><li>")}</li>`;
-                return `${renderedElements}${hasMore ? `<li>... ${extraText}</li>` : ""}`;
-              }
-              return renderOne(field);
-            })();
-
-            const cell = document.getElementById(cellId);
-            if (cell) {
-              cell.innerHTML = fetchedValue;
-              cell.classList.remove("placeholder", "placeholder-glow", "col-4");
-              $table.bootstrapTable("resetView");
-            }
-          };
-
-          const customProcessor = customModelProcessors[fieldDefinition.model.model];
-          if (customProcessor?.getSingle) {
-            const cacheKey = `~get-single-${value}`;
-            if (!cache[cacheKey]) {
-              cache[cacheKey] = [];
-              // eslint-disable-next-line @typescript-eslint/no-explicit-any
-              customProcessor.getSingle(value, (d: any) => cache[cacheKey].forEach((handler) => handler(d)));
-            }
-            cache[cacheKey].push(handleSuccess);
-          } else {
-            let urlPath = `${value}/`;
-            let filters = { ...fieldDefinition.model.limit_choices_to };
-
-            // use json filters
-            if (Number.isNaN(parseInt(value as string, 10))) {
-              urlPath = "";
-              filters = { ...JSON.parse(value as string), ...filters };
-
-              // name is mostly not there, use search instead
-              if ("name" in filters) filters.search = filters.name;
-            }
-
-            const url = `${fieldDefinition.model.api_url}/${urlPath}?limit=${MODEL_LIMIT}`.replace("//", "/");
-            const cacheKey = `~get-api-${url}-${JSON.stringify(value)}`;
-
-            if (!cache[cacheKey]) {
-              cache[cacheKey] = [];
-              // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-              // @ts-ignore
-              inventreeGet(
-                url,
-                { ...filters },
-                {
-                  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-                  success: (item: any) => {
-                    cache[cacheKey].forEach((handler) => handler(item));
-                  },
-                },
-              );
-            }
-            cache[cacheKey].push(handleSuccess);
-          }
-
-          return `<span id=${cellId} class="placeholder placeholder-glow col-4">${value}</span>`;
-        }
-        if (fieldDefinition.field_type === "select") {
-          return escapeHtml(fieldDefinition.options[value as string] ?? `${value}`);
-        }
-        if (fieldDefinition.field_type === "list" && Array.isArray(value)) {
-          return `<ul>${value
-            .map((r, i) => `<li>${format(fieldDefinition.items_type, r, `${cellId}-${i}`)}</li>`)
-            .join("")}</ul>`;
-        }
-        if (fieldDefinition.field_type === "object" && typeof value === "object") {
-          return `<ul>${Object.entries(value)
-            .map(
-              ([k, r], i) =>
-                `<li>${escapeHtml(fieldDefinition.fields[k].name ?? k)}: ${format(
-                  fieldDefinition.fields[k],
-                  r,
-                  `${cellId}-${i}`,
-                )}</li>`,
-            )
-            .join("")}</ul>`;
-        }
-        return escapeHtml(`${value}`);
-      };
-
-      $table.bootstrapTable("destroy");
-      $table.bootstrapTable({
-        data,
-        idField: "id",
-        height,
-        columns: [
-          ...Object.entries(bulkGenerateInfo.fields)
-            .filter(([key]) => usedGenerateKeys.includes(key))
-            .map(([key, f]) => ({
-              field: key,
-              title: f.name,
-              formatter: (value: FieldType, _row: Record<string, FieldType>, index: number, cellName: string) =>
-                format(f, value, `table-${id}-field-${index}-${cellName}`),
-            })),
-          { field: "path", title: "Path" },
-        ],
-        treeShowField: "name",
-        parentIdField: "pid",
-        onPostBody() {
-          const columns = $table.bootstrapTable("getOptions").columns;
-
-          if (columns && columns[0][1].visible) {
-            $table.treegrid({
-              treeColumn: 0,
-              onChange() {
-                $table.bootstrapTable("resetView");
-              },
-            });
-          }
-        },
-        rowStyle: () => ({
-          css: {
-            padding: "2px 0.5rem",
-          },
-        }),
-      });
+      setHeaders(Object.entries(bulkGenerateInfo.fields).filter(([key]) => usedGenerateKeys.includes(key)));
+      setData(nestedData);
     })();
   }, [api, bulkGenerateInfo.fields, height, id, parentId, tableId, template]);
 
+  return <NestedDataTable headers={headers} data={data} />;
+};
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const TableCell = ({ fieldDefinition, data }: { fieldDefinition: FieldDefinition; data: any }) => {
+  if (fieldDefinition.field_type === "model") {
+    if (data === null || data === undefined) return "";
+    return <InstanceFromUrl model={fieldDefinition.model} pk={data} />;
+  }
+
+  if (fieldDefinition.field_type === "select") {
+    return <span>{fieldDefinition.options[data as string] ?? `${data}`}</span>;
+  }
+
+  if (fieldDefinition.field_type === "list" && Array.isArray(data)) {
+    return (
+      <List>
+        {data.map((r) => (
+          <List.Item>
+            <TableCell fieldDefinition={fieldDefinition.items_type} data={r} />
+          </List.Item>
+        ))}
+      </List>
+    );
+  }
+
+  if (fieldDefinition.field_type === "object" && typeof data === "object") {
+    return (
+      <List listStyleType="none">
+        {Object.entries(data).map(([k, r]) => (
+          <List.Item>
+            {fieldDefinition.fields[k].name ?? k}: <TableCell fieldDefinition={fieldDefinition.fields[k]} data={r} />
+          </List.Item>
+        ))}
+      </List>
+    );
+  }
+
+  if (typeof data === "object") return JSON.stringify(data, null, 2);
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return (data !== undefined ? `${data}` : null) as any;
+};
+
+const NestedDataTable = ({
+  headers,
+  data,
+  level = 0,
+}: {
+  headers: [string, FieldDefinition][];
+  data: NestedObjectType;
+  level?: number;
+}) => {
+  const [expandedIds, setExpandedIds] = useState<number[]>(() =>
+    data.filter((d) => d.childs.length > 0).map((d) => d.id),
+  );
+
+  // Expand first nodes with childs on initial render
+  useEffect(() => {
+    const firstId = data.find((d) => d.childs.length > 0)?.id;
+    setExpandedIds(firstId === undefined ? [] : [firstId]);
+  }, [data]);
+
+  const columns = useMemo(
+    () => [
+      ...headers.map(([key, f]) => ({
+        accessor: key,
+        title: f.name,
+        noWrap: true,
+        width: 300,
+        render: (record: Record<string, unknown>) => {
+          if (key === "name") {
+            return (
+              <Box ml={level * 40} component="span" align="center" display="flex">
+                {(record.childs as Array<unknown>).length > 0 && (
+                  <IconChevronRight
+                    size={16}
+                    className={clsx(classes.icon, classes.expandIcon, {
+                      [classes.expandIconRotated]: expandedIds.includes(record.id as number),
+                    })}
+                  />
+                )}
+                <TableCell fieldDefinition={f} data={record[key]} />
+              </Box>
+            );
+          }
+
+          return <TableCell fieldDefinition={f} data={record[key]} />;
+        },
+      })),
+      { accessor: "path", title: "Path", width: 300 },
+    ],
+    [expandedIds, headers, level],
+  );
+
   return (
-    <div class="mt-3">
-      <table id={tableId} style={{ whiteSpace: "nowrap" }}></table>
-    </div>
+    <DataTable
+      withTableBorder={level === 0}
+      highlightOnHover={level === 0}
+      withColumnBorders
+      noHeader={level > 0}
+      columns={columns}
+      records={data}
+      rowExpansion={{
+        allowMultiple: true,
+        expandable: ({ record }) => record.childs.length > 0,
+        expanded: {
+          recordIds: expandedIds,
+          onRecordIdsChange: setExpandedIds,
+        },
+        content: ({ record }) => {
+          return <NestedDataTable headers={headers} data={record.childs} level={level + 1} />;
+        },
+      }}
+    />
   );
 };

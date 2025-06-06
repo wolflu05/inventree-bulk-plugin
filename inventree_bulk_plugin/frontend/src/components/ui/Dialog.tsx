@@ -46,7 +46,7 @@ export const Dialog = ({ title, children, show, scrollable, onClose, actions = [
     >
       {children}
 
-      <Group justify="flex-end" gap="xs">
+      <Group justify="flex-end" gap="xs" mt={12}>
         {onClose && (
           <Button variant="outline" onClick={close}>
             Close

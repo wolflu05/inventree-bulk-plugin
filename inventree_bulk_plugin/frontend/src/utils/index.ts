@@ -85,6 +85,32 @@ export const toFlat = (data: BulkGenerateAPIResult, counter: () => number, pid =
     return [{ ...parent, id, pid, path }, ...toFlat(childs, counter, id, path)];
   });
 
+export type NestedObjectType = Array<{
+  id: number;
+  pid: number;
+  path: string;
+  childs: NestedObjectType;
+}>;
+
+export const mapNestedObject = (
+  data: BulkGenerateAPIResult,
+  counter: () => number,
+  pid = 0,
+  pa = "...",
+): NestedObjectType => {
+  return data.map(([parent, childs]) => {
+    const id = counter();
+    const path = `${pa}/${parent.name}`;
+    return {
+      ...parent,
+      id,
+      pid,
+      path,
+      childs: mapNestedObject(childs, counter, id, path),
+    };
+  }) as NestedObjectType;
+};
+
 export const escapeHtml = (unsafe: string) =>
   unsafe
     .replace(/&/g, "&amp;")

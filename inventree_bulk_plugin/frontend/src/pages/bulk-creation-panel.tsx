@@ -10,6 +10,7 @@ import { InvenTreeContext } from "../contexts/InvenTreeContext";
 
 import "@mantine/core/styles.css";
 import "@mantine/notifications/styles.css";
+import "mantine-datatable/styles.css";
 
 export function renderPanel(ref: HTMLDivElement, inventreeContext: InvenTreePluginContext) {
   preact_render(
