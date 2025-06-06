@@ -190,7 +190,7 @@ export const TemplateForm = ({
 
     showNotification({
       color: "green",
-      message: `Successfully bulk created ${res.data.length} ${bulkGenerateInfoDict[template.template_type]?.name}s.`,
+      message: `Successfully bulk created ${res.data.length} ${template.template_type}s.`,
     });
   }, [api, bulkGenerateInfoDict, parentId, template]);
 
