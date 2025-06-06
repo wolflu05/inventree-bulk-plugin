@@ -16,7 +16,7 @@ export default defineConfig({
     rollupOptions: {
       input: inputs,
       output: {
-        dir: resolve(__dirname, "../static/inventree-bulk-plugin/dist"),
+        dir: resolve(__dirname, "../static/dist"),
         entryFileNames: "[name].js",
         assetFileNames: "assets/[name].[ext]",
       },
