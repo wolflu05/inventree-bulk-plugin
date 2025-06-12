@@ -19,6 +19,7 @@ class Panel:
     model: str
     icon: str
     args: dict
+    key: str
 
 
 def validate_json(value):
@@ -58,19 +59,22 @@ class InvenTreeBulkPlugin(AppMixin, UserInterfaceMixin, UrlsMixin, SettingsMixin
             "Location bulk creation",
             model="stocklocation",
             icon="ti:tools:outline",
-            args={"objectType": "STOCK_LOCATION"}
+            args={"objectType": "STOCK_LOCATION"},
+            key="bulk-creation-location"
         ),
         Panel(
             "Category bulk creation",
             model="partcategory",
             icon="ti:tools:outline",
-            args={"objectType": "PART_CATEGORY"}
+            args={"objectType": "PART_CATEGORY"},
+            key="bulk-creation-category"
         ),
         Panel(
             "Part bulk creation",
             model="partcategory",
             icon="ti:tools:outline",
-            args={"objectType": "PART"}
+            args={"objectType": "PART"},
+            key="bulk-creation-part"
         ),
     ]
 
@@ -83,7 +87,7 @@ class InvenTreeBulkPlugin(AppMixin, UserInterfaceMixin, UrlsMixin, SettingsMixin
         for panel in self.PREACT_PANELS:
             if target_model == panel.model and target_id is not None:
                 panels.append({
-                    'key': f'bulk-creation-panel-{panel.model}',
+                    'key': panel.key,
                     'title': panel.title,
                     'source': self.plugin_static_file('bulk-creation-panel.dev.js:renderPanel' if os.environ.get('INVENTREE_REPORT_LSP_DEV', False) else 'dist/bulk-creation-panel.js:renderPanel'),
                     'icon': panel.icon,
