@@ -1,6 +1,6 @@
 import json
 
-from django.urls import reverse
+from django.test import override_settings
 
 from InvenTree.unit_test import InvenTreeAPITestCase
 from stock.models import StockLocation
@@ -10,6 +10,9 @@ from common.models import InvenTreeSetting
 from ...models import BulkCreationTemplate
 
 
+@override_settings(
+    SITE_URL='http://testserver', CSRF_TRUSTED_ORIGINS=['http://testserver']
+)
 class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
     def setUp(self):
         super().setUp()
@@ -65,7 +68,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         }
 
     def test_url_bulkcreate_info(self):
-        url = reverse("plugin:inventree-bulk-plugin:api-bulk-create")
+        url = "/plugin/inventree-bulk-plugin/bulkcreate"
 
         # Test template_type advertisement
         response = self.get(url, expected_code=200).json()
@@ -82,7 +85,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         self.assertTrue("PART" in template_types)
 
     def test_url_bulkcreate_info_detail(self):
-        url = reverse("plugin:inventree-bulk-plugin:api-bulk-create")
+        url = "/plugin/inventree-bulk-plugin/bulkcreate"
 
         self.get(url + "?template_type=NOT_EXISTING_TEMPLATE_TYPE", expected_code=400)
 
@@ -116,7 +119,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         ])
 
     def test_url_bulkcreate_preview(self):
-        url = reverse("plugin:inventree-bulk-plugin:api-bulk-create")
+        url = "/plugin/inventree-bulk-plugin/bulkcreate"
 
         # There should be only one item generated
         data = self.simple_valid_generation_template
@@ -231,7 +234,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         self.assertJSONEqual(response.content, [[{"name": "Parent 13"}, []]])
 
     def test_url_bulkcreate_create(self):
-        url = reverse("plugin:inventree-bulk-plugin:api-bulk-create")
+        url = "/plugin/inventree-bulk-plugin/bulkcreate"
 
         # If template_type is provided and no parent_id, everything should work and placeholders should be used
         data = {
@@ -300,9 +303,9 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
 
     def _template_url(self, pk=None):
         if pk:
-            return reverse("plugin:inventree-bulk-plugin:api-detail-templates", kwargs={"pk": pk})
+            return f"/plugin/inventree-bulk-plugin/templates/{pk}"
         else:
-            return reverse("plugin:inventree-bulk-plugin:api-list-templates")
+            return "/plugin/inventree-bulk-plugin/templates"
 
     def test_url_template_get(self):
         BulkCreationTemplate.objects.create(name="Complex Stock template", template_type="STOCK_LOCATION",
