@@ -277,7 +277,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         StockLocation.objects.all().delete()
         parent = StockLocation.objects.create(name="Parent", description="Parent description", parent=None)
         self.post(url + f"?parent_id={parent.pk}&create=true",
-                  self.complex_valid_generation_template, expected_code=201)
+                  self.complex_valid_generation_template, expected_code=201, max_query_count=1000)
 
         all_objects = list(StockLocation.objects.all())
         self.assertEqual(26, len(all_objects))

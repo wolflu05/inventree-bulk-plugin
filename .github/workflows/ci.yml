@@ -107,6 +107,7 @@ jobs:
         INVENTREE_DB_USER: inventree
         INVENTREE_DB_PASSWORD: inventree
         INVENTREE_PLUGINS_ENABLED: True
+        INVENTREE_PLUGINS_MANDATORY: inventree-bulk-plugin
         INVENTREE_PLUGIN_TESTING: True
         INVENTREE_PLUGIN_TESTING_SETUP: True
         INVENTREE_SITE_URL: http://localhost:8000
