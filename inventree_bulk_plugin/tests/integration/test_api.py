@@ -1,5 +1,6 @@
 import json
 
+from django.test import override_settings
 from django.urls import reverse
 
 from InvenTree.unit_test import InvenTreeAPITestCase
@@ -10,6 +11,9 @@ from common.models import InvenTreeSetting
 from ...models import BulkCreationTemplate
 
 
+@override_settings(
+    SITE_URL='http://testserver', CSRF_TRUSTED_ORIGINS=['http://testserver']
+)
 class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
     def setUp(self):
         super().setUp()
@@ -274,7 +278,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         StockLocation.objects.all().delete()
         parent = StockLocation.objects.create(name="Parent", description="Parent description", parent=None)
         self.post(url + f"?parent_id={parent.pk}&create=true",
-                  self.complex_valid_generation_template, expected_code=201)
+                  self.complex_valid_generation_template, expected_code=201, max_query_count=1000)
 
         all_objects = list(StockLocation.objects.all())
         self.assertEqual(26, len(all_objects))
