@@ -94,7 +94,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        inventree-tag: [latest] # , stable]  # TODO: re-add after v0.18 is released
+        inventree-tag: [latest, stable]
 
     container:
       image: inventree/inventree:${{ matrix.inventree-tag }}
