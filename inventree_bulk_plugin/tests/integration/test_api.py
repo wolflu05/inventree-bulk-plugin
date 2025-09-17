@@ -10,6 +10,7 @@ from common.models import InvenTreeSetting
 
 from ...models import BulkCreationTemplate
 
+
 @override_settings(
     SITE_URL='http://testserver', CSRF_TRUSTED_ORIGINS=['http://testserver']
 )
