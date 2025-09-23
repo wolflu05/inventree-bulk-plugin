@@ -6,18 +6,28 @@ from .generators import GENERATORS
 from .generators.generator import Generator, GeneratorTypes
 
 
-def parse_dimension(dimension: str) -> list[tuple[GeneratorTypes, Union[str, tuple[str, str]], dict, str]]:
+def parse_dimension(
+    dimension: str,
+) -> list[tuple[GeneratorTypes, Union[str, tuple[str, str]], dict, str]]:
     res = []
-    for gen_match in re.finditer(r"(?:(?:(\w+)-(\w+))|(\*?.+?))(?:\((.*?)\))?(?:,|$)", dimension):
+    for gen_match in re.finditer(
+        r"(?:(?:(\w+)-(\w+))|(\*?.+?))(?:\((.*?)\))?(?:,|$)", dimension
+    ):
         settings = {}
         if gen_match.group(4):
-            for setting_match in re.finditer(r"([A-Za-z_]+?)(?:=)([^=]+)(?:,|$)", gen_match.group(4)):
+            for setting_match in re.finditer(
+                r"([A-Za-z_]+?)(?:=)([^=]+)(?:,|$)", gen_match.group(4)
+            ):
                 settings[setting_match.group(1)] = setting_match.group(2)
 
         # decide if word/infinity generator or start-end is given
         if gen_match.group(3) is not None:
             gen = gen_match.group(3).lstrip("*")
-            gen_type = (GeneratorTypes.INFINITY if gen_match.group(3).startswith("*") else GeneratorTypes.WORD)
+            gen_type = (
+                GeneratorTypes.INFINITY
+                if gen_match.group(3).startswith("*")
+                else GeneratorTypes.WORD
+            )
         else:
             gen = (gen_match.group(1), gen_match.group(2))
             gen_type = GeneratorTypes.RANGE
@@ -27,7 +37,11 @@ def parse_dimension(dimension: str) -> list[tuple[GeneratorTypes, Union[str, tup
     return res
 
 
-def match_generator(generators: list[Generator], gen_type: GeneratorTypes, gen: Union[str, Tuple[str, str]]) -> Union[Generator, None]:
+def match_generator(
+    generators: list[Generator],
+    gen_type: GeneratorTypes,
+    gen: Union[str, Tuple[str, str]],
+) -> Union[Generator, None]:
     for generator in generators:
         if gen_type == GeneratorTypes.INFINITY and generator.NAME == gen:
             return generator
@@ -37,13 +51,17 @@ def match_generator(generators: list[Generator], gen_type: GeneratorTypes, gen: 
     return None
 
 
-def get_dimension_values(dimension: str, global_count: Union[int, None]) -> Iterable[str]:
+def get_dimension_values(
+    dimension: str, global_count: Union[int, None]
+) -> Iterable[str]:
     seq = []
     parsed_dimension = parse_dimension(dimension)
     for gen_type, gen, settings, gen_name in parsed_dimension:
         if gen_type == GeneratorTypes.WORD:
+
             def generator():
                 yield gen
+
             seq.append((generator(), 0, 1, 1))
         else:
             gen_class = match_generator(GENERATORS, gen_type, gen)
@@ -81,13 +99,20 @@ def get_dimension_values(dimension: str, global_count: Union[int, None]) -> Iter
 
     # generate result, islice objects with no end will take all available space to generate global_count elements
     res = []
-    for (generator, start_idx, end_idx, step), (gen_type, gen, settings, gen_name) in zip(seq, parsed_dimension):
+    for (generator, start_idx, end_idx, step), (
+        gen_type,
+        gen,
+        settings,
+        gen_name,
+    ) in zip(seq, parsed_dimension):
         length = None
         if None not in [start_idx, end_idx]:
             length = (end_idx - start_idx) * step
 
         if global_count is None and length is None:
-            raise ValueError(f"Missing count for generator: '{gen_name}' or dimension count")
+            raise ValueError(
+                f"Missing count for generator: '{gen_name}' or dimension count"
+            )
 
         if global_count is not None:
             if (remaining_items := global_count - len(res)) <= 0:

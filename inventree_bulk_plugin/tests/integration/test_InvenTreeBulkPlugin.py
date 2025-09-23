@@ -6,7 +6,7 @@ from django.core.exceptions import ValidationError
 from plugin import registry
 
 from ...models import validate_template
-from ...InvenTreeBulkPlugin import InvenTreeBulkPlugin, validate_json
+from ...core import InvenTreeBulkPlugin, validate_json
 from ...version import BULK_PLUGIN_VERSION
 
 

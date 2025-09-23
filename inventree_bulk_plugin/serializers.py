@@ -8,6 +8,7 @@ class TemplateSerializer(serializers.ModelSerializer):
 
     class Meta:
         """Meta for a serializer."""
+
         model = BulkCreationTemplate
         fields = [
             "id",
@@ -53,7 +54,9 @@ class FieldDefinitionSerializer(serializers.Serializer):
     def get_fields(self):
         fields = super().get_fields()
         fields["items_type"] = FieldDefinitionSerializer()
-        fields["fields"] = serializers.DictField(child=FieldDefinitionSerializer(read_only=True))
+        fields["fields"] = serializers.DictField(
+            child=FieldDefinitionSerializer(read_only=True)
+        )
         return fields
 
     def get_model(self, obj):

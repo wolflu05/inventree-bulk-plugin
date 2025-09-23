@@ -19,7 +19,13 @@ class BaseSettingsSchema(BaseModel):
 
 
 class Generator(ABC):
-    def __init__(self, gen_type: GeneratorTypes, gen: Union[str, Tuple[str, str]], settings: Dict[str, str], gen_name: str) -> None:
+    def __init__(
+        self,
+        gen_type: GeneratorTypes,
+        gen: Union[str, Tuple[str, str]],
+        settings: Dict[str, str],
+        gen_name: str,
+    ) -> None:
         self.gen_type = gen_type
         self.gen = gen
         self.settings = self.SettingsSchema(**settings)

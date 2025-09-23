@@ -29,10 +29,14 @@ template_filters = {
     "to_csv": to_csv,
     "from_csv": from_csv,
     "to_json": to_json,
-    "from_json": from_json
+    "from_json": from_json,
 }
 
-env = Environment(variable_start_string="{{", variable_end_string="}}", extensions=["jinja2.ext.debug"])
+env = Environment(
+    variable_start_string="{{",
+    variable_end_string="}}",
+    extensions=["jinja2.ext.debug"],
+)
 env.filters.update(template_filters)
 
 

@@ -2,7 +2,11 @@ import json
 
 from django.urls import path
 from rest_framework import permissions, status
-from rest_framework.authentication import SessionAuthentication, BasicAuthentication, TokenAuthentication
+from rest_framework.authentication import (
+    SessionAuthentication,
+    BasicAuthentication,
+    TokenAuthentication,
+)
 from rest_framework.generics import ListCreateAPIView, RetrieveUpdateDestroyAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -11,7 +15,11 @@ from rest_framework.request import Request
 from InvenTree.filters import SEARCH_ORDER_FILTER
 
 from .bulkcreate_objects import bulkcreate_objects
-from .serializers import TemplateSerializer, BulkCreateObjectSerializer, BulkCreateObjectDetailSerializer
+from .serializers import (
+    TemplateSerializer,
+    BulkCreateObjectSerializer,
+    BulkCreateObjectDetailSerializer,
+)
 from .models import BulkCreationTemplate
 from .BulkGenerator.utils import str2bool
 from .BulkGenerator.BulkGenerator import BulkGenerator
@@ -19,12 +27,15 @@ from .BulkGenerator.BulkGenerator import BulkGenerator
 
 # Fix csrf
 class CsrfExemptSessionAuthentication(SessionAuthentication):
-
     def enforce_csrf(self, request):
         return  # To not perform the csrf check previously happening
 
 
-authentication_classes = [CsrfExemptSessionAuthentication, BasicAuthentication, TokenAuthentication]
+authentication_classes = [
+    CsrfExemptSessionAuthentication,
+    BasicAuthentication,
+    TokenAuthentication,
+]
 
 
 class TemplateList(ListCreateAPIView):
@@ -88,7 +99,9 @@ class BulkCreate(APIView):
 
         # return all bulk create objects
         if template_type is None:
-            results = BulkCreateObjectSerializer(bulkcreate_objects.values(), many=True).data
+            results = BulkCreateObjectSerializer(
+                bulkcreate_objects.values(), many=True
+            ).data
             return Response(results)
 
         # return for specific object, also evaluate get default values
@@ -96,8 +109,10 @@ class BulkCreate(APIView):
 
         if not bulkcreate_object_class:
             return Response(
-                {"error": f"Template type '{template_type}' not found, choose one of {','.join(bulkcreate_objects.keys())}"},
-                status=status.HTTP_400_BAD_REQUEST
+                {
+                    "error": f"Template type '{template_type}' not found, choose one of {','.join(bulkcreate_objects.keys())}"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         bulkcreate_object = bulkcreate_object_class(request)
@@ -113,12 +128,17 @@ class BulkCreate(APIView):
 
         if not bulkcreate_object_class:
             return Response(
-                {"error": f"Template type '{template_type}' not found, choose one of {','.join(bulkcreate_objects.keys())}"},
-                status=status.HTTP_400_BAD_REQUEST
+                {
+                    "error": f"Template type '{template_type}' not found, choose one of {','.join(bulkcreate_objects.keys())}"
+                },
+                status=status.HTTP_400_BAD_REQUEST,
             )
 
         if not schema:
-            return Response({"error": "BulkDefinitionSchema not provided via 'template' property."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response(
+                {"error": "BulkDefinitionSchema not provided via 'template' property."},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
 
         try:
             bulkcreate_object = bulkcreate_object_class(request)
@@ -135,7 +155,9 @@ class BulkCreate(APIView):
         if create_objects:
             try:
                 objects = bulkcreate_object.create_objects(bg)
-                return Response([obj.pk for obj in objects], status=status.HTTP_201_CREATED)
+                return Response(
+                    [obj.pk for obj in objects], status=status.HTTP_201_CREATED
+                )
             except Exception as e:  # pragma: no cover
                 return Response({"error": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
