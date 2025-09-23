@@ -38,7 +38,7 @@ InvenTreeBulkPlugin = "inventree_bulk_plugin.core:InvenTreeBulkPlugin"
 where = [""]
 
 [tool.setuptools.dynamic]
-version = {attr = "report_lsp.PLUGIN_VERSION"} 
+version = {attr = "inventree_bulk_plugin.PLUGIN_VERSION"} 
 
 [tool.ruff]
 exclude = [
