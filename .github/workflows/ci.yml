@@ -21,16 +21,18 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # pin@v5.6.0
         with:
-          python-version: "3.10"
+          python-version: 3.11
 
       - name: Install style check dependencies
         run: |
-          pip install flake8==6.0.0
-          pip install pep8-naming==0.13.2
+          pip install -U ruff
+          pip install -U wheel setuptools twine build
 
       - name: Check style
-        run: |
-          flake8 .
+        run: ruff check
+
+      - name: Build Plugin
+        run: python -m build
 
   style-js:
     name: "💄 Style: js"
@@ -65,11 +67,12 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # pin@v5.6.0
         with:
-          python-version: "3.10"
+          python-version: 3.11
 
       - name: Install pip dependencies
         run: |
-          pip install pydantic==2.* Jinja2==3.* coverage==7.0.1
+          pip install .
+          pip install coverage==7.0.1
 
       - name: Run tests
         run: |
@@ -174,7 +177,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # pin@v5.6.0
         with:
-          python-version: "3.10"
+          python-version: 3.11
 
       - name: Install test dependencies
         run: pip install coverage==7.0.1
@@ -275,7 +278,7 @@ jobs:
       - name: Setup python
         uses: actions/setup-python@a26af69be951a213d495a4c3e4e4022e16d87065 # pin@v5.6.0
         with:
-          python-version: "3.10"
+          python-version: 3.11
 
       - name: Install build dependencies
         run: pip install --upgrade wheel setuptools twine build

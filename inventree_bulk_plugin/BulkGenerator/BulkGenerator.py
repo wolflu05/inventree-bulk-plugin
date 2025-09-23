@@ -4,7 +4,7 @@ from typing import Any, Callable, Iterable, Literal, Optional, Union
 
 from jinja2.exceptions import TemplateError
 
-from ..version import BULK_PLUGIN_VERSION
+from .. import PLUGIN_VERSION
 from .validations import (
     BulkDefinitionChild,
     BulkDefinitionChildCount,
@@ -107,11 +107,11 @@ class BulkGenerator:
         self.schema = BulkDefinitionSchema(**self.inp, apply_input=apply_input)
 
         version = version_tuple(self.schema.version)
-        curr_version = version_tuple(BULK_PLUGIN_VERSION)
+        curr_version = version_tuple(PLUGIN_VERSION)
 
         if version[0] != curr_version[0]:
             raise ValueError(
-                f"The server runs on v{BULK_PLUGIN_VERSION} which is incompatible to v{self.schema.version}."
+                f"The server runs on v{PLUGIN_VERSION} which is incompatible to v{self.schema.version}."
             )
 
     def get_default_context(self):

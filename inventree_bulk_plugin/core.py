@@ -10,7 +10,7 @@ from plugin.base.ui.mixins import UIFeature
 from plugin.mixins import UserInterfaceMixin, UrlsMixin, AppMixin, SettingsMixin
 
 from .api import api_urls
-from .version import BULK_PLUGIN_VERSION
+from . import PLUGIN_VERSION
 
 
 @dataclass
@@ -34,7 +34,7 @@ class InvenTreeBulkPlugin(
 ):
     AUTHOR = "wolflu05"
     DESCRIPTION = "InvenTree Bulk plugin"
-    VERSION = BULK_PLUGIN_VERSION
+    VERSION = PLUGIN_VERSION
 
     # 0.9.1 - due to "invoke update" doesn't run collectstatic (see inventree/InvenTree#4077)
     # 0.12.6 - Settings do not work in combination with api views (see inventree/InvenTree#5408)
