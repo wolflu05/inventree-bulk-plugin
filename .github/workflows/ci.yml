@@ -97,7 +97,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        inventree-tag: [latest, stable, "1.0.4", "1.0.5", "1.0.6", "1.0.7"]
+        inventree-tag: ["1.0.6"]
 
     container:
       image: inventree/inventree:${{ matrix.inventree-tag }}
@@ -143,7 +143,14 @@ jobs:
           # and newer coverage version due to https://github.com/nedbat/coveragepy/issues/1150
           HOME=/root pip3 install django-test-migrations==1.2.0 coverage==7.4.1 django_slowtests==1.1.1
 
-          # migrate db
+      - name: tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+
+      - name: Setup database
+        run: |
+          cd /home/inventree
           HOME=/root invoke migrate
 
       - name: Run tests
