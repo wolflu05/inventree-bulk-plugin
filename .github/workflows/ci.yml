@@ -148,7 +148,7 @@ jobs:
           # and newer coverage version due to https://github.com/nedbat/coveragepy/issues/1150
           HOME=/root pip3 install django-test-migrations==1.2.0 coverage==7.4.1 django_slowtests==1.1.1
 
-      - name: Setup database
+      - name: Setup database1
         run: |
           cd /home/inventree
           HOME=/root invoke migrate
