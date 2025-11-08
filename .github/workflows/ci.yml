@@ -97,7 +97,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        inventree-tag: [latest, stable]
+        inventree-tag: [latest, stable, "1.0.4", "1.0.5", "1.0.6", "1.0.7"]
 
     container:
       image: inventree/inventree:${{ matrix.inventree-tag }}
