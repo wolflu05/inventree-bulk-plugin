@@ -132,7 +132,7 @@ jobs:
       - name: Setup inventree
         run: |
           cd /home/inventree
-          HOME=/root pip3 install --no-cache-dir --disable-pip-version-check -U -r requirements.txt
+          HOME=/root invoke update
 
       - name: Setup inventree-bulk-plugin
         run: |
@@ -141,8 +141,6 @@ jobs:
           # and newer coverage version due to https://github.com/nedbat/coveragepy/issues/1150
           HOME=/root pip3 install django-test-migrations==1.2.0 coverage==7.4.1 django_slowtests==1.1.1
 
-          # migrate before installing the plugin to avoid issues
-          HOME=/root invoke migrate
           HOME=/root pip3 install -e $GITHUB_WORKSPACE
           HOME=/root invoke migrate
 
