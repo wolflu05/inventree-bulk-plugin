@@ -134,6 +134,11 @@ jobs:
           cd /home/inventree
           HOME=/root pip3 install --no-cache-dir --disable-pip-version-check -U -r requirements.txt
 
+      - name: tmate session
+        uses: mxschmitt/action-tmate@v3
+        with:
+          limit-access-to-actor: true
+
       - name: Setup inventree-bulk-plugin
         run: |
           cd /home/inventree
@@ -142,11 +147,6 @@ jobs:
           # install additional dependencies required for testing
           # and newer coverage version due to https://github.com/nedbat/coveragepy/issues/1150
           HOME=/root pip3 install django-test-migrations==1.2.0 coverage==7.4.1 django_slowtests==1.1.1
-
-      - name: tmate session
-        uses: mxschmitt/action-tmate@v3
-        with:
-          limit-access-to-actor: true
 
       - name: Setup database
         run: |
