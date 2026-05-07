@@ -180,12 +180,12 @@ ModelType = TypeVar("ModelType")
 
 
 class BulkCreateObject(Generic[ModelType]):
-    name: str
-    template_type: str
+    name: str  # pragma: no cover
+    template_type: str  # pragma: no cover
     generate_type: Literal["tree", "single"] = "tree"
-    model: ModelType
-    fields: Optional[dict[str, FieldDefinition]]
-    get_fields: Optional[Callable[[], dict[str, FieldDefinition]]]
+    model: ModelType  # pragma: no cover
+    fields: Optional[dict[str, FieldDefinition]]  # pragma: no cover
+    get_fields: Optional[Callable[[], dict[str, FieldDefinition]]]  # pragma: no cover
 
     def __init__(self, request: Request) -> None:
         self.request = request
