@@ -739,5 +739,6 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         self.assertEqual(ctx["gen"] | {"name": "Test part", "description": "Test part desc", "is_template": True}, ctx["gen"])
         self.assertEqual(obj.parent, part)
 
+    @property
     def part_content_type(self):
         return ContentType.objects.get_for_model(Part)

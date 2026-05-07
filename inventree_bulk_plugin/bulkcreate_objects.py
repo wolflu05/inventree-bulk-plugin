@@ -857,8 +857,8 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             raise e
 
     @cached_property
-    def part_content_type(cls):
-        return ContentType.objects.get_for_model(cls.model)
+    def part_content_type(self):
+        return ContentType.objects.get_for_model(self.model)
 
 
 bulkcreate_objects: dict[str, type[BulkCreateObject]] = {

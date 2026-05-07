@@ -390,5 +390,6 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         with self.assertRaises(BulkCreationTemplate.DoesNotExist):
             BulkCreationTemplate.objects.get(pk=template.pk)
 
+    @property
     def part_content_type(self):
         return ContentType.objects.get_for_model(Part)
