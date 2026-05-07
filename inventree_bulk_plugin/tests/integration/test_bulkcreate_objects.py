@@ -682,7 +682,7 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         self.assertEqual(created.description, template_part.description)
         self.assertEqual(created.is_template, False)
         self.assertEqual(created.variant_of, template_part)
-        self.assertCountEqual(list((p.part.name, p.template.name, p.data) for p in created.get_parameters()), [
+        self.assertCountEqual(list((p.content_object.name, p.template.name, p.data) for p in created.get_parameters()), [
             ('Test 1_9', 'Test 1', '10'), ('Test 1_9', 'Test 2', '13')])
         self.assertEqual(created.image.name, template_part.image.name)
         self.assertEqual(created.IPN, template_part.IPN)
