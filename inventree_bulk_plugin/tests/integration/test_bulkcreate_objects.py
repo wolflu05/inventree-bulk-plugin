@@ -5,10 +5,12 @@ from django.urls import reverse
 from django.contrib.auth.models import User
 from django.core.exceptions import FieldDoesNotExist
 from django.db.models import Model, IntegerField, DecimalField, FloatField, BooleanField
+from django.contrib.contenttypes.models import ContentType
 from mptt.models import MPTTModel
 
 from company.models import Company, ManufacturerPart, SupplierPart
-from part.models import Part, PartCategory, PartParameterTemplate, PartParameter, PartRelated
+from part.models import Part, PartCategory, PartRelated
+from common.models import ParameterTemplate, Parameter
 from stock.models import StockLocation, StockItem
 from common.models import InvenTreeSetting
 
@@ -398,11 +400,11 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         issues = []
 
         issues.extend(self.model_test(
-            PartParameter,
+            Parameter,
             obj.fields["parameters"].items_type.fields,
             f"{obj.template_type}.parameters.[x]",
             ignore_fields=["value"],
-            ignore_model_required_fields=["data", "part"],
+            ignore_model_required_fields=["data", "model_type", "model_id"],
         ))
 
         issues.extend(self.model_test(
@@ -425,7 +427,8 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
     def test_create_objects(self):
         InvenTreeSetting.set_setting("INVENTREE_DOWNLOAD_FROM_URL", True, None)
 
-        parameter_template = PartParameterTemplate.objects.create(name="Test", units="kg", description="Test template")
+        parameter_template = ParameterTemplate.objects.create(model_type=self.part_content_type, name="Test", units="kg", description="Test template")
+        wrong_parameter_template = ParameterTemplate.objects.create(model_type=ContentType.objects.get_for_model(Company), name="Test parameter for company", units="kg", description="Test template")
         supplier_company = Company.objects.create(name="Supplier", is_supplier=True)
         manufacturer_company = Company.objects.create(name="Supplier", is_supplier=False, is_manufacturer=True)
         stock_location = StockLocation.objects.create(name="Test location")
@@ -478,7 +481,7 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
 
         expected_objs = [
             (Part, 1),
-            (PartParameter, 1),
+            (Parameter, 1),
             (ManufacturerPart, 1),
             (SupplierPart, 1),
             (StockItem, 1),
@@ -580,6 +583,23 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
                     }, [])
                 ])
             ])
+
+        # try with parameter template with wrong model type
+        with self.assertRaisesRegex(ValueError, "Parameter template 'Test parameter for company' is not valid for part model"):
+            req = self.request.get(f"/abc?parent_id={category.pk}")
+            req.user = self.user
+            obj = PartBulkCreateObject(req)
+            obj.get_context()
+            obj.create_objects([
+                ({
+                    "name": "Test 1_8",
+                    "description": "Test Description",
+                    "parameters": [
+                        {"template": str(wrong_parameter_template.pk), "value": "100"}
+                    ],
+                }, [])
+            ])
+
         # --- end: Test all exceptions here
 
         # even there are errors thrown, there shouldn't be created anything, because of the transaction
@@ -645,9 +665,9 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
             image=part.image.name,
             IPN="TEST_IPN_123_FOR_TEMPLATE"
         )
-        part_parameter_template1 = PartParameterTemplate.objects.create(name="Test 1", units="kg")
-        part_parameter_template2 = PartParameterTemplate.objects.create(name="Test 2", units="kg")
-        PartParameter.objects.create(part=template_part, template=part_parameter_template1, data="10")
+        part_parameter_template1 = ParameterTemplate.objects.create(model_type=self.part_content_type, name="Test 1", units="kg")
+        part_parameter_template2 = ParameterTemplate.objects.create(model_type=self.part_content_type, name="Test 2", units="kg")
+        Parameter.objects.create(model_type=self.part_content_type, model_id=template_part.pk, template=part_parameter_template1, data="10")
         req = self.request.get(f"/abc?parent_id={category.pk}")
         req.user = self.user
         req.data = {"template": {"output": {"generate": {"variant_of": str(template_part.pk)}}}}
@@ -662,7 +682,7 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         self.assertEqual(created.description, template_part.description)
         self.assertEqual(created.is_template, False)
         self.assertEqual(created.variant_of, template_part)
-        self.assertCountEqual(list((p.part.name, p.template.name, p.data) for p in created.get_parameters()), [
+        self.assertCountEqual(list((p.content_object.name, p.template.name, p.data) for p in created.get_parameters()), [
             ('Test 1_9', 'Test 1', '10'), ('Test 1_9', 'Test 2', '13')])
         self.assertEqual(created.image.name, template_part.image.name)
         self.assertEqual(created.IPN, template_part.IPN)
@@ -718,3 +738,7 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         ctx = obj.get_context()
         self.assertEqual(ctx["gen"] | {"name": "Test part", "description": "Test part desc", "is_template": True}, ctx["gen"])
         self.assertEqual(obj.parent, part)
+
+    @property
+    def part_content_type(self):
+        return ContentType.objects.get_for_model(Part)

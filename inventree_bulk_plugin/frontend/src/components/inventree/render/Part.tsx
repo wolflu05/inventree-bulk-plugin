@@ -107,9 +107,9 @@ export function RenderPartCategory(props: Readonly<InstanceRenderInterface>) {
 }
 
 /**
- * Inline rendering of a PartParameterTemplate instance
+ * Inline rendering of a ParameterTemplate instance
  */
-export function RenderPartParameterTemplate({
+export function RenderParameterTemplate({
   instance,
 }: Readonly<{
   // eslint-disable-next-line @typescript-eslint/no-explicit-any

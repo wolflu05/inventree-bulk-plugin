@@ -2,10 +2,13 @@ import json
 
 from django.test import override_settings
 from django.urls import reverse
+from django.contrib.contenttypes.models import ContentType
 
 from InvenTree.unit_test import InvenTreeAPITestCase
+from inventree_bulk_plugin.bulkcreate_objects import PartBulkCreateObject
 from stock.models import StockLocation
-from part.models import PartCategory, PartParameterTemplate, PartCategoryParameterTemplate
+from part.models import Part, PartCategory, PartCategoryParameterTemplate
+from common.models import ParameterTemplate
 from common.models import InvenTreeSetting
 
 from ...models import BulkCreationTemplate
@@ -107,11 +110,11 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         ])
 
         # detail with parent id set and with defined part category parameter templates
-        part_parameter_template1 = PartParameterTemplate.objects.create(name="Length", units="m")
-        part_parameter_template2 = PartParameterTemplate.objects.create(name="Weight per meter", units="kg/m")
-        PartCategoryParameterTemplate.objects.create(category=category, parameter_template=part_parameter_template1)
+        part_parameter_template1 = ParameterTemplate.objects.create(model_type=self.part_content_type, name="Length", units="m")
+        part_parameter_template2 = ParameterTemplate.objects.create(model_type=self.part_content_type, name="Weight per meter", units="kg/m")
+        PartCategoryParameterTemplate.objects.create(category=category, template=part_parameter_template1)
         PartCategoryParameterTemplate.objects.create(
-            category=category, parameter_template=part_parameter_template2, default_value="10")
+            category=category, template=part_parameter_template2, default_value="10")
 
         response = self.get(url + f"?template_type=PART&parent_id={category.pk}", expected_code=200).json()
         self.assertEqual(response["fields"]["parameters"]["default"], [
@@ -386,3 +389,7 @@ class InvenTreeBulkPluginAPITestCase(InvenTreeAPITestCase):
         self.delete(self._template_url(template.pk), expected_code=204)
         with self.assertRaises(BulkCreationTemplate.DoesNotExist):
             BulkCreationTemplate.objects.get(pk=template.pk)
+
+    @property
+    def part_content_type(self):
+        return ContentType.objects.get_for_model(Part)
