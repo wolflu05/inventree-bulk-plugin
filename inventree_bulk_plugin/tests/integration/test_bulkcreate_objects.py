@@ -585,7 +585,7 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
             ])
 
         # try with parameter template with wrong model type
-        with self.assertRaisesRegex(ValueError, "Parameter template 'Length' is not valid for part model"):
+        with self.assertRaisesRegex(ValueError, "Parameter template 'Test parameter for company' is not valid for part model"):
             req = self.request.get(f"/abc?parent_id={category.pk}")
             req.user = self.user
             obj = PartBulkCreateObject(req)
