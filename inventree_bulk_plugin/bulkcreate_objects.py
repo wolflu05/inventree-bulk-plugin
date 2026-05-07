@@ -578,7 +578,6 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             "manufacturer",
             "stock",
             "related_parts",
-            "default_supplier",
             "category",
             "variant_of",
             "is_template",
@@ -705,13 +704,9 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                 part=part,
                 supplier=supplier,
                 manufacturer_part=manufacturer_part,
+                primary=_make_default,
                 **supplier_data,
             )
-
-            # if wanted, make this supplier part the default for this part
-            if _make_default:
-                part.default_supplier = supplier_part
-                part.save()
 
         # create initial stock
         if stock_data:

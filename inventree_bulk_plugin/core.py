@@ -41,7 +41,9 @@ class InvenTreeBulkPlugin(
     # 0.12.7 - Fix missing filters for get settings validator (see inventree/InvenTree#5480)
     # 0.15.8 - plugin_static template tag was added (see inventree/InvenTree#7764)
     # 0.18.0 - Migrate to PUI
-    MIN_VERSION = "0.18.0"
+    # 1.2.0 - generic parameters
+    # 1.3.0 - default supplier was removed from part
+    MIN_VERSION = "1.3.0"
 
     TITLE = "InvenTree Bulk Plugin"
     SLUG = "inventree-bulk-plugin"
