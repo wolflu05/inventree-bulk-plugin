@@ -5,7 +5,15 @@ import { Alert, Anchor, Group, Space, Text } from "@mantine/core";
 
 import { RenderBuildItem, RenderBuildLine, RenderBuildOrder } from "./Build";
 import { RenderAddress, RenderCompany, RenderContact, RenderManufacturerPart, RenderSupplierPart } from "./Company";
-import { RenderContentType, RenderError, RenderImportSession, RenderProjectCode, RenderSelectionList } from "./Generic";
+import {
+  RenderContentType,
+  RenderError,
+  RenderImportSession,
+  RenderProjectCode,
+  RenderSelectionList,
+  RenderSelectionEntry,
+  RenderParameter,
+} from "./Generic";
 import {
   RenderPurchaseOrder,
   RenderReturnOrder,
@@ -78,6 +86,7 @@ const RendererLookup: EnumDictionary<
   [ModelType.part]: RenderPart,
   [ModelType.partcategory]: RenderPartCategory,
   [ModelType.parametertemplate]: RenderParameterTemplate,
+  [ModelType.parameter]: RenderParameter,
   [ModelType.parttesttemplate]: RenderPartTestTemplate,
   [ModelType.projectcode]: RenderProjectCode,
   [ModelType.purchaseorder]: RenderPurchaseOrder,
@@ -99,6 +108,7 @@ const RendererLookup: EnumDictionary<
   [ModelType.pluginconfig]: RenderPlugin,
   [ModelType.contenttype]: RenderContentType,
   [ModelType.selectionlist]: RenderSelectionList,
+  [ModelType.selectionentry]: RenderSelectionEntry,
   [ModelType.error]: RenderError,
   part_image: RenderPartImage,
 };

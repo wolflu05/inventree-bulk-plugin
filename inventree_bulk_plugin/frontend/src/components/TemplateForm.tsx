@@ -192,7 +192,7 @@ export const TemplateForm = ({
       color: "green",
       message: `Successfully bulk created ${res.data.length} ${template.template_type}s.`,
     });
-  }, [api, bulkGenerateInfoDict, parentId, template]);
+  }, [api, parentId, template]);
 
   const downloadAsFile = useCallback(() => {
     const filename = `${Date.now()}_${template?.name}.json`;
