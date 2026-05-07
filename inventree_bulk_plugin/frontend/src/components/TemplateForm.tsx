@@ -181,7 +181,7 @@ export const TemplateForm = ({
         template: JSON.stringify(beautifySchema(template.template)),
       });
     } catch (err) {
-      showNotification({ color: "red", message: `An error occurred, ${(err as AxiosError)?.response?.data}` });
+      showNotification({ color: "red", message: `An error occurred, ${(err as AxiosError)?.response?.data?.error}` });
       return;
     } finally {
       setIsBulkCreateLoading(false);

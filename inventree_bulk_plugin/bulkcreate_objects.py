@@ -1,3 +1,4 @@
+from functools import cached_property
 import io
 import re
 import requests
@@ -7,6 +8,7 @@ from typing import Any, Callable, Generic, Literal, Optional, TypeVar, Union
 from pathlib import Path
 from django.db import transaction
 from django.db.models import Model
+from django.contrib.contenttypes.models import ContentType
 from django.apps import apps
 from django.urls import reverse
 from django.core.files import File
@@ -19,11 +21,10 @@ from stock.models import StockLocation
 from part.models import (
     PartCategory,
     Part,
-    PartParameter,
-    PartParameterTemplate,
     PartCategoryParameterTemplate,
     PartRelated,
 )
+from common.models import Parameter, ParameterTemplate
 from company.models import Company, ManufacturerPart, SupplierPart
 from stock.models import StockItem
 from common.models import InvenTreeSetting
@@ -371,10 +372,11 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                         "template": FieldDefinition(
                             "Template",
                             field_type="model",
-                            model="part.PartParameterTemplate",
+                            model=("common.ParameterTemplate"),
                             required=True,
                         ),
                         "value": FieldDefinition("Value", required=True),
+                        "note": FieldDefinition("Note"),
                     },
                     required=True,
                 ),
@@ -650,10 +652,21 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
 
         for parameter in parameters:
             template = get_model_instance(
-                PartParameterTemplate, parameter["template"], {}, f"for {part.name}"
+                ParameterTemplate, parameter["template"], {}, f"for {part.name}"
             )
-            PartParameter.objects.create(
-                part=part, template=template, data=parameter["value"]
+            if (
+                template.model_type is not None
+                and template.model_type != self.part_content_type
+            ):
+                raise ValueError(
+                    f"Parameter template '{template.name}' is not valid for part model"
+                )
+            Parameter.objects.create(
+                model_type=self.part_content_type,
+                model_id=part.pk,
+                template=template,
+                data=parameter["value"],
+                note=parameter.get("note", ""),
             )
 
         # create attachments
@@ -792,7 +805,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                     return [{"template": "", "value": ""}]
 
                 return [
-                    {"template": str(c.parameter_template.id), "value": c.default_value}
+                    {"template": str(c.template.pk), "value": c.default_value}
                     for c in parameters
                 ]
             except Exception:  # pragma: no cover
@@ -842,6 +855,10 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
             )
         except Exception as e:  # pragma: no cover
             raise e
+
+    @cached_property
+    def part_content_type(cls):
+        return ContentType.objects.get_for_model(cls.model)
 
 
 bulkcreate_objects: dict[str, type[BulkCreateObject]] = {
