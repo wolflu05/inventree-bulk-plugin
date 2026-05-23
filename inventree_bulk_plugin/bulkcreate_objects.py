@@ -511,12 +511,6 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
 
                 self.part_images[url] = None
 
-                # check if image download is enabled
-                if not InvenTreeSetting.get_setting("INVENTREE_DOWNLOAD_FROM_URL"):
-                    raise ValueError(
-                        "Downloading images from remote URL is not enabled"
-                    )
-
                 try:
                     self.part_images[url] = download_image_from_url(
                         part_data[0]["image"]
