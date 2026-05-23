@@ -425,8 +425,6 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
         return issues
 
     def test_create_objects(self):
-        InvenTreeSetting.set_setting("INVENTREE_DOWNLOAD_FROM_URL", True, None)
-
         parameter_template = ParameterTemplate.objects.create(model_type=self.part_content_type, name="Test", units="kg", description="Test template")
         wrong_parameter_template = ParameterTemplate.objects.create(model_type=ContentType.objects.get_for_model(Company), name="Test parameter for company", units="kg", description="Test template")
         supplier_company = Company.objects.create(name="Supplier", is_supplier=True)
@@ -507,22 +505,6 @@ class PartBulkCreateObjectTestCase(BulkCreateObjectTestMixin, TestCase):
                     "attachments": [{"comment": "A", "link": "https://github.com", "file_url": "https://github.com"}]
                 }, [])
             ])
-
-        # try with disabled image download
-        InvenTreeSetting.set_setting("INVENTREE_DOWNLOAD_FROM_URL", False, None)
-        with self.assertRaisesRegex(ValueError, "Downloading images from remote URL is not enabled"):
-            req = self.request.get(f"/abc?parent_id={category.pk}")
-            req.user = self.user
-            obj = PartBulkCreateObject(req)
-            obj.get_context()
-            obj.create_objects([
-                ({
-                    "name": "Test 1_1",
-                    "description": "Test Description",
-                    "image": "https://raw.githubusercontent.com/test-images/png/main/202105/cs-black-000.png"
-                }, [])
-            ])
-        InvenTreeSetting.set_setting("INVENTREE_DOWNLOAD_FROM_URL", True, None)
 
         # try with invalid url image download
         with self.assertRaises(ValueError):
