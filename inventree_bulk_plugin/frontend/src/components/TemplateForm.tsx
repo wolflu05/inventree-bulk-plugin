@@ -176,12 +176,21 @@ export const TemplateForm = ({
 
     let res;
     try {
-      res = await api.post(URLS.bulkcreate({ parentId, create: true }), {
-        ...template,
-        template: JSON.stringify(beautifySchema(template.template)),
-      });
+      res = await api.post(
+        URLS.bulkcreate({ parentId, create: true }),
+        {
+          ...template,
+          template: JSON.stringify(beautifySchema(template.template)),
+        },
+        {
+          timeout: 10 * 60 * 1000, // 10 minutes
+        },
+      );
     } catch (err) {
-      showNotification({ color: "red", message: `An error occurred, ${(err as AxiosError)?.response?.data?.error}` });
+      showNotification({
+        color: "red",
+        message: `An error occurred, ${(err as AxiosError)?.response?.data?.error ?? err}`,
+      });
       return;
     } finally {
       setIsBulkCreateLoading(false);

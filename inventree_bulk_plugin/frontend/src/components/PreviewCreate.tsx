@@ -81,15 +81,21 @@ export const PreviewCreate = ({
 
     let res;
     try {
-      res = await api.post(URLS.bulkcreate({ parentId, create: true }), {
-        ...final,
-        template: JSON.stringify(beautifySchema(final.template)),
-      });
+      res = await api.post(
+        URLS.bulkcreate({ parentId, create: true }),
+        {
+          ...final,
+          template: JSON.stringify(beautifySchema(final.template)),
+        },
+        {
+          timeout: 10 * 60 * 1000, // 10 minutes
+        },
+      );
     } catch (err) {
       handleDoneCreate?.(false);
       showNotification({
         color: "red",
-        message: `An error occurred, ${(err as AxiosError).response?.data?.error}`,
+        message: `An error occurred, ${(err as AxiosError).response?.data?.error ?? err}`,
       });
       return;
     } finally {
