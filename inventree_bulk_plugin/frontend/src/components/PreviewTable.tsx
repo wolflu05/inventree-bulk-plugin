@@ -37,7 +37,10 @@ export const PreviewTable = ({ template, height, parentId, bulkGenerateInfo }: P
           template: JSON.stringify(beautifySchema(template.template)),
         });
       } catch (err) {
-        showNotification({ color: "red", message: `An error occurred, ${(err as AxiosError).response?.data?.error}` });
+        showNotification({
+          color: "red",
+          message: `An error occurred, ${(err as AxiosError).response?.data?.error ?? err}`,
+        });
         return;
       }
 
