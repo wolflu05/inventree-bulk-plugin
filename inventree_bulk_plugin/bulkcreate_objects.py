@@ -604,6 +604,7 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                 image = self.part_images[image]
             elif not re.match(r"^(?:[a-z+]+:)?//", image):
                 # try use local image
+                image = image.removeprefix("/media/")
                 if not (Path(settings.MEDIA_ROOT.joinpath(image))).is_file():
                     raise ValueError(
                         f"Image '{image}' for part '{data[0]['name']}' does not exist"
