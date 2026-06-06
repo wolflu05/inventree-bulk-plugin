@@ -77,7 +77,7 @@ export function RenderPartImage(props: Readonly<InstanceRenderInterface>) {
       primary={instance.image}
       secondary={`(x${instance.count})`}
       suffix={badge}
-      image={`/media/${instance.image}`}
+      image={`${instance.image}`}
       url={props.link ? getDetailUrl(ModelType.part, instance.pk) : undefined}
     />
   );
