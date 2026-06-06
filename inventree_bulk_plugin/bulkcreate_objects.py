@@ -458,9 +458,6 @@ class PartBulkCreateObject(BulkCreateObject[Part]):
                     ),
                     "batch": FieldDefinition("Batch"),
                     "link": FieldDefinition("Link"),
-                    "review_needed": FieldDefinition(
-                        "Review needed", field_type="boolean"
-                    ),
                     "delete_on_deplete": FieldDefinition(
                         "Delete on deplete", field_type="boolean"
                     ),
